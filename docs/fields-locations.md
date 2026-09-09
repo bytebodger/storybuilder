@@ -10,6 +10,7 @@ field here describes the terrain a place sits in and names the features it sits 
 | Field | Stored as | Covers |
 | --- | --- | --- |
 | Name | item name | What the place is called. |
+| Pronunciation | attribute | A plain respelling. [Common to every container](containers.md#fields-every-container-gets). |
 | Parent Location | attribute | The larger place it sits inside. Links itself when that has an article. |
 | Description | item summary | The opening paragraph. Shown wherever the place is mentioned elsewhere. |
 | Existed Since | **`beginDate`** | When it came to be. Defaults to `0` — the start of recorded canon. |

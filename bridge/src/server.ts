@@ -13,7 +13,6 @@ import { readCatalog } from './catalog.ts'
 import type { RunRequest } from './types.ts'
 import {
   CONTAINER_TYPES,
-  UNIVERSE_FIELDS,
   createUniverse,
   draftToItem,
   draftToPatch,
@@ -130,7 +129,7 @@ const server = createServer(async (req, res) => {
     // The form, the generator and this endpoint all read one field spec, so a
     // field cannot exist in one of them and not the others.
     if (req.method === 'GET' && url.pathname === '/api/universe/fields') {
-      return send(res, 200, { fields: UNIVERSE_FIELDS })
+      return send(res, 200, { fields: fieldsFor('universe') })
     }
 
     // The same, for any container that has a spec. A container without one is

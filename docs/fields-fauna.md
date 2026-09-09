@@ -9,14 +9,15 @@ world's own uncertainty, but it has no plot and no protagonist. See
 
 ## The fields
 
-Thirty fields. **Name** and **Description** are required; everything else is optional, and an empty field is
+Thirty fields — twenty-nine declared here, plus Pronunciation, which
+[every container gets](containers.md#fields-every-container-gets). **Name** and **Description** are required; everything else is optional, and an empty field is
 honest — it means nothing has been established, and briefs stay silent about it rather than inviting
 a skill to fill the gap.
 
 | Field | Stored as | Covers |
 | --- | --- | --- |
 | Name | item name | The in-world common name. |
-| Pronunciation | attribute | A plain respelling, stressed syllable in capitals: `BOTT-uhn-fligh`. |
+| Pronunciation | attribute | A plain respelling, stressed syllable in capitals: `BOTT-uhn-fligh`. Common to every container. |
 | Description | item summary | The opening paragraph. Shown wherever the creature is mentioned elsewhere. |
 | Scientific Name | attribute | The formal name, if this world has anyone who assigns them. |
 | Parent Species | attribute | What it descended from. Links itself if that ancestor has an article. |

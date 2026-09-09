@@ -17,7 +17,9 @@ const bottonfly = {
 
 describe('the fauna spec', () => {
   it('has every field the container needs, name and description required', () => {
-    assert.equal(FAUNA_FIELDS.length, 30)
+    // 29 declared, plus pronunciation folded in from the common set.
+    assert.equal(FAUNA_FIELDS.length, 29)
+    assert.equal(fieldsFor('fauna')!.length, 30)
     const required = FAUNA_FIELDS.filter((f) => f.required).map((f) => f.key)
     assert.deepEqual(required, ['name', 'description'])
   })
@@ -25,7 +27,7 @@ describe('the fauna spec', () => {
   it('keeps the short reference facts as text, not prose', () => {
     // These are looked up, not read: a lifespan rendered as a paragraph is
     // worse than one rendered as a value.
-    const facts = ['pronunciation', 'scientificName', 'parentSpecies', 'conservationStatus',
+    const facts = ['scientificName', 'parentSpecies', 'conservationStatus',
       'lifespan', 'averageHeight', 'averageWeight', 'averageLength']
     for (const key of facts) {
       const field = FAUNA_FIELDS.find((f) => f.key === key)

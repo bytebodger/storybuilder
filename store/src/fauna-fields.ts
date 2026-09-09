@@ -26,17 +26,6 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     examples: ['Bottonfly', 'Ice Dragon', 'Sunder Whale'],
   },
   {
-    key: 'pronunciation',
-    label: 'Pronunciation',
-    kind: 'text',
-    required: false,
-    default: null,
-    help:
-      'A plain respelling, not a phonetic alphabet - the point is that a reader can say it aloud. ' +
-      'Stressed syllable in capitals.',
-    examples: ['BOTT-uhn-fligh', 'thor-IN-flee', 'KELL-ish'],
-  },
-  {
     key: 'description',
     label: 'Description',
     kind: 'longtext',

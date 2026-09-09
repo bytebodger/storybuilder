@@ -45,6 +45,23 @@ Specs are data, in [store/src/fields.ts](../store/src/fields.ts). Adding a conta
 form appear, makes its fields generatable, and makes them accepted on save, with nothing else to
 change.
 
+### Fields every container gets
+
+Some fields belong on anything worth an article, and are declared once in
+[common-fields.ts](../store/src/common-fields.ts) rather than pasted into each spec. **Pronunciation**
+is the first of them.
+
+Each common field carries the key it follows, because position is part of the definition — a
+pronunciation belongs beside the name, not appended after the history. A container that declares the
+field itself keeps its own version, so a common field is a default rather than a rule.
+
+Composition happens once, where specs are registered, and the raw per-container arrays are not
+exported: `fieldsFor()` is the only way to read a spec, and it always returns the composed one. A
+consumer cannot accidentally read a spec the form and the generator never use.
+
+The universe manifest is excluded. It describes the world rather than a thing inside it — the same
+reason a stub can never be a universe.
+
 Any container can hold a **stub** — a name recorded without an article, so a reference in one article
 does not have to be written out before that article can be finished. See [stubs.md](stubs.md).
 

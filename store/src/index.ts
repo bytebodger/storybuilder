@@ -5,9 +5,15 @@ export { JsonFileStore } from './json-store.ts'
 export { validate, type Issue } from './validate.ts'
 export { renderBrief, renderUniverseBrief } from './brief.ts'
 export { openUniverse, listUniverses, universesRoot, createUniverse, toUniverseId } from './universes.ts'
-export { UNIVERSE_FIELDS, universeField, type UniverseField } from './universe-fields.ts'
-export { FAUNA_FIELDS } from './fauna-fields.ts'
-export { LOCATION_FIELDS } from './locations-fields.ts'
+export { universeField, type UniverseField } from './universe-fields.ts'
+
+/*
+ * The per-container arrays are deliberately not exported. They are the *raw*
+ * declarations, without the common fields folded in, and a consumer reading one
+ * directly would see a spec the form and the generator never use. `fieldsFor`
+ * is the only way to read a spec, and it always returns the composed one.
+ */
+export { COMMON_FIELDS, composeSpec, type CommonField } from './common-fields.ts'
 export { isEmptyValue, type FieldSpec, type FieldKind } from './field-spec.ts'
 export { FIELD_SPECS, fieldsFor, fieldIn, containersWithFields } from './fields.ts'
 export { draftToItem, itemToDraft, draftToPatch, defaultValues, type ArticleValues } from './article.ts'
