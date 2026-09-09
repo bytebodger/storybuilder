@@ -89,7 +89,10 @@ const format = (v: unknown) => (typeof v === 'object' && v !== null ? JSON.strin
  */
 export async function renderUniverseBrief(store: Store): Promise<string> {
   const m = await store.manifest()
-  const out = [`UNIVERSE: ${m.name} [${m.id}]`]
+  // The respelling rides on the name rather than getting a line of its own: it
+  // is useful where dialogue has to say the word, and noise everywhere else.
+  const said = m.pronunciation?.trim() ? ` (said "${m.pronunciation.trim()}")` : ''
+  const out = [`UNIVERSE: ${m.name}${said} [${m.id}]`]
 
   const span = m.totalYears ?? 1000
   out.push(`Canon spans Year 0 to Year ${span}. Dates outside that range are outside the canon.`)

@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { COMMON_FIELDS, composeSpec } from '../src/common-fields.ts'
-import { FIELD_SPECS, containersWithFields, fieldsFor } from '../src/fields.ts'
+import { FIELD_SPECS, fieldsFor } from '../src/fields.ts'
 import type { FieldSpec } from '../src/field-spec.ts'
 
 const field = (key: string, over: Partial<FieldSpec> = {}): FieldSpec => ({
@@ -15,8 +15,8 @@ const field = (key: string, over: Partial<FieldSpec> = {}): FieldSpec => ({
 })
 
 describe('fields common to every article container', () => {
-  it('reaches every container that has a spec', () => {
-    for (const container of containersWithFields()) {
+  it('reaches every container that has a spec, the universe included', () => {
+    for (const container of Object.keys(FIELD_SPECS)) {
       const keys = fieldsFor(container)!.map((f) => f.key)
       for (const { field: common } of COMMON_FIELDS) {
         assert.ok(keys.includes(common.key), `${container} has ${common.key}`)
@@ -24,10 +24,10 @@ describe('fields common to every article container', () => {
     }
   })
 
-  it('leaves the universe manifest alone', () => {
-    // It describes the world, not a thing inside it - the same reason a stub
-    // can never be a universe.
-    assert.equal(FIELD_SPECS.universe.some((f) => f.key === 'pronunciation'), false)
+  it('reaches the universe manifest, whose name is as invented as any other', () => {
+    const keys = FIELD_SPECS.universe.map((f) => f.key)
+    assert.ok(keys.includes('pronunciation'))
+    assert.equal(keys[keys.indexOf('name') + 1], 'pronunciation')
   })
 
   it('puts the field where it belongs, not at the end', () => {

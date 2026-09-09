@@ -128,6 +128,8 @@ export interface ContainerFile {
 export interface Universe {
   id: string
   name: string
+  /** A plain respelling of the name. Common to every container's spec. */
+  pronunciation?: string
   /**
    * Years the whole canon spans. Year 0 to Year `totalYears`. Not a
    * naturalistic age, and not a constraint on when stories are set.

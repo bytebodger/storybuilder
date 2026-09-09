@@ -1,9 +1,9 @@
 /**
- * Fields every article container gets, without each spec repeating them.
+ * Fields every container gets, without each spec repeating them.
  *
- * Some things are true of anything worth an article: it has a name, and the
- * name may need saying aloud. Copying such a field into nineteen specs means
- * nineteen chances for its wording, its kind, or its help text to drift - and a
+ * Some things are true of anything with a name, the universe itself included:
+ * the name may need saying aloud. Copying such a field into twenty specs means
+ * twenty chances for its wording, its kind, or its help text to drift - and a
  * field that means slightly different things in different containers is exactly
  * the drift this tool exists to prevent.
  *
@@ -34,7 +34,7 @@ export const COMMON_FIELDS: CommonField[] = [
       help:
         'A plain respelling, not a phonetic alphabet - the point is that a reader can say it aloud. ' +
         'Stressed syllable in capitals. Leave blank when the name says itself.',
-      examples: ['BOTT-uhn-fligh', 'thor-IN-flee', 'KELL-ish', 'ess-tuh-VAHN'],
+      examples: ['BOTT-uhn-fligh', 'thor-IN-flee', 'KELL-ish', 'ex-OR-ee-uh'],
     },
   },
 ]

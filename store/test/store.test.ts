@@ -411,6 +411,16 @@ describe('universe manifest', () => {
     assert.equal(m.genres, undefined)
   })
 
+  it('carries a pronunciation for the name of the world itself', async () => {
+    const store = await createUniverse(
+      'spec-said',
+      { name: 'Exoria', pronunciation: 'ex-OR-ee-uh' },
+      root,
+    )
+    assert.equal((await store.manifest()).pronunciation, 'ex-OR-ee-uh')
+    assert.match(await renderUniverseBrief(store), /Exoria \(said "ex-OR-ee-uh"\)/)
+  })
+
   it('slugifies a name into a directory-safe id', () => {
     assert.equal(toUniverseId('The Ashfall Cycle'), 'the-ashfall-cycle')
     assert.equal(toUniverseId('  Farion V!! '), 'farion-v')
@@ -436,6 +446,7 @@ describe('universe manifest', () => {
     const text = await renderUniverseBrief(store)
 
     assert.match(text, /Canon spans Year 0 to Year 400/)
+    assert.doesNotMatch(text, /said/)
     assert.match(text, /Genre: space opera/)
     assert.match(text, /NATURAL LAWS: Faster-than-light/)
     // An empty tone is silence, not an invitation to pick one.

@@ -11,15 +11,9 @@ import { UNIVERSE_FIELDS } from './universe-fields.ts'
 import { FAUNA_FIELDS } from './fauna-fields.ts'
 import { LOCATION_FIELDS } from './locations-fields.ts'
 
-/**
- * Article containers, each composed with the common fields.
- *
- * The universe manifest is deliberately not here. It describes the world rather
- * than a thing inside it, and the fields common to articles are not common to
- * it - the same reason a stub can never be a universe.
- */
+/** Every container with a spec, each composed with the common fields. */
 export const FIELD_SPECS: Record<string, FieldSpec[]> = {
-  universe: UNIVERSE_FIELDS,
+  universe: composeSpec(UNIVERSE_FIELDS),
   fauna: composeSpec(FAUNA_FIELDS),
   locations: composeSpec(LOCATION_FIELDS),
 }

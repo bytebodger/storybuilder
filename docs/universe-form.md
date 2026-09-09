@@ -28,6 +28,10 @@ change.
 | Culture(s) | no | — | Global features of the cultures with the most sway — not the detail. |
 | Inspiration | no | — | Real-world works whose influence should be felt. |
 
+The pronunciation rides on the name in every brief a skill reads — `UNIVERSE: The Phonon Cycle (said
+"FOH-non")` — rather than taking a line of its own. It earns that place where dialogue has to say the
+word, and stays out of the way everywhere else.
+
 **Total years** is not a naturalistic age. A planet may be billions of years old while its canon
 covers a hundred; enter what the canon spans. It does not constrain when stories are set — a
 1000-year universe can be written about entirely in Year 250. Briefs state the span, so a skill knows
