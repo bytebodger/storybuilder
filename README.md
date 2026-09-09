@@ -193,6 +193,7 @@ Scaffolding and foundation. What exists:
 - [x] Stubs: a third state between absent and described, with reference scanning on save
 - [x] Two-round save flow: loose ends first, then a canon check that reads the result. See [docs/save-flow.md](docs/save-flow.md)
 - [x] Cross-references: article prose links to the articles it mentions, stubs included. See [docs/cross-references.md](docs/cross-references.md)
+- [x] Map import from Azgaar exports, tiered, with hand-added labels always included. See [docs/map-import.md](docs/map-import.md)
 - [x] Worked example universe (`universes/phonon`)
 - [x] Frontend and bridge scaffolds, wired to the store
 - [ ] The remaining skills: `name-forge`, `outline`, `scene-draft`, `continuity-pass`, `world-brief`, `timeline`

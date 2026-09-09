@@ -12,6 +12,11 @@ import { renderBrief, renderUniverseBrief } from './brief.ts'
 import { validate } from './validate.ts'
 import { CanonViolation, type ClosureState } from './types.ts'
 import { matchTerm } from './terms.ts'
+import { buildImportPlan } from './import/azgaar.ts'
+import type { Tier } from './import/types.ts'
+import { readFile } from 'node:fs/promises'
+
+const NL = String.fromCharCode(10)
 
 const USAGE = `sb - storybuilder canon store
 
@@ -42,6 +47,12 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
         religions, cities, characters and the like open: they accrete.
   sb remove <id>
   sb validate
+
+  sb import-map <map.svg> <map.json> [--tier 0|1|2|3] [--min-population N]
+                                            Plan an import from an Azgaar export
+        Add --write to create the articles. Without it, nothing is written.
+        Hand-added labels come in at every tier: they exist only in the SVG,
+        and nothing else will ever recover them.
 `
 
 interface Args {
@@ -229,6 +240,68 @@ async function main(argv: string[]): Promise<number> {
       const s = await store(a)
       await s.remove(rest[0])
       console.log(`Removed ${rest[0]}`)
+      return 0
+    }
+
+    case 'import-map': {
+      const s = await store(a)
+      const [svgPath, jsonPath] = rest
+      if (!svgPath || !jsonPath) throw new Error('Usage: sb import-map <map.svg> <map.json>')
+
+      const svg = await readFile(svgPath, 'utf8')
+      const json = JSON.parse(await readFile(jsonPath, 'utf8'))
+      const plan = buildImportPlan(json, svg, {
+        tier: Number(one(a, 'tier') ?? 1) as Tier,
+        minPopulation: Number(one(a, 'min-population') ?? 1000),
+      })
+
+      for (const w of plan.warnings) console.log(`WARNING: ${w}`)
+      console.log('  source          container      found  included')
+      for (const c of plan.counts) {
+        console.log(`  ${c.sourceType.padEnd(15)} ${c.container.padEnd(13)} ${String(c.found).padStart(5)} ${String(c.included).padStart(9)}`)
+      }
+
+      // Screened against the store, not just against each other: an import can
+      // be re-run, or run after hand-authoring, without duplicating anything.
+      const existing = await s.list()
+      const fresh = plan.candidates.filter((c) => !matchTerm(c.name, existing).length)
+      console.log(NL + `${plan.candidates.length} candidate(s); ${plan.candidates.length - fresh.length} already in this universe.`)
+
+      if (!a.flags.write) {
+        console.log(NL + 'Nothing written. Re-run with --write to create them.')
+        for (const c of fresh.slice(0, 12)) {
+          console.log(`  ${c.container}/${c.kind ?? '-'}  ${c.name}${c.parentNames?.length ? `  (in ${c.parentNames[0]})` : ''}`)
+        }
+        if (fresh.length > 12) console.log(`  ... and ${fresh.length - 12} more`)
+        return 0
+      }
+
+      const byName = new Map<string, string>()
+      let made = 0
+      for (const c of fresh) {
+        const item = await s.add({
+          container: c.container,
+          name: c.name,
+          kind: c.kind,
+          summary: c.summary,
+          attributes: c.attributes && Object.keys(c.attributes).length ? c.attributes : undefined,
+          stub: !c.summary,
+        })
+        byName.set(c.name.toLowerCase(), item.id)
+        made++
+      }
+      // Links go on afterwards, once every name in the plan has an id.
+      let linked = 0
+      for (const c of fresh) {
+        const child = byName.get(c.name.toLowerCase())
+        // The most specific parent that this tier actually brought in.
+        const parent = (c.parentNames ?? []).map((n) => byName.get(n.toLowerCase())).find(Boolean)
+        if (child && parent && child !== parent) {
+          await s.link(child, parent)
+          linked++
+        }
+      }
+      console.log(NL + `Created ${made} article(s), ${linked} linked to a parent.`)
       return 0
     }
 
