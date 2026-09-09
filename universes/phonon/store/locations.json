@@ -1,0 +1,59 @@
+{
+  "container": "locations",
+  "items": [
+    {
+      "id": "bf3c9fff",
+      "container": "locations",
+      "name": "Dol",
+      "kind": "city",
+      "aliases": [],
+      "summary": "Kell's capital and only deepwater port.",
+      "tags": [
+        {
+          "type": "locations",
+          "relatedTo": "be248b76"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:20.006Z",
+      "updatedAt": "2026-09-09T15:25:20.016Z"
+    },
+    {
+      "id": "be248b76",
+      "container": "locations",
+      "name": "Kell",
+      "kind": "country",
+      "aliases": [],
+      "summary": "A coastal country on Eastlandia's western shore.",
+      "tags": [
+        {
+          "type": "geography",
+          "relatedTo": "57156dca"
+        },
+        {
+          "type": "locations",
+          "relatedTo": "bf3c9fff"
+        },
+        {
+          "type": "theology",
+          "relatedTo": "eedc55a2"
+        },
+        {
+          "type": "theology",
+          "relatedTo": "6222bd36"
+        },
+        {
+          "type": "ethnicities",
+          "relatedTo": "3ef39b4b"
+        },
+        {
+          "type": "fauna",
+          "relatedTo": "c1cba029"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:19.338Z",
+      "updatedAt": "2026-09-09T16:36:25.520Z"
+    }
+  ]
+}

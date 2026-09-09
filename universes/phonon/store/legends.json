@@ -1,0 +1,21 @@
+{
+  "container": "legends",
+  "items": [
+    {
+      "id": "ea8704ca",
+      "container": "legends",
+      "name": "Southlandia",
+      "aliases": [],
+      "summary": "A third continent beyond the Sunder. Sailors swear to it; no chart shows it.",
+      "tags": [
+        {
+          "type": "cosmology",
+          "relatedTo": "889c3b36"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:18.660Z",
+      "updatedAt": "2026-09-09T15:30:52.797Z"
+    }
+  ]
+}

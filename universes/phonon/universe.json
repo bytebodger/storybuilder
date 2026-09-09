@@ -1,0 +1,20 @@
+{
+  "totalYears": 1200,
+  "name": "The Phonon Cycle",
+  "genres": [
+    "low fantasy",
+    "maritime adventure"
+  ],
+  "tone": "grim, wry",
+  "themes": [
+    "the folly of unbridled ambition"
+  ],
+  "scale": "planetary",
+  "naturalLaws": "No magic. The only unexplained thing in the world is the Sunder Ocean, which no one has crossed and returned from.",
+  "geography": "Two continents divided by an ocean nobody can cross.",
+  "inspiration": [
+    "Patrick O'Brian"
+  ],
+  "id": "phonon",
+  "createdAt": "2026-09-09T15:25:14.625Z"
+}

@@ -1,0 +1,82 @@
+{
+  "container": "geography",
+  "items": [
+    {
+      "id": "57156dca",
+      "container": "geography",
+      "name": "Eastlandia",
+      "kind": "continent",
+      "aliases": [],
+      "summary": "Older, wealthier, and convinced of both.",
+      "tags": [
+        {
+          "type": "cosmology",
+          "relatedTo": "889c3b36"
+        },
+        {
+          "type": "locations",
+          "relatedTo": "be248b76"
+        },
+        {
+          "type": "fauna",
+          "relatedTo": "e28c0ded"
+        },
+        {
+          "type": "fauna",
+          "relatedTo": "c1cba029"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:16.011Z",
+      "updatedAt": "2026-09-09T16:36:24.857Z"
+    },
+    {
+      "id": "ca7adf2c",
+      "container": "geography",
+      "name": "muddwood",
+      "stub": true,
+      "tags": [
+        {
+          "type": "fauna",
+          "relatedTo": "c1cba029"
+        }
+      ],
+      "createdAt": "2026-09-09T17:14:32.917Z",
+      "updatedAt": "2026-09-09T17:14:32.921Z"
+    },
+    {
+      "id": "50606d1e",
+      "container": "geography",
+      "name": "The Sunder",
+      "kind": "ocean",
+      "aliases": [],
+      "summary": "The ocean between the continents. No one has crossed it and returned.",
+      "tags": [
+        {
+          "type": "cosmology",
+          "relatedTo": "889c3b36"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:17.344Z",
+      "updatedAt": "2026-09-09T15:30:52.796Z"
+    },
+    {
+      "id": "922c85f0",
+      "container": "geography",
+      "name": "Westlandia",
+      "kind": "continent",
+      "aliases": [],
+      "summary": "Colder, newer, and less interested in Eastlandia than Eastlandia assumes.",
+      "tags": [
+        {
+          "type": "cosmology",
+          "relatedTo": "889c3b36"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:16.667Z",
+      "updatedAt": "2026-09-09T15:30:52.796Z"
+    }
+  ]
+}

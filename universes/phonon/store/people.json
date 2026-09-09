@@ -1,0 +1,22 @@
+{
+  "container": "people",
+  "items": [
+    {
+      "id": "80e5221e",
+      "container": "people",
+      "name": "Antin Forin, III",
+      "stub": true,
+      "aliases": [
+        "Antin Forin"
+      ],
+      "tags": [
+        {
+          "type": "fauna",
+          "relatedTo": "c1cba029"
+        }
+      ],
+      "createdAt": "2026-09-09T17:30:46.647Z",
+      "updatedAt": "2026-09-09T17:30:46.653Z"
+    }
+  ]
+}

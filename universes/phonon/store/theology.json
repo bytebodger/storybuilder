@@ -1,0 +1,39 @@
+{
+  "container": "theology",
+  "items": [
+    {
+      "id": "eedc55a2",
+      "container": "theology",
+      "name": "The Ashfaith",
+      "kind": "religion",
+      "aliases": [],
+      "summary": "Dominant in Kell; tolerated elsewhere on Eastlandia.",
+      "tags": [
+        {
+          "type": "locations",
+          "relatedTo": "be248b76"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:20.672Z",
+      "updatedAt": "2026-09-09T15:25:20.677Z"
+    },
+    {
+      "id": "6222bd36",
+      "container": "theology",
+      "name": "The Quiet Hand",
+      "kind": "cult",
+      "aliases": [],
+      "summary": "A minor cult in the Kellish uplands, recorded in a later pass.",
+      "tags": [
+        {
+          "type": "locations",
+          "relatedTo": "be248b76"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:21.358Z",
+      "updatedAt": "2026-09-09T15:25:21.369Z"
+    }
+  ]
+}

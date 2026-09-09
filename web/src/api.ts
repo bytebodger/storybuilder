@@ -1,0 +1,110 @@
+import type {
+  ArticleView,
+  CanonCheckResult,
+  ForgeResult,
+  StubContainer,
+  StubScan,
+  NavSection,
+  RunRequest,
+  RunResult,
+  Skill,
+  Universe,
+  UniverseDraft,
+  UniverseField,
+} from './types'
+
+async function json<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`/api${path}`, {
+    ...init,
+    headers: { 'content-type': 'application/json', ...init?.headers },
+  })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`)
+  return res.json() as Promise<T>
+}
+
+export const listUniverses = () =>
+  json<{ universes: Universe[] }>('/universes').then((r) => r.universes)
+
+export const universeFields = () =>
+  json<{ fields: UniverseField[] }>('/universe/fields').then((r) => r.fields)
+
+/** A container's field spec, or null when it has no article form yet. */
+export const containerFields = (container: string) =>
+  json<{ fields: UniverseField[] | null }>(
+    `/fields?container=${encodeURIComponent(container)}`,
+  ).then((r) => r.fields)
+
+export const getItem = (universe: string, id: string) =>
+  json<{ item: { id: string; name: string; kind?: string }; values: UniverseDraft }>(
+    `/item?universe=${encodeURIComponent(universe)}&id=${encodeURIComponent(id)}`,
+  )
+
+export const saveItem = (body: {
+  universe: string
+  id?: string
+  container: string
+  values: UniverseDraft
+  links?: string[]
+}) =>
+  json<{ item: { id: string; name: string; kind?: string } }>('/item', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }).then((r) => r.item)
+
+export const getUniverse = (id: string) =>
+  json<{ universe: Universe }>(`/universe?id=${encodeURIComponent(id)}`).then((r) => r.universe)
+
+export const saveUniverse = (draft: UniverseDraft, id?: string) =>
+  json<{ universe: Universe }>('/universe', { method: 'POST', body: JSON.stringify({ id, draft }) }).then(
+    (r) => r.universe,
+  )
+
+/** Generate values for `fill` only. The bridge discards anything else. */
+export const forge = (
+  fill: string[],
+  current: UniverseDraft,
+  container = 'universe',
+  universe?: string,
+) =>
+  json<ForgeResult>('/universe/forge', {
+    method: 'POST',
+    body: JSON.stringify({ container, universe, fill, current }),
+  })
+
+export const nav = (universe: string) =>
+  json<{ sections: NavSection[] }>(`/nav?universe=${encodeURIComponent(universe)}`).then((r) => r.sections)
+
+export const article = (universe: string, id: string) =>
+  json<ArticleView>(`/article?universe=${encodeURIComponent(universe)}&id=${encodeURIComponent(id)}`)
+
+export const brief = (universe: string, id: string) =>
+  json<{ brief: string }>(
+    `/brief?universe=${encodeURIComponent(universe)}&id=${encodeURIComponent(id)}`,
+  ).then((r) => r.brief)
+
+export const stubContainers = () =>
+  json<{ containers: StubContainer[] }>('/stubs/containers').then((r) => r.containers)
+
+export const scanStubs = (universe: string, id: string) =>
+  json<StubScan>('/stubs/scan', { method: 'POST', body: JSON.stringify({ universe, id }) })
+
+export const createStubs = (
+  universe: string,
+  stubs: { term: string; container: string; alias?: string }[],
+  linkTo?: string,
+) =>
+  json<{ created: { id: string; name: string }[]; skipped: { term: string; why: string }[] }>('/stubs', {
+    method: 'POST',
+    body: JSON.stringify({ universe, stubs, linkTo }),
+  })
+
+export const canonCheck = (universe: string, id: string) =>
+  json<CanonCheckResult>('/canon/check', { method: 'POST', body: JSON.stringify({ universe, id }) })
+
+export const intro = (universe: string) =>
+  json<{ intro: string }>(`/intro?universe=${encodeURIComponent(universe)}`).then((r) => r.intro)
+
+export const listSkills = () => json<{ skills: Skill[] }>('/skills').then((r) => r.skills)
+
+export const run = (req: RunRequest) =>
+  json<RunResult>('/run', { method: 'POST', body: JSON.stringify(req) })

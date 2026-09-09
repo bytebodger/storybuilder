@@ -1,0 +1,19 @@
+{
+  "container": "institutions",
+  "items": [
+    {
+      "id": "4be42a45",
+      "container": "institutions",
+      "name": "Archane Order",
+      "stub": true,
+      "tags": [
+        {
+          "type": "fauna",
+          "relatedTo": "c1cba029"
+        }
+      ],
+      "createdAt": "2026-09-09T17:14:32.910Z",
+      "updatedAt": "2026-09-09T17:14:32.914Z"
+    }
+  ]
+}

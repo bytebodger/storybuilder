@@ -1,0 +1,109 @@
+{
+  "container": "cosmology",
+  "items": [
+    {
+      "id": "d2ee59bf",
+      "container": "cosmology",
+      "name": "Little Verrin",
+      "kind": "moon",
+      "aliases": [],
+      "summary": "The smaller, faster moon. Sailors time the Sunder tides by it.",
+      "tags": [
+        {
+          "type": "cosmology",
+          "relatedTo": "889c3b36"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:31:34.051Z",
+      "updatedAt": "2026-09-09T15:31:34.062Z"
+    },
+    {
+      "id": "889c3b36",
+      "container": "cosmology",
+      "name": "Phonon",
+      "kind": "planet",
+      "aliases": [],
+      "summary": "A temperate world of two continents divided by the Sunder Ocean.",
+      "tags": [
+        {
+          "type": "geography",
+          "relatedTo": "57156dca"
+        },
+        {
+          "type": "geography",
+          "relatedTo": "922c85f0"
+        },
+        {
+          "type": "geography",
+          "relatedTo": "50606d1e"
+        },
+        {
+          "type": "legends",
+          "relatedTo": "ea8704ca"
+        },
+        {
+          "type": "cosmology",
+          "relatedTo": "81730339"
+        },
+        {
+          "type": "cosmology",
+          "relatedTo": "d2ee59bf"
+        },
+        {
+          "type": "cosmology",
+          "relatedTo": "fbd8c42a"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:15.330Z",
+      "updatedAt": "2026-09-09T15:31:44.324Z",
+      "closure": {
+        "continent": {
+          "state": "closed",
+          "note": "The two-continent geography is structural: the Sunder crossing is the spine of the series.",
+          "setAt": "2026-09-09T15:25:18.007Z"
+        },
+        "moon": {
+          "state": "closed",
+          "note": "Two moons, and the tide tables depend on there being exactly two.",
+          "setAt": "2026-09-09T15:31:34.720Z"
+        }
+      }
+    },
+    {
+      "id": "fbd8c42a",
+      "container": "cosmology",
+      "name": "The Long Wanderer",
+      "kind": "comet",
+      "aliases": [],
+      "summary": "Returns every ninety-one years. Its last passage went unrecorded.",
+      "tags": [
+        {
+          "type": "cosmology",
+          "relatedTo": "889c3b36"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:31:44.312Z",
+      "updatedAt": "2026-09-09T15:31:44.324Z"
+    },
+    {
+      "id": "81730339",
+      "container": "cosmology",
+      "name": "Verrin",
+      "kind": "moon",
+      "aliases": [],
+      "summary": "The larger moon. Its months set the Kellish calendar.",
+      "tags": [
+        {
+          "type": "cosmology",
+          "relatedTo": "889c3b36"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:31:33.379Z",
+      "updatedAt": "2026-09-09T15:31:33.390Z"
+    }
+  ]
+}

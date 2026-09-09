@@ -1,0 +1,65 @@
+{
+  "container": "fauna",
+  "items": [
+    {
+      "id": "c1cba029",
+      "container": "fauna",
+      "name": "Bottonfly",
+      "summary": "Massive insects of the muddwood regions of Eastlandia, central to casterway societies for food, dyes and poisons.",
+      "attributes": {
+        "anatomy": "Rust-coloured, eight legs, four undersized wings that drone in flight.",
+        "biologicalTraits": "It is a close relative of its Westlandia cousin, the thorinfly, and laypersons often mistake the two. Neither is found on the Boundless Plain.",
+        "domestication": "The bottonfly was famously domesticated by Antin Forin, the third potentate of the Archane Order."
+      },
+      "tags": [
+        {
+          "type": "geography",
+          "relatedTo": "57156dca"
+        },
+        {
+          "type": "locations",
+          "relatedTo": "be248b76"
+        },
+        {
+          "type": "institutions",
+          "relatedTo": "4be42a45"
+        },
+        {
+          "type": "geography",
+          "relatedTo": "ca7adf2c"
+        },
+        {
+          "type": "people",
+          "relatedTo": "80e5221e"
+        }
+      ],
+      "createdAt": "2026-09-09T16:35:00.949Z",
+      "updatedAt": "2026-09-09T17:30:46.654Z"
+    },
+    {
+      "id": "e28c0ded",
+      "container": "fauna",
+      "name": "Sunder Whale",
+      "aliases": [],
+      "summary": "Follows the current along Eastlandia's coast; no one has seen where it goes.",
+      "tags": [
+        {
+          "type": "geography",
+          "relatedTo": "57156dca"
+        }
+      ],
+      "sources": [],
+      "createdAt": "2026-09-09T15:25:22.702Z",
+      "updatedAt": "2026-09-09T15:25:22.707Z"
+    },
+    {
+      "id": "723ffd27",
+      "container": "fauna",
+      "name": "Thorinflies",
+      "stub": true,
+      "tags": [],
+      "createdAt": "2026-09-09T17:13:32.442Z",
+      "updatedAt": "2026-09-09T17:13:32.442Z"
+    }
+  ]
+}

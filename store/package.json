@@ -1,0 +1,18 @@
+{
+  "name": "@storybuilder/store",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "bin": { "sb": "./src/cli.ts" },
+  "scripts": {
+    "sb": "tsx src/cli.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "~5.7.2"
+  }
+}
