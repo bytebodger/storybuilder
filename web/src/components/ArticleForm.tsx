@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { containerFields, forge, getItem, saveItem } from '../api'
+import { containerFields, defaultsFrom, forge, getItem, saveItem } from '../api'
 import type { UniverseDraft, UniverseField } from '../types'
 import { FieldRow } from './FieldRow'
 
@@ -35,8 +35,13 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    containerFields(container).then(setFields, (e: unknown) => setError(String(e)))
-  }, [container])
+    containerFields(container).then((spec) => {
+      setFields(spec)
+      // Defaults belong to a new article only. On an edit the stored values
+      // arrive next and a default would overwrite a field cleared on purpose.
+      if (spec && !itemId) setValues(defaultsFrom(spec))
+    }, (e: unknown) => setError(String(e)))
+  }, [container, itemId])
 
   useEffect(() => {
     if (!itemId) return

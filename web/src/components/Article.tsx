@@ -68,8 +68,11 @@ export function Article({ universe, item, onEdit, onNavigate }: Props) {
   if (error) return <section className="panel"><p className="error">{error}</p></section>
   if (!view) return <section className="panel"><p className="empty">Loading…</p></section>
 
-  const facts = view.fields.filter((f) => f.kind === 'text' || f.kind === 'number')
-  const prose = view.fields.filter((f) => f.kind !== 'text' && f.kind !== 'number')
+  // Lists count as facts: a line of founders or genres is scanned like a value,
+  // not read like a paragraph.
+  const isFact = (kind: string) => kind === 'text' || kind === 'number' || kind === 'list'
+  const facts = view.fields.filter((f) => isFact(f.kind))
+  const prose = view.fields.filter((f) => !isFact(f.kind))
 
   return (
     <section className="panel">

@@ -109,7 +109,10 @@ describe('form values to item', () => {
   })
 
   it('produces a patch that carries every column an update touches', () => {
+    // Including the date columns: a patch that omitted them could not clear one.
     const patch = draftToPatch('fauna', bottonfly)
-    assert.deepEqual(Object.keys(patch).sort(), ['attributes', 'kind', 'name', 'summary'])
+    assert.deepEqual(Object.keys(patch).sort(), [
+      'attributes', 'beginDate', 'endDate', 'kind', 'name', 'summary',
+    ])
   })
 })

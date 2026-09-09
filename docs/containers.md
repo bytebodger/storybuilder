@@ -36,8 +36,8 @@ types are a later feature; for now, adding one means adding it to the catalog.
 ## Fields
 
 A container may declare a field spec: the form the author fills in, and the list the generator is
-briefed from. Two exist so far — the universe manifest
-([docs/universe-form.md](universe-form.md)) and [fauna](fields-fauna.md). A container without one is
+briefed from. Three exist so far — the universe manifest ([universe-form.md](universe-form.md)),
+[fauna](fields-fauna.md) and [locations](fields-locations.md). A container without one is
 not broken; its entries are the name, summary and tags every container supports, and a spec can be
 added later without migrating anything.
 

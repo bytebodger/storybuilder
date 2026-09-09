@@ -20,10 +20,16 @@ export interface FieldSpec {
   examples?: string[]
   /**
    * Where the value is stored on an item. Most fields are free-form and live in
-   * `attributes`; a few map onto columns the store already understands, so that
-   * a brief can show a name and a summary without knowing any container's spec.
+   * `attributes`; a few map onto columns the store already understands, so a
+   * brief can show a name and a summary without knowing any container's spec.
+   *
+   * `beginDate` and `endDate` matter most here. Every container will have its
+   * own words for when a thing started and stopped - "Existed Since", "Reign
+   * Began", "Founded" - and if each stored its own attribute, the brief could
+   * not tell a reader that a fallen city is no longer standing. One column,
+   * many labels.
    */
-  storeAs?: 'name' | 'summary' | 'kind'
+  storeAs?: 'name' | 'summary' | 'kind' | 'beginDate' | 'endDate'
 }
 
 /** True when a field holds nothing a generator should preserve. */

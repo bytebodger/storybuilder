@@ -28,7 +28,7 @@ import {
   renderUniverseBrief,
   toUniverseId,
 } from '../../store/src/index.ts'
-import type { UniverseDraft } from '../../store/src/index.ts'
+import type { Item, UniverseDraft } from '../../store/src/index.ts'
 import { applyForgeResponse, buildForgePrompt, type ForgeRequest } from './forge.ts'
 import { extractCandidates, screenCandidates, stubContainers } from './stubs.ts'
 import { normalizeTerm } from '../../store/src/index.ts'
@@ -87,13 +87,20 @@ function runClaude(prompt: string): Promise<{ output: string; error?: string }> 
 }
 
 /**
- * The fields worth scanning: the ones the author actually filled. A blank field
- * was left blank on purpose and has nothing in it to check.
+ * The fields an article actually has values in.
+ *
+ * Reading them back through the container's spec matters: a field declared
+ * `storeAs: 'beginDate'` lives on a column, not in `attributes`, so anything
+ * that reassembled an article from `attributes` alone would silently lose every
+ * date - unrendered in the view, unchecked by the canon check.
  */
-function filledFields(item: { summary?: string; attributes?: Record<string, unknown> }) {
-  const fields: Record<string, unknown> = { ...(item.attributes ?? {}) }
-  if (item.summary) fields.description = item.summary
-  return fields
+function filledFields(item: Item) {
+  const spec = fieldsFor(item.container)
+  const values: Record<string, unknown> = spec
+    ? itemToDraft(item.container, item)
+    : { ...(item.attributes ?? {}), ...(item.summary ? { description: item.summary } : {}) }
+
+  return Object.fromEntries(Object.entries(values).filter(([, v]) => !isEmptyValue(v)))
 }
 
 function send(res: ServerResponse, status: number, body: unknown) {
@@ -167,11 +174,17 @@ const server = createServer(async (req, res) => {
       // `kind` travels with each field so the reader can lay out a lifespan and
       // a life cycle differently. A one-line fact rendered as a paragraph reads
       // as though something is missing from it.
+      // A list is joined before linking, so each entry is matched on its own and
+      // "Antin Forin, III" does not become one long unmatched run.
       const fields = ordered.map((f) => ({
         key: f.key,
         label: f.label,
         kind: f.kind,
-        segments: linkify(String(f.value), all, { excludeId: item.id }),
+        segments: linkify(
+          Array.isArray(f.value) ? f.value.join(', ') : String(f.value),
+          all,
+          { excludeId: item.id },
+        ),
       }))
 
       const { related } = await store.neighborhood(item.id)

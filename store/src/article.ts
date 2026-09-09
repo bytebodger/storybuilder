@@ -49,6 +49,8 @@ export function draftToItem(container: string, values: ArticleValues): NewItem {
     if (field.storeAs === 'name') item.name = String(value)
     else if (field.storeAs === 'summary') item.summary = String(value)
     else if (field.storeAs === 'kind') item.kind = String(value)
+    else if (field.storeAs === 'beginDate') item.beginDate = String(value)
+    else if (field.storeAs === 'endDate') item.endDate = String(value)
     else attributes[field.key] = value
   }
 
@@ -65,6 +67,8 @@ export function itemToDraft(container: string, item: Item): ArticleValues {
     if (field.storeAs === 'name') values[field.key] = item.name
     else if (field.storeAs === 'summary') values[field.key] = item.summary ?? null
     else if (field.storeAs === 'kind') values[field.key] = item.kind ?? null
+    else if (field.storeAs === 'beginDate') values[field.key] = item.beginDate ?? null
+    else if (field.storeAs === 'endDate') values[field.key] = item.endDate ?? null
     else values[field.key] = item.attributes?.[field.key] ?? null
   }
   return values
@@ -77,6 +81,22 @@ export function draftToPatch(container: string, values: ArticleValues) {
     name: draft.name,
     summary: draft.summary,
     kind: draft.kind,
+    beginDate: draft.beginDate,
+    endDate: draft.endDate,
     attributes: draft.attributes,
   }
+}
+
+/**
+ * The values a blank form starts with.
+ *
+ * Only for a new article: applying defaults to an edit would resurrect a value
+ * the author had deliberately cleared.
+ */
+export function defaultValues(container: string): ArticleValues {
+  const values: ArticleValues = {}
+  for (const field of fieldsFor(container) ?? []) {
+    if (field.default !== null && field.default !== undefined) values[field.key] = field.default
+  }
+  return values
 }

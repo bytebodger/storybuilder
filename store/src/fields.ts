@@ -8,10 +8,12 @@
 import type { FieldSpec } from './field-spec.ts'
 import { UNIVERSE_FIELDS } from './universe-fields.ts'
 import { FAUNA_FIELDS } from './fauna-fields.ts'
+import { LOCATION_FIELDS } from './locations-fields.ts'
 
 export const FIELD_SPECS: Record<string, FieldSpec[]> = {
   universe: UNIVERSE_FIELDS,
   fauna: FAUNA_FIELDS,
+  locations: LOCATION_FIELDS,
 }
 
 /** The spec for a container, or null when it has none yet. */

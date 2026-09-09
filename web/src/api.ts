@@ -34,6 +34,16 @@ export const containerFields = (container: string) =>
     `/fields?container=${encodeURIComponent(container)}`,
   ).then((r) => r.fields)
 
+/**
+ * What a blank form starts with. Only for a new article - applying defaults to
+ * an edit would resurrect a value the author had cleared.
+ */
+export function defaultsFrom(fields: UniverseField[]): UniverseDraft {
+  const values: UniverseDraft = {}
+  for (const f of fields) if (f.default !== null && f.default !== undefined) values[f.key] = f.default
+  return values
+}
+
 export const getItem = (universe: string, id: string) =>
   json<{ item: { id: string; name: string; kind?: string }; values: UniverseDraft }>(
     `/item?universe=${encodeURIComponent(universe)}&id=${encodeURIComponent(id)}`,

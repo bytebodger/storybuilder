@@ -189,7 +189,7 @@ Scaffolding and foundation. What exists:
 - [x] Skill catalog read from `.claude/skills/`, so the console offers only skills that exist
 - [x] Container catalog and per-universe navigation, including empty sections
 - [x] Kinds, so coarse containers can still carry fine completeness claims
-- [x] Generic field specs: one form, one generator, any container. `universe` and `fauna` have specs
+- [x] Generic field specs: one form, one generator, any container. `universe`, `fauna` and `locations` have specs
 - [x] Stubs: a third state between absent and described, with reference scanning on save
 - [x] Two-round save flow: loose ends first, then a canon check that reads the result. See [docs/save-flow.md](docs/save-flow.md)
 - [x] Cross-references: article prose links to the articles it mentions, stubs included. See [docs/cross-references.md](docs/cross-references.md)
@@ -198,7 +198,7 @@ Scaffolding and foundation. What exists:
 - [ ] The remaining skills: `name-forge`, `outline`, `scene-draft`, `continuity-pass`, `world-brief`, `timeline`
 - [ ] Temporal queries — dates are recorded and surfaced, not yet filtered on
 - [ ] Named ages and eras ("Year 432 of the First Age")
-- [ ] Field specs for the remaining sixteen containers
+- [ ] Field specs for the remaining fifteen containers
 - [ ] Author-defined container types
 - [ ] The story-building workflow, grounded in established canon
 - [ ] Canon indexing, so large universes don't re-read the corpus on every call

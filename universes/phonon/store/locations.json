@@ -5,9 +5,8 @@
       "id": "bf3c9fff",
       "container": "locations",
       "name": "Dol",
-      "kind": "city",
       "aliases": [],
-      "summary": "Kell's capital and only deepwater port.",
+      "summary": "Kell's capital and only deepwater port, built where the Sunder current turns back on itself.",
       "tags": [
         {
           "type": "locations",
@@ -16,7 +15,18 @@
       ],
       "sources": [],
       "createdAt": "2026-09-09T15:25:20.006Z",
-      "updatedAt": "2026-09-09T15:25:20.016Z"
+      "updatedAt": "2026-09-09T18:44:43.034Z",
+      "beginDate": "198",
+      "attributes": {
+        "parentLocation": "Kell",
+        "population": "about 40,000",
+        "founders": [
+          "Antin Forin, III"
+        ],
+        "climate": "Wet, and cold enough that the harbour ices in a hard year.",
+        "nativeWildlife": "The Sunder Whale passes offshore each spring. Bottonfly swarms reach the landward districts in summer.",
+        "demographics": "Overwhelmingly Kellish. The Ashfaith holds the harbour temples; the Quiet Hand is tolerated inland."
+      }
     },
     {
       "id": "be248b76",
