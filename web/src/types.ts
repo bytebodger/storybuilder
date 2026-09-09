@@ -117,6 +117,8 @@ export interface Segment {
 export interface ArticleField {
   key: string
   label: string
+  /** Short values are looked up; long ones are read. They are laid out differently. */
+  kind: FieldKind
   segments: Segment[]
 }
 

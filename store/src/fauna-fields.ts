@@ -26,6 +26,17 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     examples: ['Bottonfly', 'Ice Dragon', 'Sunder Whale'],
   },
   {
+    key: 'pronunciation',
+    label: 'Pronunciation',
+    kind: 'text',
+    required: false,
+    default: null,
+    help:
+      'A plain respelling, not a phonetic alphabet - the point is that a reader can say it aloud. ' +
+      'Stressed syllable in capitals.',
+    examples: ['BOTT-uhn-fligh', 'thor-IN-flee', 'KELL-ish'],
+  },
+  {
     key: 'description',
     label: 'Description',
     kind: 'longtext',
@@ -36,6 +47,72 @@ export const FAUNA_FIELDS: FieldSpec[] = [
       'The opening paragraph: what it is, where it lives, and why it matters to the people alongside ' +
       'it. Two to four sentences. Every other article shows this when the creature is mentioned in ' +
       'passing, so it has to stand alone.',
+  },
+  {
+    key: 'scientificName',
+    label: 'Scientific Name',
+    kind: 'text',
+    required: false,
+    default: null,
+    help:
+      'The formal name, if this world has anyone who assigns them. A world with no naturalists has ' +
+      'no scientific names, and leaving this blank says so.',
+  },
+  {
+    key: 'parentSpecies',
+    label: 'Parent Species',
+    kind: 'text',
+    required: false,
+    default: null,
+    help:
+      'What it descended from or is a variety of. If that ancestor has its own article, name it the ' +
+      'same way, and the reference will link itself.',
+  },
+  {
+    key: 'conservationStatus',
+    label: 'Conservation Status',
+    kind: 'text',
+    required: false,
+    default: null,
+    help:
+      'How its numbers stand, in terms this world would use. "Abundant", "hunted to scarcity", ' +
+      '"protected by decree" - not an IUCN category unless this world has an IUCN.',
+  },
+  {
+    key: 'lifespan',
+    label: 'Lifespan',
+    kind: 'text',
+    required: false,
+    default: null,
+    help: 'Typical lifespan, with the range if it varies by stage, sex or captivity.',
+    examples: ['five years', 'up to 200 years in the deep'],
+  },
+  {
+    key: 'averageHeight',
+    label: 'Average Height',
+    kind: 'text',
+    required: false,
+    default: null,
+    help: 'Include the unit. Free text, so a world with its own measures can use them.',
+    examples: ['15 centimeters', 'two hands at the shoulder'],
+  },
+  {
+    key: 'averageWeight',
+    label: 'Average Weight',
+    kind: 'text',
+    required: false,
+    default: null,
+    help: 'Include the unit.',
+    examples: ['900 grams', 'a little under a stone'],
+  },
+  {
+    key: 'averageLength',
+    label: 'Average Length',
+    kind: 'text',
+    required: false,
+    default: null,
+    help: 'Include the unit, and say what is being measured when it is not obvious.',
+    examples: ['30 centimeters', '4 meters, snout to tail'],
   },
   {
     key: 'anatomy',

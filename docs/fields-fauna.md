@@ -9,14 +9,22 @@ world's own uncertainty, but it has no plot and no protagonist. See
 
 ## The fields
 
-**Name** and **Description** are required; everything else is optional, and an empty field is
+Thirty fields. **Name** and **Description** are required; everything else is optional, and an empty field is
 honest — it means nothing has been established, and briefs stay silent about it rather than inviting
 a skill to fill the gap.
 
 | Field | Stored as | Covers |
 | --- | --- | --- |
 | Name | item name | The in-world common name. |
+| Pronunciation | attribute | A plain respelling, stressed syllable in capitals: `BOTT-uhn-fligh`. |
 | Description | item summary | The opening paragraph. Shown wherever the creature is mentioned elsewhere. |
+| Scientific Name | attribute | The formal name, if this world has anyone who assigns them. |
+| Parent Species | attribute | What it descended from. Links itself if that ancestor has an article. |
+| Conservation Status | attribute | How its numbers stand, in terms this world would use. |
+| Lifespan | attribute | Typical lifespan, with the range where it varies. |
+| Average Height | attribute | With the unit. |
+| Average Weight | attribute | With the unit. |
+| Average Length | attribute | With the unit, and what is being measured. |
 | Anatomy | attribute | Body plan, size, colouration, what distinguishes it on sight. |
 | Biological Traits | attribute | Traits that shape how it is regarded — including exaggerations. |
 | Genetics and Reproduction | attribute | Mating, clutches, parental investment, what preys on the young. |
@@ -37,6 +45,23 @@ a skill to fill the gap.
 | Gender Ideals | attribute | Differences between sexes, and the meaning attached to them. |
 | Historical Impact | attribute | Events it shaped. |
 | Associated Myths and Legends | attribute | Stories told about it, and which are known to be false. |
+
+## Two shapes of field
+
+The short fields — pronunciation, the measurements, lifespan — are **looked up**, not read. They are
+declared `kind: 'text'`, and the article view gathers them into one compact block above the prose,
+rather than giving each a heading and a paragraph of its own. A lifespan set out as a paragraph reads
+as though something has been left out of it.
+
+The long fields are `kind: 'longtext'` and render in spec order as sections, which is how they are
+meant to be read.
+
+The split is driven by the spec, not by a list of field names, so it works the same way for every
+container that gets one.
+
+Two of the short fields carry more than they look like they do. **Parent Species** is a name, so if
+that ancestor has an article the value links to it by itself — no separate relation needed. And
+**Scientific Name** left blank is a statement: a world with no naturalists has no scientific names.
 
 Name and Description map onto the store's own columns, declared by `storeAs` in the spec. That is what
 lets a brief show a creature's name and opening paragraph without knowing anything about fauna. Every

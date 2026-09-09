@@ -156,12 +156,21 @@ const server = createServer(async (req, res) => {
       const ordered = spec
         ? spec
             .filter((f) => f.storeAs !== 'name' && !isEmptyValue(values[f.key]))
-            .map((f) => ({ key: f.key, label: f.label, value: values[f.key] }))
-        : Object.entries(values).map(([key, value]) => ({ key, label: key, value }))
+            .map((f) => ({ key: f.key, label: f.label, kind: f.kind, value: values[f.key] }))
+        : Object.entries(values).map(([key, value]) => ({
+            key,
+            label: key,
+            kind: 'longtext' as const,
+            value,
+          }))
 
+      // `kind` travels with each field so the reader can lay out a lifespan and
+      // a life cycle differently. A one-line fact rendered as a paragraph reads
+      // as though something is missing from it.
       const fields = ordered.map((f) => ({
         key: f.key,
         label: f.label,
+        kind: f.kind,
         segments: linkify(String(f.value), all, { excludeId: item.id }),
       }))
 

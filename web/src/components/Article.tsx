@@ -11,9 +11,18 @@ interface Props {
 }
 
 /** One field's prose, with the mentions of other articles made into links. */
-function Prose({ segments, onNavigate }: { segments: Segment[]; onNavigate: (t: NavItem) => void }) {
+function Prose({
+  segments,
+  onNavigate,
+  inline,
+}: {
+  segments: Segment[]
+  onNavigate: (t: NavItem) => void
+  inline?: boolean
+}) {
+  const Tag = inline ? 'span' : 'p'
   return (
-    <p className="prose">
+    <Tag className={inline ? 'prose inline' : 'prose'}>
       {segments.map((seg, i) =>
         seg.target ? (
           <button
@@ -33,7 +42,7 @@ function Prose({ segments, onNavigate }: { segments: Segment[]; onNavigate: (t: 
           <span key={i}>{seg.text}</span>
         ),
       )}
-    </p>
+    </Tag>
   )
 }
 
@@ -58,6 +67,9 @@ export function Article({ universe, item, onEdit, onNavigate }: Props) {
 
   if (error) return <section className="panel"><p className="error">{error}</p></section>
   if (!view) return <section className="panel"><p className="empty">Loading…</p></section>
+
+  const facts = view.fields.filter((f) => f.kind === 'text' || f.kind === 'number')
+  const prose = view.fields.filter((f) => f.kind !== 'text' && f.kind !== 'number')
 
   return (
     <section className="panel">
@@ -86,7 +98,25 @@ export function Article({ universe, item, onEdit, onNavigate }: Props) {
         <p className="empty">No fields have been filled in yet.</p>
       )}
 
-      {view.fields.map((field) => (
+      {/*
+        Short fields are reference data - a weight, a pronunciation - and belong
+        together where they can be scanned. Prose is read in order, so it keeps
+        the spec's order below.
+      */}
+      {facts.length > 0 && (
+        <dl className="facts">
+          {facts.map((field) => (
+            <div key={field.key} className="fact">
+              <dt>{field.label}</dt>
+              <dd>
+                <Prose segments={field.segments} onNavigate={onNavigate} inline />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {prose.map((field) => (
         <div key={field.key} className="article-field">
           <h3>{field.label}</h3>
           <Prose segments={field.segments} onNavigate={onNavigate} />

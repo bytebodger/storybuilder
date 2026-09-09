@@ -8,6 +8,8 @@ import type { Item } from '../src/types.ts'
 
 const bottonfly = {
   name: 'Bottonfly',
+  pronunciation: 'BOTT-uhn-fligh',
+  averageWeight: '900 grams',
   description: 'Massive insects that populate the forested and muddwood regions of Westlandia.',
   anatomy: 'Rust-coloured bodies covered in long spikes dusted with a powdery white substance.',
   socialStructure: '   ',
@@ -15,9 +17,22 @@ const bottonfly = {
 
 describe('the fauna spec', () => {
   it('has every field the container needs, name and description required', () => {
-    assert.equal(FAUNA_FIELDS.length, 22)
+    assert.equal(FAUNA_FIELDS.length, 30)
     const required = FAUNA_FIELDS.filter((f) => f.required).map((f) => f.key)
     assert.deepEqual(required, ['name', 'description'])
+  })
+
+  it('keeps the short reference facts as text, not prose', () => {
+    // These are looked up, not read: a lifespan rendered as a paragraph is
+    // worse than one rendered as a value.
+    const facts = ['pronunciation', 'scientificName', 'parentSpecies', 'conservationStatus',
+      'lifespan', 'averageHeight', 'averageWeight', 'averageLength']
+    for (const key of facts) {
+      const field = FAUNA_FIELDS.find((f) => f.key === key)
+      assert.ok(field, `${key} exists`)
+      assert.equal(field.kind, 'text', `${key} is a short field`)
+      assert.equal(field.required, false, `${key} is optional`)
+    }
   })
 
   it('is registered against a container that actually exists', () => {
@@ -47,6 +62,9 @@ describe('form values to item', () => {
     assert.match(item.summary!, /^Massive insects/)
     assert.match(String(item.attributes!.anatomy), /Rust-coloured/)
     assert.equal('description' in item.attributes!, false)
+    // The new short fields ride in attributes like any other non-column field.
+    assert.equal(item.attributes!.pronunciation, 'BOTT-uhn-fligh')
+    assert.equal(item.attributes!.averageWeight, '900 grams')
   })
 
   it('drops empty fields rather than storing blanks', () => {

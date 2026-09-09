@@ -7,9 +7,16 @@
       "name": "Bottonfly",
       "summary": "Massive insects of the muddwood regions of Eastlandia, central to casterway societies for food, dyes and poisons.",
       "attributes": {
+        "pronunciation": "BOTT-uhn-fligh",
+        "scientificName": "Apis bottonis",
+        "parentSpecies": "Thorinflies",
+        "conservationStatus": "Abundant; no one has ever thought to protect them.",
+        "lifespan": "five years as an adult",
+        "averageHeight": "15 centimeters",
+        "averageWeight": "900 grams",
+        "averageLength": "30 centimeters",
         "anatomy": "Rust-coloured, eight legs, four undersized wings that drone in flight.",
-        "biologicalTraits": "It is a close relative of its Westlandia cousin, the thorinfly, and laypersons often mistake the two. Neither is found on the Boundless Plain.",
-        "domestication": "The bottonfly was famously domesticated by Antin Forin, the third potentate of the Archane Order."
+        "biologicalTraits": "It is a close relative of its Westlandia cousin, the thorinfly, and laypersons often mistake the two."
       },
       "tags": [
         {
@@ -34,7 +41,7 @@
         }
       ],
       "createdAt": "2026-09-09T16:35:00.949Z",
-      "updatedAt": "2026-09-09T17:30:46.654Z"
+      "updatedAt": "2026-09-09T18:35:53.949Z"
     },
     {
       "id": "e28c0ded",
