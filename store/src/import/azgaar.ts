@@ -7,6 +7,7 @@
  * file. Neither is a superset of the other.
  */
 import { readAddedLabels, guessGeographyKind } from './azgaar-svg.ts'
+import { normalizeTerm } from '../terms.ts'
 import type { ImportCandidate, ImportPlan, Tier } from './types.ts'
 
 /** Placeholders the generator uses for "none of the above". Never articles. */
@@ -37,6 +38,17 @@ const MARKER_CONTAINERS: Record<string, [string, string]> = {
   libraries: ['institutions', 'library'],
 }
 
+/**
+ * Where a zone belongs.
+ *
+ * Azgaar's zones are mostly things that happened - an invasion, a crusade, a
+ * flood - and those are history. A fault is not: it is a feature of the ground
+ * that will still be there when the story is over.
+ */
+const ZONE_CONTAINERS: Record<string, [string, string]> = {
+  fault: ['geography', 'fault'],
+}
+
 interface Azgaar {
   info?: { mapName?: string; width?: number; height?: number }
   settings?: { populationRate?: number }
@@ -53,10 +65,29 @@ export interface BuildOptions {
   tier: Tier
   /** Settlements at or above this population are worth an article at tier 2. */
   minPopulation?: number
+  /**
+   * Import the generator's provinces as articles. Off by default.
+   *
+   * Azgaar produces an administrative layer whether or not anyone asked for it,
+   * and a province is rarely a thing a story names: everyone knows Mos Eisley is
+   * a city on Tatooine, and nobody knows or cares which province it is in.
+   * Leaving them out also shortens every settlement's parentage to the country,
+   * which is the relationship a reader actually holds in mind.
+   */
+  withProvinces?: boolean
+  /**
+   * Import the generator's map markers as articles. Off by default.
+   *
+   * Markers are prompts for a game master rather than facts about a world -
+   * nearly half of them repeat verbatim, and the ones that do not are mostly
+   * scenery with a label. A world is not richer for 224 articles about jetties
+   * and columns, and the nav is measurably worse.
+   */
+  withMarkers?: boolean
 }
 
 export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions): ImportPlan {
-  const { tier, minPopulation = 1000 } = options
+  const { tier, minPopulation = 1000, withProvinces = false, withMarkers = false } = options
   const pack = json.pack ?? {}
   const rate = json.settings?.populationRate ?? 1000
   const candidates: ImportCandidate[] = []
@@ -132,10 +163,12 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
     const found = rows(pack[key]).filter(usable)
     for (const r of found) {
       if (!admit(at)) break
+      const kind = typeof r.type === 'string' ? String(r.type).toLowerCase() : undefined
+      const override = key === 'zones' && kind ? ZONE_CONTAINERS[kind] : undefined
       candidates.push({
         name: nameOf(r),
-        container,
-        kind: typeof r.type === 'string' ? String(r.type).toLowerCase() : undefined,
+        container: override?.[0] ?? container,
+        kind: override?.[1] ?? kind,
         tier: at,
         source: 'json',
         sourceType: key.replace(/s$/, ''),
@@ -144,11 +177,75 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
     tally(key.replace(/s$/, ''), container, found.length, admit(at) ? found.length : 0)
   }
 
-  addSettlements({ burgs, provinces, cellById, provinceName, stateName, rate, tier, minPopulation, candidates, tally })
-  addGeography({ pack, tier, candidates, tally, rate, cellById, provinceName, stateName })
+  addSettlements({ burgs, provinces, cellById, provinceName, stateName, rate, tier, minPopulation, withProvinces, candidates, tally })
+  addGeography({ pack, tier, withMarkers, candidates, tally, rate, cellById, provinceName, stateName })
 
   candidates.sort((a, b) => order(a) - order(b))
+
+  const qualified = disambiguate(candidates)
+  if (qualified) {
+    warnings.push(
+      `${qualified} name(s) were reused across the map and have been qualified by country, ` +
+        'e.g. "Betford (Brandlemar)". Two articles sharing a name would make every reference to ' +
+        'either one a coin toss.',
+    )
+  }
   return { candidates, counts, warnings }
+}
+
+/**
+ * Give every candidate a name no other candidate answers to.
+ *
+ * A generated world reuses settlement names freely - this one has seven Uxbrids
+ * - and two articles with one name break every cross-reference to either, since
+ * the linker has no way to choose. Qualifying by country is what a real
+ * gazetteer does: Springfield, Illinois and Springfield, Massachusetts.
+ *
+ * All members of a clash are qualified, not just the later ones. Leaving the
+ * first bare would make a bare mention resolve to whichever happened to be
+ * imported first, which is arbitrary dressed up as certain.
+ */
+function disambiguate(candidates: ImportCandidate[]): number {
+  const groups = new Map<string, ImportCandidate[]>()
+  for (const c of candidates) {
+    const key = normalizeTerm(c.name)
+    if (!key) continue
+    groups.set(key, [...(groups.get(key) ?? []), c])
+  }
+
+  let qualified = 0
+  const renamed = new Map<string, string>()
+
+  for (const group of groups.values()) {
+    if (group.length < 2) continue
+    const used = new Set<string>()
+    for (const c of group) {
+      const country = c.parentNames?.[c.parentNames.length - 1]
+      let name = country ? `${c.name} (${country})` : c.name
+      // Two of a name inside one country still need telling apart.
+      if (used.has(normalizeTerm(name))) {
+        let n = 2
+        while (used.has(normalizeTerm(`${name} ${n}`))) n++
+        name = `${name} ${n}`
+      }
+      used.add(normalizeTerm(name))
+      if (name !== c.name) {
+        renamed.set(normalizeTerm(c.name), name)
+        c.name = name
+        qualified++
+      }
+    }
+  }
+
+  // Anything naming a renamed candidate as its parent has to follow it, or the
+  // link would be looked up under a name that no longer exists.
+  if (renamed.size) {
+    for (const c of candidates) {
+      if (!c.parentNames?.length) continue
+      c.parentNames = c.parentNames.map((n) => renamed.get(normalizeTerm(n)) ?? n)
+    }
+  }
+  return qualified
 }
 
 /** Parents first, so a child can name something that already exists. */
@@ -202,6 +299,7 @@ interface SectionArgs {
   rate: number
   tier: Tier
   minPopulation: number
+  withProvinces: boolean
   candidates: ImportCandidate[]
   tally: (sourceType: string, container: string, found: number, included: number) => void
 }
@@ -214,7 +312,7 @@ interface SectionArgs {
  * guessed from coordinates.
  */
 function addSettlements(a: SectionArgs): void {
-  const { burgs, provinces, cellById, provinceName, stateName, rate, tier, minPopulation, candidates, tally } = a
+  const { burgs, provinces, cellById, provinceName, stateName, rate, tier, minPopulation, withProvinces, candidates, tally } = a
   const real = burgs.filter(usable)
 
   const capitals = real.filter((b) => b.capital)
@@ -251,10 +349,10 @@ function addSettlements(a: SectionArgs): void {
   }
   tally('burg', 'locations', real.length, included.length)
 
-  // Provinces are the middle of the chain, and arrive with tier 2 - the point
-  // at which their towns start coming in and need somewhere to belong.
+  // Only on request. Without them a settlement's parent falls through to its
+  // country, which is the relationship worth recording.
   const realProvinces = provinces.filter(usable)
-  if (tier >= 2) {
+  if (withProvinces) {
     for (const p of realProvinces) {
       candidates.push({
         // Under its full name - "Blandbury County", not "Blandbury".
@@ -273,13 +371,14 @@ function addSettlements(a: SectionArgs): void {
       })
     }
   }
-  tally('province', 'locations', realProvinces.length, tier >= 2 ? realProvinces.length : 0)
+  tally('province', 'locations', realProvinces.length, withProvinces ? realProvinces.length : 0)
   tally('capital', 'locations', capitals.length, tier >= 1 ? capitals.length : 0)
 }
 
 interface GeoArgs {
   pack: Record<string, unknown[]>
   tier: Tier
+  withMarkers: boolean
   candidates: ImportCandidate[]
   tally: SectionArgs['tally']
   rate: number
@@ -290,7 +389,7 @@ interface GeoArgs {
 
 /** Rivers, lakes, and the marked sites scattered over the map. */
 function addGeography(a: GeoArgs): void {
-  const { pack, tier, candidates, tally, cellById, provinceName, stateName } = a
+  const { pack, tier, withMarkers, candidates, tally, cellById, provinceName, stateName } = a
 
   const rivers = rows(pack.rivers).filter(usable)
   if (tier >= 3) {
@@ -324,8 +423,23 @@ function addGeography(a: GeoArgs): void {
   }
   tally('lake', 'geography', lakes.length, tier >= 3 ? lakes.length : 0)
 
-  const markers = rows(pack.markers).filter(usable)
-  if (tier >= 3) {
+  /*
+   * Only the marked sites that are actually places.
+   *
+   * Azgaar scatters prompts across the map as markers - 81 of them named
+   * "Random encounter", 35 named "Dungeon", all carrying identical notes. They
+   * are decoration for a game master, not entities in a world, and importing
+   * them would bury the ones that are: a volcano someone named, a hot spring
+   * with a place attached to it.
+   *
+   * A repeated name is the tell, and it needs no list of banned words.
+   */
+  const allMarkers = rows(pack.markers).filter(usable)
+  const seen = new Map<string, number>()
+  for (const m of allMarkers) seen.set(nameOf(m), (seen.get(nameOf(m)) ?? 0) + 1)
+  const markers = allMarkers.filter((m) => seen.get(nameOf(m)) === 1)
+
+  if (withMarkers) {
     for (const m of markers) {
       const [container, kind] = MARKER_CONTAINERS[String(m.type)] ?? ['locations', 'site']
       const cell = cellById.get(m.cell as number)
@@ -333,9 +447,9 @@ function addGeography(a: GeoArgs): void {
         name: nameOf(m),
         container,
         kind,
-        tier: 3,
-        // The note is real prose the generator already wrote - the only content
-        // in the whole export that is not just a name.
+        tier: 2,
+        // The note is real prose the generator already wrote - the one thing
+        // markers have going for them, if they are wanted at all.
         summary: typeof m.note === 'string' ? m.note : undefined,
         parentNames: chain(cell, provinceName, stateName, nameOf(m)),
         source: 'json',
@@ -343,5 +457,5 @@ function addGeography(a: GeoArgs): void {
       })
     }
   }
-  tally('marker', 'various', markers.length, tier >= 3 ? markers.length : 0)
+  tally('marker', 'various', allMarkers.length, withMarkers ? markers.length : 0)
 }

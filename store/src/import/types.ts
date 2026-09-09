@@ -30,11 +30,11 @@ export const TIERS: Record<Tier, { label: string; description: string }> = {
   },
   2: {
     label: 'Navigable',
-    description: 'Adds provinces, ports, and settlements above a population threshold.',
+    description: 'Adds ports and settlements above a population threshold.',
   },
   3: {
     label: 'Everything',
-    description: 'Adds every settlement, river, lake, and marked site.',
+    description: 'Adds every remaining settlement, river and lake.',
   },
 }
 

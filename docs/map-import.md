@@ -44,9 +44,9 @@ carry a story, so the author picks the grain — and can come back later, since 
 | Tier | Adds | Watia |
 | --- | --- | --- |
 | **0** | Hand-added labels. Always, at every tier. | 6 |
-| **1** | Countries, capitals, peoples, faiths, named roads, recorded events. | 88 |
-| **2** | Provinces, ports, settlements above a population threshold. | ~700 |
-| **3** | Every settlement, river, lake and marked site. | 3,686 |
+| **1** (default) | Countries, capitals, peoples, faiths, named roads, recorded events. | 88 |
+| **2** | Ports and settlements above a population threshold. | 648 |
+| **3** | Every remaining settlement, river and lake. | 2,864 |
 
 ```bash
 npm run sb --silent -- --universe watia import-map map.svg map.json --tier 1
@@ -54,6 +54,22 @@ npm run sb --silent -- --universe watia import-map map.svg map.json --tier 1
 
 Nothing is written without `--write`. The dry run prints what each source yielded against what the
 tier admits, so the shape of the decision is visible before anything lands.
+
+### Two things the generator makes that a story does not want
+
+Both are excluded at every tier, and both have a flag for the rare case.
+
+**Provinces** (`--with-provinces`). Azgaar produces an administrative layer whether or not anyone
+asked for it. Everyone knows Mos Eisley is a city on Tatooine; nobody knows or cares which province it
+is in. Leaving them out also shortens every settlement's parentage to its country, which is the
+relationship a reader actually holds in mind.
+
+**Markers** (`--with-markers`). These are prompts for a game master rather than facts about a world.
+Of Watia's 408, **184 repeat verbatim** — 81 named `Random encounter` carrying identical notes, 35
+named `Dungeon` — and the 224 that survive are largely scenery with a label: jetties, columns, a
+ruined mausoleum. A world is not richer for those articles, and the navigation is measurably worse.
+When they are asked for, the repeated ones are still dropped: a name used more than once on a map is
+decoration, and that test needs no list of banned words.
 
 ## What Azgaar gives beyond names
 
@@ -66,6 +82,42 @@ Container mapping covers 8 of the 19: states, provinces and settlements to `loca
 `country`, `province`, `city`/`town`/`village`), rivers and lakes to `geography`, cultures to
 `ethnicities`, religions to `theology`, roads to `roads`, zones to `history`, and markers spread
 across `geography`, `history`, `fauna`, `institutions`, `traditions` and `phenomena` by their type.
+
+### Zones are worth keeping
+
+Watia's twelve zones are the opposite profile from markers: every name is unique, none repeat, and
+they are the only entries in the whole export that describe something *happening*. Everything else at
+tier 1 is a noun — countries, capitals, peoples, faiths, roads.
+
+```
+CONFLICTS                                DISASTERS
+Southesian Pillaging     Invasion        Peringdonese Famine   Disaster
+Wigan Secessionists      Rebels          Manches Eruption      Eruption
+Granishan Crusade        Crusade         Retescom Tsunami      Tsunami
+```
+
+A crusade spanning 8,581 cells is a continent-scale war with a name; a flood covering two is local
+memory. Both are story fuel, at a cost of twelve rows.
+
+They arrive with a name and a type and nothing else — no dates, no description — so they are stubs
+with evocative names, which is the honest way to hold them.
+
+Most zones are history. A **Fault** is not: it is a feature of the ground that will still be there
+when the story is over, so it goes to `geography`.
+
+## Names reused across a map
+
+A generated world reuses settlement names freely. Watia has seven Uxbrids, six Framptons, and two
+Betfords — and two Torkleighs inside the same country.
+
+Two articles sharing a name break every cross-reference to either, since the linker has no way to
+choose, so clashing names are qualified by country: `Betford (Seedon)` and `Betford (Brandlemar)`.
+**Every** side of a clash is qualified, not just the later ones — leaving the first bare would make a
+passing mention resolve to whichever happened to be imported first, which is arbitrary dressed up as
+certain. Two of a name inside one country get a numeral. Anything referring to a renamed article
+follows it, so parentage does not break.
+
+For Watia at tier 2 this qualifies 65 names, and the store then validates with zero warnings.
 
 ## Two traps, both real
 

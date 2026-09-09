@@ -38,7 +38,10 @@ const JSON_EXPORT = {
     ],
     cultures: [{ i: 0, name: 'Wildlands' }, { i: 1, name: 'Dunsmouth' }],
     religions: [{ i: 0, name: 'No religion' }, { i: 1, name: 'Old Deities' }],
-    zones: [{ i: 0, name: 'Granishan Crusade', type: 'Crusade' }],
+    zones: [
+      { i: 0, name: 'Granishan Crusade', type: 'Crusade' },
+      { i: 1, name: 'Watchambean Fault', type: 'Fault' },
+    ],
     routes: [{ i: 0, name: 'Jade road' }, { i: 1, name: 'Unnamed route segment' }],
     rivers: [{ i: 1, name: 'Horsbumeby' }],
     features: [{ i: 7, name: 'Harden', type: 'lake', subtype: 'freshwater' }],
@@ -46,8 +49,8 @@ const JSON_EXPORT = {
   },
 }
 
-const plan = (tier: 0 | 1 | 2 | 3) => buildImportPlan(JSON_EXPORT, SVG, { tier })
-const names = (tier: 0 | 1 | 2 | 3) => plan(tier).candidates.map((c) => c.name)
+const plan = (tier: 0 | 1 | 2 | 3, opts = {}) => buildImportPlan(JSON_EXPORT, SVG, { tier, ...opts })
+const names = (tier: 0 | 1 | 2 | 3, opts = {}) => plan(tier, opts).candidates.map((c) => c.name)
 
 describe('labels the author added by hand', () => {
   it('reads them out of the SVG, which is the only file that has them', () => {
@@ -91,22 +94,23 @@ describe('tiers', () => {
     for (const expected of ['Whitmere', 'Seedon', 'Blandbury', 'Dunsmouth', 'Old Deities', 'Granishan Crusade', 'Jade road']) {
       assert.ok(got.includes(expected), expected)
     }
-    // A non-capital settlement, a river, a lake and a marker all wait.
+    // A non-capital settlement, a river, a lake and a marked site all wait.
     for (const held of ['Harborough', 'Tinyham', 'Horsbumeby', 'Harden', 'Manches Volcano']) {
       assert.ok(!got.includes(held), held)
     }
   })
 
-  it('adds provinces and ports at tier 2, still holding the smallest back', () => {
+  it('adds ports and marked sites at tier 2, still holding the smallest back', () => {
     const got = names(2)
-    assert.ok(got.includes('Blandbury County'))
     assert.ok(got.includes('Harborough'), 'a port earns an article')
+    assert.ok(!got.includes('Manches Volcano'), 'marked sites stay out unless asked for')
     assert.ok(!got.includes('Tinyham'), 'a hamlet under the threshold does not')
+    assert.ok(!got.includes('Horsbumeby'), 'nor does every river')
   })
 
-  it('brings everything at tier 3', () => {
+  it('brings everything else at tier 3', () => {
     const got = names(3)
-    for (const expected of ['Tinyham', 'Horsbumeby', 'Harden', 'Manches Volcano']) {
+    for (const expected of ['Tinyham', 'Horsbumeby', 'Harden']) {
       assert.ok(got.includes(expected), expected)
     }
   })
@@ -125,9 +129,22 @@ describe('tiers', () => {
   })
 })
 
-describe('a province named after its capital', () => {
-  it('imports under its full name, so the two do not collide', () => {
-    const got = names(2)
+describe('provinces', () => {
+  it('stays out at every tier, because nobody names one', () => {
+    // Azgaar generates an administrative layer whether or not it was wanted.
+    for (const tier of [1, 2, 3] as const) {
+      assert.ok(!names(tier).includes('Blandbury County'), `tier ${tier}`)
+    }
+  })
+
+  it('sends a settlement straight to its country when they are left out', () => {
+    const got = new Set(names(1))
+    const blandbury = plan(1).candidates.find((c) => c.sourceType === 'burg')!
+    assert.equal((blandbury.parentNames ?? []).find((n) => got.has(n)), 'Whitmere')
+  })
+
+  it('imports under its full name when asked for, so the two do not collide', () => {
+    const got = names(2, { withProvinces: true })
     assert.ok(got.includes('Blandbury County'), 'the province')
     assert.ok(got.includes('Blandbury'), 'the town')
     // One article each, not two called the same thing.
@@ -140,17 +157,16 @@ describe('a province named after its capital', () => {
     assert.deepEqual(blandbury.parentNames, ['Blandbury County', 'Whitmere'])
   })
 
-  it('offers the country when the tier left the province out', () => {
-    // Tier 1 has no provinces, so the country is the parent that resolves.
-    const got = new Set(names(1))
-    const blandbury = plan(1).candidates.find((c) => c.sourceType === 'burg')!
-    assert.equal((blandbury.parentNames ?? []).find((n) => got.has(n)), 'Whitmere')
+  it('still prefers the province when one was asked for', () => {
+    const got = new Set(names(2, { withProvinces: true }))
+    const blandbury = plan(2, { withProvinces: true }).candidates.find((c) => c.sourceType === 'burg')!
+    assert.equal((blandbury.parentNames ?? []).find((n) => got.has(n)), 'Blandbury County')
   })
 })
 
 describe('what the generator already wrote', () => {
-  it('keeps a marker note as the article summary', () => {
-    const volcano = plan(3).candidates.find((c) => c.name === 'Manches Volcano')!
+  it('keeps a marker note as the article summary, when markers are asked for', () => {
+    const volcano = plan(2, { withMarkers: true }).candidates.find((c) => c.name === 'Manches Volcano')!
     assert.equal(volcano.summary, 'Dormant volcano.')
     assert.equal(volcano.container, 'geography')
     assert.equal(volcano.kind, 'volcano')
@@ -167,7 +183,92 @@ describe('what the generator already wrote', () => {
     assert.equal(by.get('Dunsmouth'), 'ethnicities')
     assert.equal(by.get('Old Deities'), 'theology')
     assert.equal(by.get('Granishan Crusade'), 'history')
+    // A fault is not something that happened; it is still there.
+    assert.equal(by.get('Watchambean Fault'), 'geography')
     assert.equal(by.get('Jade road'), 'roads')
     assert.equal(by.get('Horsbumeby'), 'geography')
+  })
+})
+
+describe('names reused across a generated map', () => {
+  const REUSED = {
+    ...JSON_EXPORT,
+    pack: {
+      ...JSON_EXPORT.pack,
+      burgs: [
+        { i: 1, name: 'Betford', cell: 10, capital: 1, population: 3, state: 1 },
+        { i: 2, name: 'Betford', cell: 20, capital: 1, population: 3, state: 2 },
+        { i: 3, name: 'Torkleigh', cell: 10, capital: 1, population: 3, state: 1 },
+        { i: 4, name: 'Torkleigh', cell: 11, capital: 1, population: 3, state: 1 },
+      ],
+      cells: [
+        { i: 10, p: [120, 220], state: 1, province: 1 },
+        { i: 11, p: [130, 230], state: 1, province: 1 },
+        { i: 20, p: [300, 300], state: 2 },
+      ],
+    },
+  }
+  const got = () => buildImportPlan(REUSED, SVG, { tier: 1 }).candidates.map((c) => c.name)
+
+  it('qualifies every side of a clash, not just the later ones', () => {
+    const names = got()
+    assert.ok(names.includes('Betford (Whitmere)'))
+    assert.ok(names.includes('Betford (Seedon)'))
+    // A bare mention must not silently resolve to whichever came first.
+    assert.ok(!names.includes('Betford'))
+  })
+
+  it('tells apart two of a name inside one country', () => {
+    const names = got().filter((n) => n.startsWith('Torkleigh'))
+    assert.equal(names.length, 2)
+    assert.equal(new Set(names).size, 2, 'the two are distinguishable')
+  })
+
+  it('says so, rather than renaming quietly', () => {
+    assert.match(buildImportPlan(REUSED, SVG, { tier: 1 }).warnings.join(' '), /qualified by country/)
+  })
+
+  it('leaves a name used once alone', () => {
+    assert.ok(names(1).includes('Blandbury'))
+  })
+})
+
+describe('markers that are not places', () => {
+  const NOISY = {
+    ...JSON_EXPORT,
+    pack: {
+      ...JSON_EXPORT.pack,
+      markers: [
+        { i: 0, name: 'Manches Volcano', type: 'volcanoes', cell: 10, note: 'Dormant volcano.' },
+        { i: 1, name: 'Random encounter', type: 'encounters', cell: 10, note: 'Something happens.' },
+        { i: 2, name: 'Random encounter', type: 'encounters', cell: 11, note: 'Something happens.' },
+        { i: 3, name: 'Dungeon', type: 'dungeons', cell: 10, note: 'A dungeon.' },
+        { i: 4, name: 'Dungeon', type: 'dungeons', cell: 11, note: 'A dungeon.' },
+      ],
+    },
+  }
+  const plan2 = buildImportPlan(NOISY, SVG, { tier: 2, withMarkers: true })
+
+  it('stays out entirely unless asked for', () => {
+    const without = buildImportPlan(NOISY, SVG, { tier: 3 })
+    assert.ok(!without.candidates.some((c) => c.sourceType === 'marker'))
+  })
+
+  it('keeps the ones somebody named', () => {
+    assert.ok(plan2.candidates.some((c) => c.name === 'Manches Volcano'))
+  })
+
+  it('drops the map decoration, which repeats', () => {
+    // 81 markers called "Random encounter" are a prompt for a game master,
+    // not 81 places in a world.
+    for (const noise of ['Random encounter', 'Dungeon']) {
+      assert.ok(!plan2.candidates.some((c) => c.name === noise), noise)
+    }
+  })
+
+  it('reports everything it found, not only what it kept', () => {
+    const markers = plan2.counts.find((c) => c.sourceType === 'marker')!
+    assert.equal(markers.found, 5)
+    assert.equal(markers.included, 1)
   })
 })

@@ -49,10 +49,13 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
   sb validate
 
   sb import-map <map.svg> <map.json> [--tier 0|1|2|3] [--min-population N]
+                                     [--with-provinces] [--with-markers]
                                             Plan an import from an Azgaar export
         Add --write to create the articles. Without it, nothing is written.
         Hand-added labels come in at every tier: they exist only in the SVG,
-        and nothing else will ever recover them.
+        and nothing else will ever recover them. Provinces are left out unless
+        asked for - the generator makes them whether or not you wanted them.
+        So are map markers, which are prompts for a game master, not world facts.
 `
 
 interface Args {
@@ -253,6 +256,8 @@ async function main(argv: string[]): Promise<number> {
       const plan = buildImportPlan(json, svg, {
         tier: Number(one(a, 'tier') ?? 1) as Tier,
         minPopulation: Number(one(a, 'min-population') ?? 1000),
+        withProvinces: !!a.flags['with-provinces'],
+        withMarkers: !!a.flags['with-markers'],
       })
 
       for (const w of plan.warnings) console.log(`WARNING: ${w}`)
