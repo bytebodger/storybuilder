@@ -163,7 +163,12 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
     const found = rows(pack[key]).filter(usable)
     for (const r of found) {
       if (!admit(at)) break
-      const kind = typeof r.type === 'string' ? String(r.type).toLowerCase() : undefined
+      // Azgaar's culture "type" describes how a culture spread across terrain
+      // while the map was generated - Naval cultures hug coasts, Nomadic ones
+      // roam. That is a fact about the simulation, not about the people, and
+      // carrying it in would split one section into four meaningless ones.
+      const kind =
+        key === 'cultures' || typeof r.type !== 'string' ? undefined : String(r.type).toLowerCase()
       const override = key === 'zones' && kind ? ZONE_CONTAINERS[kind] : undefined
       candidates.push({
         name: nameOf(r),

@@ -48,11 +48,15 @@ carry a story, so the author picks the grain — and can come back later, since 
 | **2** | Ports and settlements above a population threshold. | 648 |
 | **3** | Every remaining settlement, river and lake. | 2,864 |
 
+From inside a universe, **Import a map** in the sidebar plans and reviews an import. From the command
+line:
+
 ```bash
 npm run sb --silent -- --universe watia import-map map.svg map.json --tier 1
 ```
 
-Nothing is written without `--write`. The dry run prints what each source yielded against what the
+Files are named by path rather than uploaded, in both places: the bridge runs on the author's own
+machine, and a Full export is 75 MB. Nothing is written without `--write`. The dry run prints what each source yielded against what the
 tier admits, so the shape of the decision is visible before anything lands.
 
 ### Two things the generator makes that a story does not want
@@ -104,6 +108,42 @@ with evocative names, which is the honest way to hold them.
 
 Most zones are history. A **Fault** is not: it is a feature of the ground that will still be there
 when the story is over, so it goes to `geography`.
+
+## Reviewing an import
+
+A tier can offer thousands of candidates, and a flat list of thousands is not a review — it is a wall
+that gets accepted wholesale or abandoned. The decision an author actually makes is at the group
+level: keep every country, drop every village. So groups are the interface, they start collapsed, and
+rows are underneath for the audit rather than for the choosing.
+
+```
+LOCATIONS                      GEOGRAPHY                  HISTORY
+  town              384          mountain-range     3       flood          2
+  village           176          sea                1       crusade        1
+  city               14          strait             1       invasion       1
+  country            14          fault              1       tsunami        1
+```
+
+Groups sit under the container they will land in, so the list reads as the sections of the world
+rather than one undifferentiated run, and the biggest group in each section is on top — that is where
+the costly decision is. Each container has one **Keep all / Drop all**, and a search box confirms a
+particular name made it in.
+
+**Everything is selected by default**, which is the opposite of the [stub review](stubs.md). An author
+scoped this by choosing a tier and two files; the plan is the consequence of that choice rather than a
+set of guesses nobody asked for. Dropping `locations/village` from Watia's tier 2 is one click, and
+takes 648 candidates down to 472.
+
+Candidates the universe already holds are screened out before review, through the same matcher stub
+proposals use — so an import can be re-run, or run after hand-authoring, without duplicating anything.
+
+### Kinds that came from the simulation, not the world
+
+Azgaar labels each culture Generic, Naval, Nomadic or Lake, describing how it spread across terrain
+while the map was being built. That is a fact about the generator, not about a people, and carrying it
+in split one Ethnicities section into four meaningless ones. Culture types are dropped. Religion
+forms (folk, organized, cult, heresy) and zone types (flood, crusade, invasion) are kept, because
+those describe the thing rather than how it was placed.
 
 ## Names reused across a map
 

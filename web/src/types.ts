@@ -134,6 +134,34 @@ export interface ArticleView {
   }[]
 }
 
+export interface ImportCandidate {
+  name: string
+  container: string
+  kind?: string
+  tier: 0 | 1 | 2 | 3
+  parentNames?: string[]
+  summary?: string
+  attributes?: Record<string, unknown>
+  source: 'svg' | 'json'
+  sourceType: string
+}
+
+export interface PlanGroup {
+  key: string
+  container: string
+  kind?: string
+  sourceType: string
+  candidates: ImportCandidate[]
+}
+
+export interface GroupedPlan {
+  groups: PlanGroup[]
+  alreadyPresent: { name: string; matched: string }[]
+  counts: { sourceType: string; container: string; found: number; included: number }[]
+  warnings: string[]
+  total: number
+}
+
 export interface Skill {
   name: string
   description: string

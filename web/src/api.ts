@@ -1,5 +1,7 @@
 import type {
   ArticleView,
+  GroupedPlan,
+  ImportCandidate,
   CanonCheckResult,
   ForgeResult,
   StubContainer,
@@ -110,6 +112,22 @@ export const createStubs = (
 
 export const canonCheck = (universe: string, id: string) =>
   json<CanonCheckResult>('/canon/check', { method: 'POST', body: JSON.stringify({ universe, id }) })
+
+export const planImport = (body: {
+  universe: string
+  svgPath: string
+  jsonPath: string
+  tier: number
+  minPopulation?: number
+  withProvinces?: boolean
+  withMarkers?: boolean
+}) => json<GroupedPlan>('/import/plan', { method: 'POST', body: JSON.stringify(body) })
+
+export const commitImport = (universe: string, candidates: ImportCandidate[]) =>
+  json<{ created: number; linked: number }>('/import/commit', {
+    method: 'POST',
+    body: JSON.stringify({ universe, candidates }),
+  })
 
 export const intro = (universe: string) =>
   json<{ intro: string }>(`/intro?universe=${encodeURIComponent(universe)}`).then((r) => r.intro)

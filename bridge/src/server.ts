@@ -21,17 +21,21 @@ import {
   itemToDraft,
   containerType,
   linkify,
+  buildImportPlan,
+  TIERS,
   listUniverses,
   openUniverse,
   renderBrief,
   renderUniverseBrief,
   toUniverseId,
 } from '../../store/src/index.ts'
-import type { Item, UniverseDraft } from '../../store/src/index.ts'
+import type { ImportCandidate, Item, UniverseDraft } from '../../store/src/index.ts'
+import { readFile } from 'node:fs/promises'
 import { applyForgeResponse, buildForgePrompt, type ForgeRequest } from './forge.ts'
 import { extractCandidates, screenCandidates, stubContainers } from './stubs.ts'
 import { normalizeTerm } from '../../store/src/index.ts'
 import { buildCanonCheckPrompt, extractFindings, screenFindings } from './canon.ts'
+import { groupPlan, type PlanRequest } from './import.ts'
 
 const PORT = Number(process.env.PORT ?? 8787)
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -272,6 +276,76 @@ const server = createServer(async (req, res) => {
       const id = toUniverseId(draft.name)
       const store = await createUniverse(id, draft)
       return send(res, 200, { universe: await store.manifest() })
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/import/tiers') {
+      return send(res, 200, { tiers: TIERS })
+    }
+
+    /**
+     * Read two export files and say what an import would do.
+     *
+     * Paths rather than uploads: the bridge already runs on the author's own
+     * machine, and a Full export is 75MB. Nothing is written here.
+     */
+    if (req.method === 'POST' && url.pathname === '/api/import/plan') {
+      const body = await readJson<PlanRequest>(req)
+      const store = await openUniverse(body.universe)
+
+      let svg: string
+      let json: unknown
+      try {
+        svg = await readFile(body.svgPath, 'utf8')
+        json = JSON.parse(await readFile(body.jsonPath, 'utf8'))
+      } catch (e: unknown) {
+        return send(res, 400, { error: `Could not read the export: ${(e as Error).message}` })
+      }
+
+      const plan = buildImportPlan(json as never, svg, {
+        tier: body.tier,
+        minPopulation: body.minPopulation,
+        withProvinces: body.withProvinces,
+        withMarkers: body.withMarkers,
+      })
+      return send(res, 200, groupPlan(plan, await store.list()))
+    }
+
+    /**
+     * Create what the author kept.
+     *
+     * Parents are linked in a second pass, once every name in the batch has an
+     * id - a settlement can name a country that is being created alongside it.
+     */
+    if (req.method === 'POST' && url.pathname === '/api/import/commit') {
+      const body = await readJson<{ universe: string; candidates: ImportCandidate[] }>(req)
+      const store = await openUniverse(body.universe)
+      const chosen = body.candidates ?? []
+
+      const byName = new Map<string, string>()
+      let created = 0
+      for (const c of chosen) {
+        const item = await store.add({
+          container: c.container,
+          name: c.name,
+          kind: c.kind,
+          summary: c.summary,
+          attributes: c.attributes && Object.keys(c.attributes).length ? c.attributes : undefined,
+          stub: !c.summary,
+        })
+        byName.set(c.name.toLowerCase(), item.id)
+        created++
+      }
+
+      let linked = 0
+      for (const c of chosen) {
+        const child = byName.get(c.name.toLowerCase())
+        const parent = (c.parentNames ?? []).map((n) => byName.get(n.toLowerCase())).find(Boolean)
+        if (child && parent && child !== parent) {
+          await store.link(child, parent)
+          linked++
+        }
+      }
+      return send(res, 200, { created, linked })
     }
 
     // Containers a stub may be filed under. Never the universe manifest.
