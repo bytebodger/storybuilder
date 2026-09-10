@@ -15,12 +15,14 @@ import { matchTerm } from './terms.ts'
 import { buildImportPlan } from './import/azgaar.ts'
 import type { Tier } from './import/types.ts'
 import { readFile, writeFile } from 'node:fs/promises'
-import { boxOf, cropSvg, growToShore, pad, type Box } from './import/crop.ts'
+import { boxOf, cropSvg, enclosure, gridSampler, growToShore, pad, type Box } from './import/crop.ts'
 import { readAddedLabels } from './import/azgaar-svg.ts'
 
 type Row = Record<string, unknown>
 
 const NL = String.fromCharCode(10)
+
+const pct = (n: number) => `${Math.round(n * 100)}%`
 
 const USAGE = `sb - storybuilder canon store
 
@@ -53,10 +55,13 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
   sb validate
 
   sb crop-map <map.svg> <map.json> --out <file.svg>
-              [--state <name> | --label <name> | --box x0,y0,x1,y1] [--pad 0.08]
+              [--state <name> | --label <name> | --box x0,y0,x1,y1]
+              [--pad 0.08] [--enclose 0.9]
         Cut a region out of a map, keeping full vector detail. A state is
         framed by its own cells; a hand-added label by its curve, grown outward
-        until it meets a shore.
+        until land rings the frame. --enclose is how much of each edge must be
+        shore before the walk stops; water at the border is where the sea opens
+        out, which is a feature of the sea rather than a fault in the crop.
 
   sb import-map <map.svg> <map.json> [--tier 0|1|2|3] [--min-population N]
                                      [--with-provinces] [--with-markers]
@@ -270,6 +275,7 @@ async function main(argv: string[]): Promise<number> {
 
       let box: Box
       let what: string
+      let sample: ReturnType<typeof gridSampler> | undefined
 
       const explicit = one(a, 'box')
       const stateName = one(a, 'state')
@@ -294,17 +300,21 @@ async function main(argv: string[]): Promise<number> {
         )
         if (!label) throw new Error(`No hand-added label named "${labelName}" in this SVG`)
         // A label over water names a stretch of sea the generator has no object
-        // for, so the frame is found by walking out to the coasts around it.
-        box = growToShore(
-          boxOf(label.points.length ? label.points : [label]),
-          cells.map((c: Row) => ({
-            x: Number((c.p as number[])[0]),
-            y: Number((c.p as number[])[1]),
-            land: Number(c.h ?? 0) >= 20,
-          })),
-          canvas,
+        // for, so the frame is found by walking out until the coasts close
+        // around it - sampled on the regular lattice, since the packed cells
+        // are too sparse in open sea to say what is there.
+        const grid = json.grid ?? {}
+        sample = gridSampler(
+          (grid.cells ?? []).map((c: Row) => Number(c?.h ?? 0)),
+          { spacing: Number(grid.spacing ?? 1), cellsX: Number(grid.cellsX ?? 1) },
         )
-        what = `${label.name}, grown from its label out to the surrounding shores`
+        const grown = growToShore(boxOf(label.points.length ? label.points : [label]), sample, canvas, {
+          enclose: one(a, 'enclose') === undefined ? 0.9 : Number(one(a, 'enclose')),
+        })
+        box = grown.box
+        what = grown.closed
+          ? `${label.name}, grown from its label until the coasts closed around it`
+          : `${label.name} — ${grown.reason}; use --box to frame it yourself`
       } else {
         throw new Error('Say what to crop to: --state, --label, or --box')
       }
@@ -316,6 +326,14 @@ async function main(argv: string[]): Promise<number> {
       const w = Math.round(framed.x1 - framed.x0)
       const h = Math.round(framed.y1 - framed.y0)
       console.log(`Cropped to ${what}.`)
+      if (sample) {
+        const ring = enclosure(framed, sample)
+        // Water at the border is where the sea opens out, and worth reporting:
+        // a frame that is 60% shore is showing a bay, not a sea.
+        console.log(
+          `  edges ringed by land: N ${pct(ring.N)} S ${pct(ring.S)} W ${pct(ring.W)} E ${pct(ring.E)}`,
+        )
+      }
       console.log(
         `  ${w} x ${h} of ${canvas.width} x ${canvas.height} ` +
           `(${Math.round((100 * w * h) / (canvas.width * canvas.height))}% of the map), ` +

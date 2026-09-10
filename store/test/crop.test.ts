@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { boxOf, cropSvg, growToShore, pad } from '../src/import/crop.ts'
+import { boxOf, cropSvg, enclosure, gridSampler, growToShore, pad } from '../src/import/crop.ts'
 
 const canvas = { width: 1000, height: 1000 }
 const SVG = '<?xml version="1.0"?><svg id="fantasyMap" width="1000" height="1000" version="1.1"><g/></svg>'
@@ -23,31 +23,56 @@ describe('framing a region', () => {
 })
 
 describe('growing a frame out to the shore', () => {
-  /** Water in the middle, land beyond x=700 and above y=300. */
-  const cells: { x: number; y: number; land: boolean }[] = []
-  for (let x = 0; x < 1000; x += 10) {
-    for (let y = 0; y < 1000; y += 10) {
-      cells.push({ x, y, land: x > 700 || y < 300 })
+  /** A lake: open water in the middle, land on every side. */
+  const basin = (x: number, y: number) => x < 200 || x > 800 || y < 200 || y > 800
+  const middle = { x0: 480, y0: 490, x1: 520, y1: 510 }
+
+  it('grows until land rings the frame', () => {
+    const grown = growToShore(middle, basin, canvas)
+    assert.equal(grown.closed, true)
+    assert.match(grown.reason, /land closed/)
+
+    const ring = enclosure(grown.box, basin)
+    for (const side of ['N', 'S', 'W', 'E'] as const) {
+      assert.ok(ring[side] >= 0.9, `${side} edge is shore: ${ring[side]}`)
     }
-  }
-
-  it('stops when a side meets land', () => {
-    const grown = growToShore({ x0: 480, y0: 600, x1: 520, y1: 620 }, cells, canvas)
-    assert.ok(grown.x1 > 660 && grown.x1 <= 760, `east edge reached the coast: ${grown.x1}`)
-    assert.ok(grown.y0 < 380 && grown.y0 >= 250, `north edge reached the coast: ${grown.y0}`)
   })
 
-  it('runs to the map edge where there is no shore', () => {
-    const grown = growToShore({ x0: 480, y0: 600, x1: 520, y1: 620 }, cells, canvas)
-    assert.equal(grown.x0, 0, 'nothing but water to the west')
-    assert.equal(grown.y1, 1000, 'nothing but water to the south')
+  it('stops close to the shore rather than running on', () => {
+    const { box } = growToShore(middle, basin, canvas)
+    assert.ok(box.x0 < 220 && box.x0 > 120, `west edge sits near the coast: ${box.x0}`)
+    assert.ok(box.x1 > 780 && box.x1 < 880, `east edge sits near the coast: ${box.x1}`)
   })
 
-  it('is not stopped by a lone island', () => {
-    // One land cell in open water must not read as a coastline.
-    const withIsland = cells.map((c) => (c.x === 300 && c.y === 610 ? { ...c, land: true } : c))
-    const grown = growToShore({ x0: 480, y0: 600, x1: 520, y1: 620 }, withIsland, canvas)
-    assert.equal(grown.x0, 0)
+  it('is not stopped by a single island', () => {
+    // One speck of land in open water is not a coastline. Sampling a strip
+    // rather than the nearest point is what makes that true.
+    const withIsland = (x: number, y: number) =>
+      basin(x, y) || (x > 395 && x < 415 && y > 490 && y < 510)
+    const { box } = growToShore(middle, withIsland, canvas)
+    assert.ok(box.x0 < 220, `the walk carried past the island: ${box.x0}`)
+  })
+
+  it('gives up on a passage instead of swallowing the map', () => {
+    // A channel: land north and south, open water east and west forever. No
+    // frame around it is ever ringed by land, and the walk must say so rather
+    // than growing until it has the whole world in view.
+    const channel = (_x: number, y: number) => y < 480 || y > 520
+    const grown = growToShore(middle, channel, canvas)
+
+    assert.equal(grown.closed, false)
+    assert.match(grown.reason, /passage|size limit/)
+    assert.ok(grown.box.x1 - grown.box.x0 < canvas.width / 2, 'and stayed a close view')
+  })
+
+  it('reads the world from a regular lattice, not from scattered points', () => {
+    // Heights on a 4x4 grid of 10px cells: top half land, bottom half water.
+    const heights = [30, 30, 30, 30, 30, 30, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0]
+    const at = gridSampler(heights, { spacing: 10, cellsX: 4 })
+    assert.equal(at(5, 5), true, 'top-left is land')
+    assert.equal(at(35, 35), false, 'bottom-right is water')
+    // Out of range reads as water rather than throwing.
+    assert.equal(at(9999, 9999), false)
   })
 })
 

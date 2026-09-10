@@ -145,14 +145,47 @@ drawn, everything inside keeps full vector detail, and the operation is reversib
 4% of the map, holding the country, its four neighbours and 85 settlements.
 
 **A sea does not.** Azgaar has no object for the Sontersea: the label sits on ocean feature 1, which
-spans half the canvas, because all connected water is one feature. A named sea is the space between
-coasts, not a thing the generator made. So the frame starts at the label's own curve and walks
-outward until each side meets a shore — and a side only counts as shored once a real share of the
-strip beyond it is land, or a single mid-sea island would stop the walk early. The result is 404×284,
-45% water, bounded by New Boria, Fartherfeld, Imperion and Granith.
+spans half the canvas, because all connected water is one feature. A named sea is not a thing the
+generator made — it is the space between coasts.
 
-`--pad` adds overflow so a frame does not end exactly where the sea meets the land; it defaults to 8%
-of the longer side. `--box` overrides the derivation entirely when the guess is not what was wanted.
+So the frame starts at the label's own curve and grows until **land rings it**. The test is a property
+of the frame's perimeter, not of what lies beyond one edge: each side must be `--enclose` land
+(default 90%) before the walk stops, and the most open side always grows first. Water still reaches
+the border wherever the sea genuinely opens out — for the Sontersea, a narrow gap north and the two
+southwest outlets, one of which is the Strait of Arnock. That is the sea's shape, not a fault in the
+crop, which is why the result reports its edges:
+
+```
+Cropped to Sontersea, grown from its label until the coasts closed around it.
+  edges ringed by land: N 90% S 95% W 98% E 95%
+  604 x 589 of 2560 x 1279 (11% of the map), 8% overflow
+```
+
+### Sample the regular grid, never the packed cells
+
+This is the trap, and it is silent. Azgaar's `pack.cells` re-samples the world: dense along coasts,
+very sparse in open sea. Counting them across a stretch of ocean finds a handful of points, several
+belonging to a passing island, and reports the water as **73% land**. Sampling the same frame on the
+regular `grid` lattice — 448 × 224 cells at even spacing, height on every one — gives **37%**, which
+is what the eye sees.
+
+The first version of this walk used packed cells and stopped at the first peninsula, framing a bay and
+calling it a sea. Nothing in the output looked wrong; the numbers were simply about a different
+question.
+
+### Not every water closes
+
+A strait is a passage, open at both ends by definition, and no frame around one is ever ringed by
+land. Each side gives up after growing `reach` without finding shore (40% of the map by default), and
+a walk that fails returns a **close view of the label** rather than its sprawl — half a map around a
+strait is worse than a tight one — along with the reason:
+
+```
+Cropped to Strait of Arnock — the frame reached its size limit before land closed it;
+use --box to frame it yourself.
+  edges ringed by land: N 22% S 0% W 59% E 40%
+  397 x 544 of 2560 x 1279 (7% of the map)
+```
 
 ### A crop is not smaller
 
