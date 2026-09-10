@@ -36,6 +36,9 @@ import { extractCandidates, screenCandidates, stubContainers } from './stubs.ts'
 import { normalizeTerm } from '../../store/src/index.ts'
 import { buildCanonCheckPrompt, extractFindings, screenFindings } from './canon.ts'
 import { groupPlan, type PlanRequest } from './import.ts'
+import { forgetMaps, renderMap } from './map.ts'
+import { universesRoot } from '../../store/src/index.ts'
+import { join } from 'node:path'
 
 const PORT = Number(process.env.PORT ?? 8787)
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -193,6 +196,8 @@ const server = createServer(async (req, res) => {
       const { related } = await store.neighborhood(item.id)
       return send(res, 200, {
         item,
+        // Whether this article has a window onto the universe's map.
+        hasMap: !!item.attributes?.mapFrame,
         container: containerType(item.container) ?? { key: item.container, label: item.container },
         fields,
         related: Object.values(related).map((set) => ({
@@ -278,6 +283,34 @@ const server = createServer(async (req, res) => {
       return send(res, 200, { universe: await store.manifest() })
     }
 
+    /**
+     * A universe's map, framed to one article when `id` names one that carries
+     * a frame. Served as an image, so it can be an <img> like any other.
+     */
+    if (req.method === 'GET' && url.pathname === '/api/map') {
+      const universe = url.searchParams.get('universe') ?? ''
+      const store = await openUniverse(universe)
+      const id = url.searchParams.get('id')
+      const item = id ? await store.get(id) : null
+
+      let svg: string
+      try {
+        svg = await renderMap({
+          universeDir: join(universesRoot(), universe),
+          frame: item?.attributes?.mapFrame,
+        })
+      } catch {
+        return send(res, 404, { error: 'This universe has no map' })
+      }
+
+      res.writeHead(200, {
+        'content-type': 'image/svg+xml; charset=utf-8',
+        'content-length': Buffer.byteLength(svg),
+        'cache-control': 'no-cache',
+      })
+      return res.end(svg)
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/import/tiers') {
       return send(res, 200, { tiers: TIERS })
     }
@@ -354,6 +387,8 @@ const server = createServer(async (req, res) => {
           bordered++
         }
       }
+      // A re-import rewrites the map, so nothing held may be served again.
+      forgetMaps()
       return send(res, 200, { created, linked, bordered })
     }
 

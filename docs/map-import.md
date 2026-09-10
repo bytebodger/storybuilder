@@ -127,6 +127,37 @@ with evocative names, which is the honest way to hold them.
 Most zones are history. A **Fault** is not: it is a feature of the ground that will still be there
 when the story is over, so it goes to `geography`.
 
+## Maps on articles
+
+Importing a map gives every country a **window onto it**, and the article shows that window as a
+compact figure. Clicking it opens the map full screen.
+
+The frame is computed at import — the same box `crop-map --state` would produce — and stored on the
+article as `attributes.mapFrame`, a `viewBox` string:
+
+```
+Charnham         1540 224 628 494
+Granith          1053 589 1124 690
+Fartherfeld      1043 0 796 952
+```
+
+### One map, many windows
+
+The map itself is saved **once**, at `universes/<id>/media/map.svg`, and the crop is applied when it is
+served. Storing a rendered crop per country would be fourteen copies of the same 12.7 MB drawing —
+178 MB for one universe — and every one of them stale the moment the map is re-imported. A frame is
+sixteen characters.
+
+Keeping the map inside the universe directory is the same rule as everything else here: a universe can
+be moved or shared without its articles losing what they point at.
+
+`GET /api/map?universe=X&id=Y` serves the framed map as `image/svg+xml`, so an article can use a plain
+`<img>`. Without `id` it serves the whole map. The source is held in memory between requests, keyed by
+the file's timestamp, and re-importing drops everything held so no old map is served.
+
+The three steps a served crop takes are the CLI's, in the CLI's order: coordinate labels moved onto
+the frame's edges and lifted to paint last, the vignette removed, then the view narrowed.
+
 ## Cropping a region out of the map
 
 The reason to keep a world as SVG rather than a raster: one export can be looked at whole, or at one

@@ -9,6 +9,8 @@
 import { readAddedLabels, guessGeographyKind } from './azgaar-svg.ts'
 import { normalizeTerm } from '../terms.ts'
 import { readStateGeography, statesAlong, statesUnder, type StateGeography } from './azgaar-geo.ts'
+import { pad } from './crop.ts'
+import { frameToAttribute } from './media.ts'
 import type { ImportCandidate, ImportPlan, Tier } from './types.ts'
 
 /** Placeholders the generator uses for "none of the above". Never articles. */
@@ -176,6 +178,15 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
         governmentForm: s.form,
         ...(geo
           ? {
+              // The window onto the map this country occupies. Stored rather
+              // than rendered: a crop is a change of view, so fourteen country
+              // maps would be fourteen copies of one drawing.
+              mapFrame: frameToAttribute(
+                pad(geo.boundsPx, 0.08, {
+                  width: json.info?.width ?? 0,
+                  height: json.info?.height ?? 0,
+                }),
+              ),
               coast: geo.coast,
               seaPorts: geo.seaPorts || undefined,
               lakePorts: geo.lakePorts || undefined,

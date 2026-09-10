@@ -124,6 +124,8 @@ export interface ArticleField {
 
 export interface ArticleView {
   item: { id: string; name: string; container: string; kind?: string; stub?: boolean }
+  /** True when this article has a window onto the universe's map. */
+  hasMap?: boolean
   container: { key: string; label: string; singular?: string }
   fields: ArticleField[]
   related: {

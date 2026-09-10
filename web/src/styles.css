@@ -433,3 +433,51 @@ pre {
   letter-spacing: 0.08em;
   color: var(--muted);
 }
+
+/* The map on an article: context, not the subject. */
+.map-figure { margin: 1rem 0 1.4rem; }
+.map-thumb {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: zoom-in;
+  overflow: hidden;
+}
+.map-thumb:hover { border-color: var(--accent); }
+.map-thumb img { display: block; width: 100%; height: auto; }
+.map-figure figcaption { margin-top: 0.35rem; font-size: 0.75rem; color: var(--muted); }
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.82);
+  cursor: zoom-out;
+}
+.lightbox img {
+  max-width: 100%;
+  max-height: calc(100vh - 5rem);
+  cursor: default;
+  background: var(--bg);
+  border-radius: 4px;
+}
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #f4f1ec;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.lightbox-bar .icon { color: #f4f1ec; border-color: rgba(255, 255, 255, 0.4); }
+.lightbox-bar .icon:hover { color: #fff; border-color: #fff; }

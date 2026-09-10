@@ -22,6 +22,8 @@ export interface StateGeography {
   riverPorts: number
   /** Degrees, so the numbers mean something outside this one image. */
   bounds: { north: number; south: number; east: number; west: number }
+  /** The same extent in canvas pixels, which is what a map crop is framed in. */
+  boundsPx: { x0: number; y0: number; x1: number; y1: number }
 }
 
 interface Coords {
@@ -59,6 +61,9 @@ export function readStateGeography(
         // Canvas y grows southward, so the northern edge is the smallest y and
         // starts high; the eastern edge is the largest x and starts low.
         bounds: { north: Infinity, south: -Infinity, east: -Infinity, west: Infinity },
+        // Filled from `bounds` once every cell has been seen, before those are
+        // converted to degrees.
+        boundsPx: { x0: 0, y0: 0, x1: 0, y1: 0 },
       }
       out.set(state, g)
     }
@@ -103,8 +108,15 @@ export function readStateGeography(
     }
   }
 
-  // Pixels mean nothing outside this export; degrees survive it.
+  // Pixels mean nothing outside this export; degrees survive it. Both are kept:
+  // degrees for anyone reading the article, pixels for framing the map.
   for (const g of out.values()) {
+    g.boundsPx = {
+      x0: g.bounds.west,
+      y0: g.bounds.north,
+      x1: g.bounds.east,
+      y1: g.bounds.south,
+    }
     const lon = (x: number) => round(coords.lonW + (x / size.width) * (coords.lonE - coords.lonW))
     const lat = (y: number) => round(coords.latN - (y / size.height) * (coords.latN - coords.latS))
     g.bounds = {

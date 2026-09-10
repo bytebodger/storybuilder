@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { article as fetchArticle, brief } from '../api'
 import type { ArticleView, NavItem, Segment } from '../types'
+import { MapFigure } from './MapFigure'
 
 interface Props {
   universe: string
@@ -96,6 +97,8 @@ export function Article({ universe, item, onEdit, onNavigate }: Props) {
           into an article.
         </p>
       )}
+
+      {view.hasMap && <MapFigure universe={universe} itemId={view.item.id} name={view.item.name} />}
 
       {view.fields.length === 0 && !view.item.stub && (
         <p className="empty">No fields have been filled in yet.</p>

@@ -7,7 +7,9 @@
  * wrapper over the Store interface, so a skill and a UI cannot diverge in what
  * they are able to do.
  */
-import { createUniverse, listUniverses, openUniverse, toUniverseId } from './universes.ts'
+import { createUniverse, listUniverses, openUniverse, toUniverseId, universesRoot } from './universes.ts'
+import { saveMapSource } from './import/media.ts'
+import { join } from 'node:path'
 import { renderBrief, renderUniverseBrief } from './brief.ts'
 import { validate } from './validate.ts'
 import { CanonViolation, type ClosureState } from './types.ts'
@@ -425,9 +427,17 @@ async function main(argv: string[]): Promise<number> {
           bordered++
         }
       }
+      // The map itself, once, so the articles that carry a frame have
+      // something to frame. Kept inside the universe, which is what lets a
+      // universe be moved without its articles losing what they point at.
+      const universeDir = join(universesRoot(), s.universeId)
+      await saveMapSource(universeDir, svg)
+      const framed = fresh.filter((c) => c.attributes?.mapFrame).length
+
       console.log(
         NL + `Created ${made} article(s), ${linked} linked to a parent, ${bordered} peer link(s).`,
       )
+      console.log(`Map saved to the universe; ${framed} article(s) carry a frame onto it.`)
       return 0
     }
 
