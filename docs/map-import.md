@@ -211,6 +211,11 @@ out. A label sitting on a line that hugs the frame's edge is nudged a few pixels
 plainly belonging to its line, where a clipped glyph would read as nothing at all. `--no-coordinates`
 leaves the layer untouched.
 
+The group is also **lifted to the end of the file so it paints last**. Azgaar draws the coordinate
+layer early, which is harmless on a whole map because the labels sit out in the ocean margin where
+nothing else is drawn. Move them inside the frame and terrain, borders, roads and settlement icons all
+paint over the top, leaving the numbers smeared rather than legible.
+
 ### Percentages do not follow the viewBox
 
 One layer in an Azgaar export writes its geometry as a share of the viewport:

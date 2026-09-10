@@ -261,3 +261,37 @@ describe('the vignette, whose geometry is a share of the viewport', () => {
     assert.equal(fitVignette(bare, { x0: 0, y0: 0, x1: 10, y1: 10 }), bare)
   })
 })
+
+describe('coordinate labels paint last', () => {
+  const LAYERED = [
+    '<svg width="1000" height="1000">',
+    '<g id="coordinates"><g id="coordinateGrid"><path d="M0,0"/></g>',
+    '<g id="coordinateLabels"><text x="500" y="7">30°E</text></g>',
+    '</g>',
+    '<g id="terrain"><path d="M1,1"/></g>',
+    '<g id="borders"><path d="M2,2"/></g>',
+    '</svg>',
+  ].join('')
+
+  it('lifts the group to the end, so nothing is drawn over it', () => {
+    const out = relabelCoordinates(LAYERED, { x0: 100, y0: 0, x1: 900, y1: 500 })
+    assert.ok(
+      out.indexOf('coordinateLabels') > out.indexOf('id="borders"'),
+      'the labels come after every other layer',
+    )
+    assert.match(out, /<g id="coordinateLabels">[\s\S]*<\/g><\/svg>$/)
+  })
+
+  it('leaves it where it was in the layer stack only once', () => {
+    const out = relabelCoordinates(LAYERED, { x0: 100, y0: 0, x1: 900, y1: 500 })
+    assert.equal(out.match(/id="coordinateLabels"/g)?.length, 1)
+    // The grid it used to sit beside is untouched.
+    assert.match(out, /<g id="coordinateGrid">/)
+  })
+
+  it('adds no empty group when every label falls outside the frame', () => {
+    const out = relabelCoordinates(LAYERED, { x0: 0, y0: 600, x1: 100, y1: 900 })
+    assert.equal(/coordinateLabels/.test(out), false)
+    assert.match(out, /<g id="terrain">/)
+  })
+})

@@ -275,6 +275,11 @@ export function cropSvg(svg: string, box: Box): string {
  * The labels are moved rather than recomputed, so the degrees shown are exactly
  * the ones the generator worked out, and a label whose line falls outside the
  * frame is dropped instead of pointing at nothing.
+ *
+ * The group is also lifted to the end of the file so it paints last. Azgaar
+ * draws it early, which is harmless while the labels sit out in the ocean
+ * margin of a whole map - and not harmless at all once a crop moves them inside,
+ * where terrain, borders and roads are all drawn over the top of them.
  */
 export function relabelCoordinates(svg: string, box: Box, inset = 9): string {
   const group = /<g id="coordinateLabels"([^>]*)>([\s\S]*?)<\/g>/.exec(svg)
@@ -305,7 +310,13 @@ export function relabelCoordinates(svg: string, box: Box, inset = 9): string {
     if (moved) kept.push(`<text${moved}>${label}</text>`)
   }
 
-  return svg.replace(whole, `<g id="coordinateLabels"${attrs}>${kept.join('')}</g>`)
+  const withoutGroup = svg.replace(whole, '')
+  if (kept.length === 0) return withoutGroup
+
+  const rebuilt = `<g id="coordinateLabels"${attrs}>${kept.join('')}</g>`
+  const close = withoutGroup.lastIndexOf('</svg>')
+  if (close === -1) return withoutGroup + rebuilt
+  return withoutGroup.slice(0, close) + rebuilt + withoutGroup.slice(close)
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10
