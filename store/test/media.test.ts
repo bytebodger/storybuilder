@@ -164,3 +164,54 @@ describe('frames for things that are not countries', () => {
     assert.ok(sea.x1 - sea.x0 > range.x1 - range.x0, 'and is wider than a label')
   })
 })
+
+describe('frames for roads', () => {
+  const SVG = '<svg><g id="textPaths"/><g id="labels-added"/></svg>'
+  const EXPORT = {
+    info: { mapName: 'T', width: 1000, height: 1000 },
+    settings: { populationRate: 1000 },
+    mapCoordinates: { latN: 90, latS: -90, lonW: -180, lonE: 180 },
+    pack: {
+      states: [{ i: 0, name: 'Neutrals' }],
+      provinces: [],
+      burgs: [],
+      cells: [],
+      cultures: [{ i: 1, name: 'Dunsmouth' }],
+      religions: [],
+      zones: [],
+      // A route carries its course as [x, y, cell] along its length.
+      routes: [
+        { i: 0, name: 'Jade road', group: 'roads', points: [[100, 500, 1], [400, 520, 2], [700, 505, 3]] },
+        { i: 1, name: 'Unnamed route segment', group: 'roads', points: [[0, 0, 1]] },
+        { i: 2, name: 'Lost road', group: 'roads' },
+      ],
+      rivers: [],
+      features: [],
+      markers: [],
+    },
+  }
+  const plan = buildImportPlan(EXPORT, SVG, { tier: 1 })
+  const find = (name: string) => plan.candidates.find((c) => c.name === name)
+
+  it('frames a road along the course it records', () => {
+    const box = frameFromAttribute(find('Jade road')!.attributes!.mapFrame)!
+    assert.ok(box, 'a road gets a frame')
+    assert.ok(box.x0 <= 100 && box.x1 >= 700, 'the whole road is in view')
+  })
+
+  it('squares up a road that is all length and no width', () => {
+    // The course spans 600 across and 20 down; the bare extent would be a slit.
+    const box = frameFromAttribute(find('Jade road')!.attributes!.mapFrame)!
+    const w = box.x1 - box.x0
+    const h = box.y1 - box.y0
+    assert.ok(w / h <= 2.6, `held to a sane aspect: ${Math.round(w)}x${Math.round(h)}`)
+  })
+
+  it('leaves a road with no recorded course unframed rather than guessing', () => {
+    assert.equal(find('Lost road')!.attributes?.mapFrame, undefined)
+  })
+
+  it('gives none to a people, which has no place to frame', () => {
+    assert.equal(find('Dunsmouth')!.attributes?.mapFrame, undefined)
+  })
+})

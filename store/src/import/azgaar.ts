@@ -225,6 +225,10 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
         container: override?.[0] ?? container,
         kind: override?.[1] ?? kind,
         tier: at,
+        // A road is the one of these with a place on the map: it carries the
+        // course it runs along. A people or a faith does not have a location in
+        // the way a road does, and nothing sensible could be framed for them.
+        attributes: key === 'routes' ? (routeFrame(r.points, canvas) ?? undefined) : undefined,
         source: 'json',
         sourceType: key.replace(/s$/, ''),
       })
@@ -386,6 +390,26 @@ function courseFrame(
   return pointsFrame(
     cellIds
       .map((id) => byId.get(id)?.p)
+      .filter((p): p is number[] => Array.isArray(p) && p.length >= 2)
+      .map((p) => ({ x: Number(p[0]), y: Number(p[1]) })),
+    canvas,
+  )
+}
+
+/**
+ * The window onto a road.
+ *
+ * A route records its course directly, as [x, y, cell] along its length, so its
+ * extent needs no lookup. Roads wander, so the frame is usually long and thin
+ * before it is squared up.
+ */
+function routeFrame(
+  points: unknown,
+  canvas: { width: number; height: number },
+): { mapFrame: string } | null {
+  if (!Array.isArray(points)) return null
+  return pointsFrame(
+    points
       .filter((p): p is number[] => Array.isArray(p) && p.length >= 2)
       .map((p) => ({ x: Number(p[0]), y: Number(p[1]) })),
     canvas,

@@ -142,7 +142,8 @@ town            386 of   386      mountain-range    3 of     3
 lake             85 of    85      sea / strait      2 of     2
 ```
 
-What is left without one is what has no place: peoples, faiths, roads and recorded events.
+Roads are framed too — all 15 named ones. What is left without a frame is what has no place on a map:
+peoples, faiths and recorded events.
 
 The frame is stored on the article as `attributes.mapFrame`, a `viewBox` string, and computed from
 whatever the thing's extent actually is:
@@ -155,6 +156,7 @@ whatever the thing's extent actually is:
 | A range | the curve its hand-added label is written along |
 | A sea | growing from that curve out to the surrounding shores |
 | A settlement | its own position — a point, not an extent |
+| A road | the course it records, as `[x, y, cell]` along its length |
 
 Whether a label is framed by its curve or grown to its shores comes from the map, not the words: the
 points of the curve are sampled against the height grid, and the majority decides. A range sits on
