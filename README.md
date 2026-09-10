@@ -166,9 +166,12 @@ Planned skills, grouped by what they touch. Each is a directory under `.claude/s
 ## The frontend
 
 `web/` is a React + TypeScript (Vite) console for people who would rather click than type. Pick a
-universe, pick a skill, fill in its arguments as a form, submit, and watch the output — with the
-universe's premise and hard rules on screen throughout, so the constraints a run is held to stay
-visible.
+universe, pick a skill, fill in its arguments as a form, submit, and watch the output.
+
+The universe's premise and hard rules — the brief every skill is handed before it writes anything — are
+on the universe's own screen, behind **Show what the skills see**, reached by clicking its name in the
+header. They used to sit above every screen inside a universe. Constraints worth reading once are not
+worth a permanent band across the top of the work.
 
 It talks to `bridge/`, a small local Node service that runs skills via the Claude Code CLI. The
 bridge is the only piece trusted with your working tree; the frontend is a static app.

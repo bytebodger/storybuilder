@@ -123,7 +123,18 @@ pre {
 .error { color: var(--error); }
 
 .brand { cursor: pointer; }
-.crumb { color: var(--muted); margin-right: auto; }
+/* The universe's name, and the way back to its details. A button rather than a
+   label because it was the only screen with no route to it from inside. */
+.crumb {
+  color: var(--muted);
+  margin-right: auto;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.crumb:hover { color: var(--accent); text-decoration: underline; }
 
 .form-head {
   display: flex;

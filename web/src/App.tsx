@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { intro, listSkills, listUniverses, nav, run } from './api'
+import { listSkills, listUniverses, nav, run } from './api'
 import type { NavItem, NavSection, RunResult, Skill, Universe } from './types'
 import { SkillForm } from './components/SkillForm'
 import { ResultPanel } from './components/ResultPanel'
@@ -13,14 +13,17 @@ import { CanonCheck } from './components/CanonCheck'
 import { ImportPanel } from './components/ImportPanel'
 import { Chronology } from './components/Chronology'
 
-type View = { name: 'home' } | { name: 'edit'; id?: string } | { name: 'inside'; id: string }
+type View =
+  | { name: 'home' }
+  /** `back` is where Cancel returns to: the form is reachable from both. */
+  | { name: 'edit'; id?: string; back?: 'home' | 'inside' }
+  | { name: 'inside'; id: string }
 
 export function App() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [universes, setUniverses] = useState<Universe[]>([])
   const [skills, setSkills] = useState<Skill[]>([])
   const [skill, setSkill] = useState<Skill | null>(null)
-  const [premise, setPremise] = useState('')
   const [sections, setSections] = useState<NavSection[]>([])
   const [article, setArticle] = useState<NavItem | null>(null)
   /** An open article form: a new entry in a section, or an existing item being edited. */
@@ -52,10 +55,8 @@ export function App() {
     listSkills().then(setSkills, () => undefined)
   }, [refresh])
 
-  // The universe's standing constraints belong on screen wherever work happens.
   useEffect(() => {
     if (view.name !== 'inside') {
-      setPremise('')
       setSections([])
       return
     }
@@ -64,7 +65,6 @@ export function App() {
     setSaved(null)
     setImporting(false)
     setChronology(false)
-    intro(view.id).then(setPremise, () => setPremise(''))
     nav(view.id).then(setSections, () => setSections([]))
   }, [view])
 
@@ -89,7 +89,16 @@ export function App() {
         <h1 onClick={() => setView({ name: 'home' })} className="brand">
           Storybuilder
         </h1>
-        {current && <span className="crumb">{current.name}</span>}
+        {current && (
+          <button
+            type="button"
+            className="crumb"
+            title="Edit this universe, and see what the skills are told about it"
+            onClick={() => setView({ name: 'edit', id: current.id, back: 'inside' })}
+          >
+            {current.name}
+          </button>
+        )}
         {view.name !== 'home' && (
           <button type="button" className="icon" onClick={() => setView({ name: 'home' })}>
             All universes
@@ -117,7 +126,9 @@ export function App() {
       {view.name === 'edit' && (
         <UniverseForm
           universeId={view.id}
-          onCancel={() => setView({ name: 'home' })}
+          onCancel={() =>
+            setView(view.back === 'inside' && view.id ? { name: 'inside', id: view.id } : { name: 'home' })
+          }
           onSaved={(u) => {
             refresh()
             setView({ name: 'inside', id: u.id })
@@ -127,7 +138,6 @@ export function App() {
 
       {view.name === 'inside' && (
         <>
-          {premise && <pre className="intro">{premise}</pre>}
           <main>
             <div className="sidebar">
               <Nav

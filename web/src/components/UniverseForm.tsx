@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { forge, getUniverse, saveUniverse, universeFields } from '../api'
+import { forge, getUniverse, intro, saveUniverse, universeFields } from '../api'
 import type { Universe, UniverseDraft, UniverseField } from '../types'
 import { FieldRow } from './FieldRow'
 
@@ -20,6 +20,8 @@ export function UniverseForm({ universeId, onSaved, onCancel }: Props) {
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showBrief, setShowBrief] = useState(false)
+  const [briefText, setBriefText] = useState<string | null>(null)
 
   useEffect(() => {
     universeFields().then(setFields, (e: unknown) => setError(String(e)))
@@ -32,6 +34,24 @@ export function UniverseForm({ universeId, onSaved, onCancel }: Props) {
       (e: unknown) => setError(String(e)),
     )
   }, [universeId])
+
+  /*
+   * Fetched only when asked for, and only for a universe that exists.
+   *
+   * This is the brief every skill is handed before it writes anything, and it
+   * used to sit at the top of every screen inside a universe. It is worth being
+   * able to read - it is what the tool believes about the world - and not worth
+   * a permanent band across the top of the work.
+   */
+  useEffect(() => {
+    if (showBrief && briefText === null && universeId) {
+      intro(universeId).then(setBriefText, () => setBriefText('Could not read the brief.'))
+    }
+  }, [showBrief, briefText, universeId])
+
+  // A saved edit changes it, so the next open re-reads rather than showing the
+  // brief for a manifest that is no longer current.
+  useEffect(() => setBriefText(null), [values])
 
   const name = typeof values.name === 'string' ? values.name : ''
 
@@ -137,6 +157,19 @@ export function UniverseForm({ universeId, onSaved, onCancel }: Props) {
         {busy === 'save' ? 'Saving…' : 'Save universe'}
       </button>
       {!name.trim() && <p className="help">A universe needs a name before it can be saved.</p>}
+
+      {universeId && (
+        <>
+          <button
+            type="button"
+            className="icon brief-toggle"
+            onClick={() => setShowBrief((v) => !v)}
+          >
+            {showBrief ? 'Hide' : 'Show'} what the skills see
+          </button>
+          {showBrief && <pre className="intro">{briefText ?? 'Loading…'}</pre>}
+        </>
+      )}
     </section>
   )
 }
