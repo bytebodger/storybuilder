@@ -51,6 +51,14 @@ export interface ImportCandidate {
    * and its country is the right parent. Whichever is present wins.
    */
   parentNames?: string[]
+  /**
+   * Links to peers rather than parents - one country bordering another.
+   *
+   * Separate from `parentNames` because these are not containment and have no
+   * preference order: every one of them is written, and each carries a role so
+   * the relationship reads the same from both ends.
+   */
+  relations?: { name: string; role?: string; reverseRole?: string }[]
   summary?: string
   attributes?: Record<string, unknown>
   /** Which file it came from, and what it was there. Shown in review. */

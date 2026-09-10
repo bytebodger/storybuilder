@@ -8,6 +8,7 @@
  */
 import { readAddedLabels, guessGeographyKind } from './azgaar-svg.ts'
 import { normalizeTerm } from '../terms.ts'
+import { readStateGeography, type StateGeography } from './azgaar-geo.ts'
 import type { ImportCandidate, ImportPlan, Tier } from './types.ts'
 
 /** Placeholders the generator uses for "none of the above". Never articles. */
@@ -52,6 +53,7 @@ const ZONE_CONTAINERS: Record<string, [string, string]> = {
 interface Azgaar {
   info?: { mapName?: string; width?: number; height?: number }
   settings?: { populationRate?: number }
+  mapCoordinates?: { latN?: number; latS?: number; lonW?: number; lonE?: number }
   pack?: Record<string, unknown[]>
 }
 
@@ -132,21 +134,51 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
 
   // --- tier 1: the spine ---------------------------------------------------
 
+  const geography = readStateGeography(
+    cells,
+    burgs,
+    new Map(rows(pack.features).map((f) => [f.i as number, f])),
+    {
+      latN: json.mapCoordinates?.latN ?? 90,
+      latS: json.mapCoordinates?.latS ?? -90,
+      lonW: json.mapCoordinates?.lonW ?? -180,
+      lonE: json.mapCoordinates?.lonE ?? 180,
+    },
+    { width: json.info?.width ?? 1, height: json.info?.height ?? 1 },
+  )
+
   const realStates = states.filter(usable)
   for (const s of realStates) {
     if (!admit(1)) break
+    const geo = geography.get(s.i as number)
     candidates.push({
       name: nameOf(s),
       container: 'locations',
       kind: 'country',
       tier: 1,
+      // Borders are the one relationship the export states outright, and the
+      // one a reader asks about first: who is next to whom.
+      relations: (Array.isArray(s.neighbors) ? (s.neighbors as number[]) : [])
+        .map((n) => stateName.get(n))
+        .filter((n): n is string => !!n)
+        .map((name) => ({ name, role: 'borders', reverseRole: 'borders' })),
       summary: summarise([
         s.form ? `A ${String(s.form).toLowerCase()}` : 'A country',
         s.area ? `covering ${Number(s.area).toLocaleString()} square units` : '',
+        geo ? waterPhrase(geo) : '',
       ]),
       attributes: {
         population: s.urban || s.rural ? Math.round((Number(s.urban ?? 0) + Number(s.rural ?? 0)) * rate) : undefined,
         governmentForm: s.form,
+        ...(geo
+          ? {
+              coast: geo.coast,
+              seaPorts: geo.seaPorts || undefined,
+              lakePorts: geo.lakePorts || undefined,
+              riverPorts: geo.riverPorts || undefined,
+              bounds: geo.bounds,
+            }
+          : {}),
       },
       source: 'json',
       sourceType: 'state',
@@ -294,6 +326,22 @@ function nearestCell(cells: Row[], x: number, y: number): Row | undefined {
 }
 
 const summarise = (parts: string[]) => parts.filter(Boolean).join(', ') + '.'
+
+/**
+ * How a country reaches water, in a clause.
+ *
+ * Landlocked and portless are different claims, and conflating them is what
+ * would put New Orleans on the coast or take its harbour away.
+ */
+function waterPhrase(g: StateGeography): string {
+  if (g.coast === 'sea') return g.seaPorts ? `with ${g.seaPorts} sea port(s)` : 'on the coast'
+  const inland = [
+    g.riverPorts ? `${g.riverPorts} river port(s)` : '',
+    g.lakePorts ? `${g.lakePorts} lake port(s)` : '',
+  ].filter(Boolean)
+  if (!inland.length) return g.coast === 'lake' ? 'landlocked, on a lake shore' : 'landlocked'
+  return `landlocked but reached by water, with ${inland.join(' and ')}`
+}
 
 interface SectionArgs {
   burgs: Row[]

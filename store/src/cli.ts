@@ -297,16 +297,26 @@ async function main(argv: string[]): Promise<number> {
       }
       // Links go on afterwards, once every name in the plan has an id.
       let linked = 0
+      let bordered = 0
       for (const c of fresh) {
         const child = byName.get(c.name.toLowerCase())
+        if (!child) continue
         // The most specific parent that this tier actually brought in.
         const parent = (c.parentNames ?? []).map((n) => byName.get(n.toLowerCase())).find(Boolean)
-        if (child && parent && child !== parent) {
+        if (parent && child !== parent) {
           await s.link(child, parent)
           linked++
         }
+        for (const rel of c.relations ?? []) {
+          const other = byName.get(rel.name.toLowerCase())
+          if (!other || other === child) continue
+          await s.link(child, other, { a: rel.role, b: rel.reverseRole })
+          bordered++
+        }
       }
-      console.log(NL + `Created ${made} article(s), ${linked} linked to a parent.`)
+      console.log(
+        NL + `Created ${made} article(s), ${linked} linked to a parent, ${bordered} peer link(s).`,
+      )
       return 0
     }
 

@@ -337,15 +337,24 @@ const server = createServer(async (req, res) => {
       }
 
       let linked = 0
+      let bordered = 0
       for (const c of chosen) {
         const child = byName.get(c.name.toLowerCase())
+        if (!child) continue
         const parent = (c.parentNames ?? []).map((n) => byName.get(n.toLowerCase())).find(Boolean)
-        if (child && parent && child !== parent) {
+        if (parent && child !== parent) {
           await store.link(child, parent)
           linked++
         }
+        // Peers, not parents: a border reads the same from both ends.
+        for (const rel of c.relations ?? []) {
+          const other = byName.get(rel.name.toLowerCase())
+          if (!other || other === child) continue
+          await store.link(child, other, { a: rel.role, b: rel.reverseRole })
+          bordered++
+        }
       }
-      return send(res, 200, { created, linked })
+      return send(res, 200, { created, linked, bordered })
     }
 
     // Containers a stub may be filed under. Never the universe manifest.

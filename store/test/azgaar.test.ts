@@ -272,3 +272,74 @@ describe('markers that are not places', () => {
     assert.equal(markers.included, 1)
   })
 })
+
+describe('what the map knows beyond names', () => {
+  const GEO = {
+    ...JSON_EXPORT,
+    info: { mapName: 'Test', width: 100, height: 100 },
+    mapCoordinates: { latN: 90, latS: -90, lonW: -180, lonE: 180 },
+    pack: {
+      ...JSON_EXPORT.pack,
+      states: [
+        { i: 0, name: 'Neutrals' },
+        { i: 1, name: 'Whitmere', form: 'Monarchy', neighbors: [2] },
+        { i: 2, name: 'Seedon', form: 'Republic', neighbors: [1] },
+      ],
+      burgs: [
+        { i: 1, name: 'Blandbury', cell: 10, capital: 1, population: 3, state: 1, port: 5 },
+        { i: 2, name: 'Harborough', cell: 11, capital: 1, population: 3, state: 2, port: 1 },
+      ],
+      cells: [
+        // Inland, on a river: a port without a coast.
+        { i: 10, p: [10, 10], state: 1, r: 4 },
+        // Coastal: harbor points at a haven, which is ocean.
+        { i: 11, p: [90, 90], state: 2, harbor: 1, haven: 99 },
+        { i: 99, p: [95, 95], f: 1 },
+      ],
+      features: [{ i: 1, type: 'ocean' }],
+      markers: [],
+    },
+  }
+  const forState = (name: string) =>
+    buildImportPlan(GEO, SVG, { tier: 1 }).candidates.find((c) => c.name === name)!
+
+  it('records who borders whom, from both ends', () => {
+    assert.deepEqual(forState('Whitmere').relations, [
+      { name: 'Seedon', role: 'borders', reverseRole: 'borders' },
+    ])
+    assert.deepEqual(forState('Seedon').relations, [
+      { name: 'Whitmere', role: 'borders', reverseRole: 'borders' },
+    ])
+  })
+
+  it('tells a sea coast from a river port', () => {
+    // New Orleans is a port and is not on the coast. Both facts survive.
+    const whitmere = forState('Whitmere').attributes!
+    assert.equal(whitmere.coast, 'none')
+    assert.equal(whitmere.riverPorts, 1)
+    assert.equal(whitmere.seaPorts, undefined)
+
+    const seedon = forState('Seedon').attributes!
+    assert.equal(seedon.coast, 'sea')
+    assert.equal(seedon.seaPorts, 1)
+  })
+
+  it('says so in the summary, in words a reader can use', () => {
+    assert.match(forState('Whitmere').summary!, /landlocked but reached by water, with 1 river port/)
+    assert.match(forState('Seedon').summary!, /with 1 sea port/)
+  })
+
+  it('converts the map to degrees, so position outlives the image', () => {
+    // x=90 of 100 across -180..180 is 144E; y=90 of 100 across 90..-90 is -72.
+    const bounds = forState('Seedon').attributes!.bounds as Record<string, number>
+    assert.equal(bounds.east, 144)
+    assert.equal(bounds.south, -72)
+  })
+
+  it('gets north and south the right way round, canvas y being inverted', () => {
+    const bounds = forState('Whitmere').attributes!.bounds as Record<string, number>
+    // The single cell is at y=10, near the top of the canvas: far north.
+    assert.equal(bounds.north, 72)
+    assert.ok(bounds.north > bounds.south || bounds.north === bounds.south)
+  })
+})

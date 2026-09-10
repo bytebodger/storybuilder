@@ -145,6 +145,51 @@ in split one Ethnicities section into four meaningless ones. Culture types are d
 forms (folk, organized, cult, heresy) and zone types (flood, crusade, invasion) are kept, because
 those describe the thing rather than how it was placed.
 
+## What a country carries beyond its name
+
+A first version imported names and hierarchy and nothing else, which left the store unable to answer
+the first three questions anyone asks of a map: *who borders whom, who is landlocked, who sees the
+sunrise first.* All three were in the export; none had been read.
+
+**Borders** are stated outright — every state carries a `neighbors` array — and become reciprocal tags
+with the role `borders`, so the relationship reads the same from either end:
+
+```
+COUNTRY (6)
+  - Fartherfeld (borders)     - New Boria (borders)
+  - Granith (borders)         - Waresia (borders)
+  - Linbeck (borders)         - Wigan Marches (borders)
+```
+
+These are peers, not parents, which is why candidates carry `relations` separately from
+`parentNames`: containment picks the most specific parent available, while every border gets written.
+
+**Water access** is derived, and is not a boolean. A land cell records `harbor` — how much water it
+touches — and `haven`, the water cell it opens onto; following the haven to its feature is what
+separates a sea coast from a lake shore.
+
+The settlement `port` flag does *not* do that job, and the reason is worth stating: of Watia's 276
+ports, 120 are on the sea, 35 on lakes, and **121 are on rivers, inland of any coast**. That looks
+like bad data until you remember New Orleans. Counting them apart is what stops a landlocked country
+either losing its harbours or gaining a coastline:
+
+```
+Linbeck        coast=none   sea=0    river=7    lake=0
+Whitmere       coast=none   sea=0    river=5    lake=0
+Dalworth       coast=lake   sea=0    river=0    lake=0
+Imperion       coast=sea    sea=16   river=26   lake=2
+```
+
+Linbeck's summary reads *"landlocked but reached by water, with 7 river port(s)"* — two claims that
+would collapse into one wrong one under a `landlocked: true` flag.
+
+**Position** is stored as a bounding box in **degrees**, not pixels, so it means something outside the
+one image it came from. Watia spans −180 to 180 longitude across 2,560 px, which makes Farn Ecton's
+eastern edge 164.2°E — the first country to see the sunrise, and 36° clear of Seedon behind it.
+
+Canvas `y` grows southward while latitude grows northward, so the northern edge of a country is its
+*smallest* y. Getting that backwards is silent: every country simply reports 0.
+
 ## Names reused across a map
 
 A generated world reuses settlement names freely. Watia has seven Uxbrids, six Framptons, and two
