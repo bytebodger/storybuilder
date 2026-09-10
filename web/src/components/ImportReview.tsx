@@ -69,6 +69,31 @@ export function ImportReview({ plan, busy, onCancel, onImport }: Props) {
         </p>
       ))}
 
+      {/*
+        A re-import is a comparison. Saying what is being left alone matters as
+        much as saying what will be written: an author who has spent a month on
+        these articles wants to know the import is not about to undo it.
+      */}
+      {plan.delta && (
+        <p className="help">
+          {plan.delta.new} new, {plan.delta.update} changed on the map.{' '}
+          {plan.delta.unchanged > 0 && `${plan.delta.unchanged} already match. `}
+          {plan.delta.edited > 0 && (
+            <strong>
+              {plan.delta.edited} written since they were imported — left untouched.{' '}
+            </strong>
+          )}
+          {plan.delta.authored > 0 && `${plan.delta.authored} authored here, not from any import. `}
+          {plan.delta.missing.length > 0 && (
+            <>
+              {plan.delta.missing.length} no longer on the map (
+              {plan.delta.missing.slice(0, 4).join(', ')}
+              {plan.delta.missing.length > 4 ? '…' : ''}) — kept, not deleted.
+            </>
+          )}
+        </p>
+      )}
+
       <label>
         Find
         <input value={filter} placeholder="A name, to check it is in here" onChange={(e) => setFilter(e.target.value)} />

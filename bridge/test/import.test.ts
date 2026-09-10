@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { groupPlan } from '../src/import.ts'
+import { importedAttributes } from '../../store/src/index.ts'
 import type { ImportCandidate, ImportPlan, Item } from '../../store/src/index.ts'
 
 const candidate = (name: string, container: string, kind?: string, over: Partial<ImportCandidate> = {}): ImportCandidate => ({
@@ -20,6 +21,14 @@ const item = (name: string, container = 'locations'): Item => ({
   tags: [],
   createdAt: '',
   updatedAt: '',
+})
+
+/** An article as a previous import left it, fingerprint and all. */
+const importedItem = (c: ImportCandidate): Item => ({
+  ...item(c.name, c.container),
+  kind: c.kind,
+  summary: c.summary,
+  attributes: importedAttributes(c),
 })
 
 const plan = (candidates: ImportCandidate[]): ImportPlan => ({ candidates, counts: [], warnings: [] })
@@ -93,5 +102,41 @@ describe('grouping a plan for review', () => {
     const grouped = groupPlan(plan([]), [])
     assert.deepEqual(grouped.groups, [])
     assert.equal(grouped.total, 0)
+  })
+})
+
+describe('a review of a re-import', () => {
+  const granith = candidate('Granith', 'locations', 'country', { summary: 'A monarchy.' })
+  const changed = candidate('Granith', 'locations', 'country', { summary: 'A republic.' })
+  const fresh = candidate('Bay of Whispers', 'geography', 'bay')
+
+  it('offers what is new and what the map now disagrees with', () => {
+    const grouped = groupPlan(plan([changed, fresh]), [importedItem(granith)])
+    const names = grouped.groups.flatMap((g) => g.candidates.map((c) => c.name))
+
+    assert.deepEqual(names.sort(), ['Bay of Whispers', 'Granith'])
+    assert.equal(grouped.delta.new, 1)
+    assert.equal(grouped.delta.update, 1)
+  })
+
+  it('leaves out what the map still agrees with', () => {
+    const grouped = groupPlan(plan([granith]), [importedItem(granith)])
+    assert.equal(grouped.total, 0)
+    assert.equal(grouped.delta.unchanged, 1)
+    assert.deepEqual(grouped.alreadyPresent, [{ name: 'Granith', matched: 'Granith' }])
+  })
+
+  it('leaves out an article written since it was imported, rather than offering to overwrite it', () => {
+    const written: Item = { ...importedItem(granith), summary: 'A kingdom of terraced hills.' }
+    const grouped = groupPlan(plan([changed]), [written])
+
+    assert.equal(grouped.total, 0, 'not offered')
+    assert.equal(grouped.delta.edited, 1)
+  })
+
+  it('names what a previous import made that the map has dropped', () => {
+    const dalworth = candidate('Dalworth', 'locations', 'country')
+    const grouped = groupPlan(plan([granith]), [importedItem(granith), importedItem(dalworth)])
+    assert.deepEqual(grouped.delta.missing, ['Dalworth'])
   })
 })

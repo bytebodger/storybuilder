@@ -227,7 +227,13 @@ const server = createServer(async (req, res) => {
       const store = await openUniverse(body.universe)
 
       if (body.id) {
-        const item = await store.update(body.id, draftToPatch(body.container, body.values))
+        // The stored item is passed in so attributes outside this container's
+        // spec - a map frame, an imported population - survive the save.
+        const before = await store.get(body.id)
+        const item = await store.update(
+          body.id,
+          draftToPatch(body.container, body.values, before ?? undefined),
+        )
         return send(res, 200, { item })
       }
       const draft = draftToItem(body.container, body.values)

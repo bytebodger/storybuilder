@@ -14,7 +14,9 @@ import { renderBrief, renderUniverseBrief } from './brief.ts'
 import { validate } from './validate.ts'
 import { CanonViolation, type ClosureState } from './types.ts'
 import { matchTerm } from './terms.ts'
+import type { Store } from './store.ts'
 import { buildImportPlan } from './import/azgaar.ts'
+import { assess, countBy, importedAttributes } from './import/delta.ts'
 import type { Tier } from './import/types.ts'
 import { readFile, writeFile } from 'node:fs/promises'
 import {
@@ -381,65 +383,101 @@ async function main(argv: string[]): Promise<number> {
         console.log(`  ${c.sourceType.padEnd(15)} ${c.container.padEnd(13)} ${String(c.found).padStart(5)} ${String(c.included).padStart(9)}`)
       }
 
-      // Screened against the store, not just against each other: an import can
-      // be re-run, or run after hand-authoring, without duplicating anything.
+      // An import is a comparison, not a rebuild: what the universe already
+      // holds decides what is worth writing.
       const existing = await s.list()
-      const fresh = plan.candidates.filter((c) => !matchTerm(c.name, existing).length)
-      console.log(NL + `${plan.candidates.length} candidate(s); ${plan.candidates.length - fresh.length} already in this universe.`)
+      const delta = assess(plan.candidates, existing)
+      const counts = countBy(delta)
+
+      console.log(
+        NL +
+          `${plan.candidates.length} candidate(s): ${counts.new} new, ${counts.update} changed, ` +
+          `${counts.unchanged} unchanged, ${counts.edited} written since import, ` +
+          `${counts.authored} authored here.`,
+      )
+      if (delta.missing.length) {
+        console.log(
+          `${delta.missing.length} article(s) this import created are no longer on the map: ` +
+            `${delta.missing.slice(0, 6).map((m) => m.name).join(', ')}` +
+            `${delta.missing.length > 6 ? '...' : ''}`,
+        )
+        console.log('  Left alone. Remove them yourself if the world has really lost them.')
+      }
 
       if (!a.flags.write) {
-        console.log(NL + 'Nothing written. Re-run with --write to create them.')
-        for (const c of fresh.slice(0, 12)) {
-          console.log(`  ${c.container}/${c.kind ?? '-'}  ${c.name}${c.parentNames?.length ? `  (in ${c.parentNames[0]})` : ''}`)
+        console.log(NL + 'Nothing written. Re-run with --write to apply.')
+        for (const at of delta.assessments.filter((x) => x.verdict === 'update').slice(0, 8)) {
+          console.log(`  changed: ${at.candidate.name} (${at.changed.join(', ')})`)
         }
-        if (fresh.length > 12) console.log(`  ... and ${fresh.length - 12} more`)
+        for (const at of delta.assessments.filter((x) => x.verdict === 'new').slice(0, 8)) {
+          console.log(`  new:     ${at.candidate.container}/${at.candidate.kind ?? '-'}  ${at.candidate.name}`)
+        }
         return 0
       }
 
-      const byName = new Map<string, string>()
       let made = 0
-      for (const c of fresh) {
-        const item = await s.add({
-          container: c.container,
-          name: c.name,
-          kind: c.kind,
-          summary: c.summary,
-          attributes: c.attributes && Object.keys(c.attributes).length ? c.attributes : undefined,
-          stub: !c.summary,
-        })
-        byName.set(c.name.toLowerCase(), item.id)
-        made++
+      let updated = 0
+      const byName = new Map<string, string>()
+      // Everything already in the universe can be a link target, so a new
+      // article can attach to a country imported months ago.
+      for (const item of existing) byName.set(item.name.toLowerCase(), item.id)
+
+      for (const at of delta.assessments) {
+        const { candidate: c } = at
+        if (at.verdict === 'new') {
+          const item = await s.add({
+            container: c.container,
+            name: c.name,
+            kind: c.kind,
+            summary: c.summary,
+            attributes: importedAttributes(c),
+            stub: !c.summary,
+          })
+          byName.set(c.name.toLowerCase(), item.id)
+          made++
+        } else if (at.verdict === 'update' && at.existing) {
+          await s.update(at.existing.id, {
+            summary: c.summary,
+            kind: c.kind ?? at.existing.kind,
+            attributes: importedAttributes(c),
+          })
+          byName.set(at.existing.name.toLowerCase(), at.existing.id)
+          updated++
+        } else if (at.existing) {
+          byName.set(at.existing.name.toLowerCase(), at.existing.id)
+        }
       }
+
       // Links go on afterwards, once every name in the plan has an id.
       let linked = 0
       let bordered = 0
-      for (const c of fresh) {
+      for (const at of delta.assessments) {
+        if (at.verdict === 'unchanged') continue
+        const c = at.candidate
         const child = byName.get(c.name.toLowerCase())
         if (!child) continue
-        // The most specific parent that this tier actually brought in.
+
         const parent = (c.parentNames ?? []).map((n) => byName.get(n.toLowerCase())).find(Boolean)
-        if (parent && child !== parent) {
+        if (parent && parent !== child && !(await linkedAlready(s, child, parent))) {
           await s.link(child, parent)
           linked++
         }
         for (const rel of c.relations ?? []) {
           const other = byName.get(rel.name.toLowerCase())
-          if (!other || other === child) continue
+          if (!other || other === child || (await linkedAlready(s, child, other))) continue
           await s.link(child, other, { a: rel.role, b: rel.reverseRole })
           bordered++
         }
       }
-      // The map itself, once, so the articles that carry a frame have
-      // something to frame. Kept inside the universe, which is what lets a
-      // universe be moved without its articles losing what they point at.
+
       const universeDir = join(universesRoot(), s.universeId)
       await saveMapSource(universeDir, svg)
-      const framed = fresh.filter((c) => c.attributes?.mapFrame).length
 
       console.log(
-        NL + `Created ${made} article(s), ${linked} linked to a parent, ${bordered} peer link(s).`,
+        NL +
+          `Created ${made}, updated ${updated}, ${linked} parent link(s), ${bordered} peer link(s).`,
       )
-      console.log(`Map saved to the universe; ${framed} article(s) carry a frame onto it.`)
+      console.log('Map saved to the universe.')
       return 0
     }
 
@@ -468,3 +506,9 @@ main(process.argv.slice(2)).then(
     process.exit(1)
   },
 )
+
+/** A link already recorded is not written twice, so a re-import stays quiet. */
+async function linkedAlready(store: Store, a: string, b: string): Promise<boolean> {
+  const item = await store.get(a)
+  return !!item?.tags.some((tag) => tag.relatedTo === b)
+}

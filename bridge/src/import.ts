@@ -7,7 +7,7 @@
  * country, drop every river. Rows exist underneath for the audit, not for the
  * choosing.
  */
-import { matchTerm, type ImportCandidate, type ImportPlan, type Item } from '../../store/src/index.ts'
+import { assess, countBy, type ImportCandidate, type ImportPlan, type Item } from '../../store/src/index.ts'
 
 export interface PlanRequest {
   universe: string
@@ -33,6 +33,16 @@ export interface GroupedPlan {
   groups: PlanGroup[]
   /** Candidates the universe already has. Reported, never offered. */
   alreadyPresent: { name: string; matched: string }[]
+  /** How the plan sits against what the universe already holds. */
+  delta: {
+    new: number
+    update: number
+    unchanged: number
+    edited: number
+    authored: number
+    /** Articles a previous import made that this export no longer mentions. */
+    missing: string[]
+  }
   counts: ImportPlan['counts']
   warnings: string[]
   total: number
@@ -42,12 +52,22 @@ export function groupPlan(plan: ImportPlan, existing: Item[]): GroupedPlan {
   const groups = new Map<string, PlanGroup>()
   const alreadyPresent: GroupedPlan['alreadyPresent'] = []
 
+  /*
+   * A re-import is a comparison, not a rebuild.
+   *
+   * Only what the universe does not already have, or no longer agrees with, is
+   * offered. An article written since it was imported is left out of the review
+   * entirely: the author has taken it over, and a checkbox suggesting otherwise
+   * would be an invitation to lose their work.
+   */
+  const delta = assess(plan.candidates, existing)
+  const verdicts = new Map(delta.assessments.map((a) => [a.candidate, a.verdict]))
+
   for (const candidate of plan.candidates) {
-    // Screened the same way a stub proposal is, so an import can be re-run, or
-    // run after hand-authoring, without duplicating anything.
-    const [match] = matchTerm(candidate.name, existing)
-    if (match) {
-      alreadyPresent.push({ name: candidate.name, matched: match.item.name })
+    const verdict = verdicts.get(candidate)
+    if (verdict && verdict !== 'new' && verdict !== 'update') {
+      const held = delta.assessments.find((a) => a.candidate === candidate)?.existing
+      alreadyPresent.push({ name: candidate.name, matched: held?.name ?? candidate.name })
       continue
     }
 
@@ -77,6 +97,7 @@ export function groupPlan(plan: ImportPlan, existing: Item[]): GroupedPlan {
   return {
     groups: ordered,
     alreadyPresent,
+    delta: { ...countBy(delta), missing: delta.missing.map((m) => m.name) },
     counts: plan.counts,
     warnings: plan.warnings,
     total: ordered.reduce((n, g) => n + g.candidates.length, 0),

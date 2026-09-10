@@ -74,16 +74,31 @@ export function itemToDraft(container: string, item: Item): ArticleValues {
   return values
 }
 
-/** The patch form of `draftToItem`, for updating an item that already exists. */
-export function draftToPatch(container: string, values: ArticleValues) {
+/**
+ * The patch form of `draftToItem`, for updating an item that already exists.
+ *
+ * `existing` matters more than it looks. An item can carry attributes its
+ * container's spec knows nothing about - a map frame, an imported population,
+ * a coastline - and a form that only knows the spec would otherwise erase every
+ * one of them on save. Anything the spec does not declare is carried through
+ * untouched.
+ */
+export function draftToPatch(container: string, values: ArticleValues, existing?: Item) {
   const draft = draftToItem(container, values)
+  const declared = new Set((fieldsFor(container) ?? []).map((f) => f.key))
+
+  const kept = Object.fromEntries(
+    Object.entries(existing?.attributes ?? {}).filter(([key]) => !declared.has(key)),
+  )
+  const attributes = { ...kept, ...(draft.attributes ?? {}) }
+
   return {
     name: draft.name,
     summary: draft.summary,
     kind: draft.kind,
     beginDate: draft.beginDate,
     endDate: draft.endDate,
-    attributes: draft.attributes,
+    attributes: Object.keys(attributes).length ? attributes : undefined,
   }
 }
 

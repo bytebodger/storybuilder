@@ -32,3 +32,5 @@ export {
   growToShore,
   type Box,
 } from './import/crop.ts'
+export { assess, countBy, digestOf, importedAttributes, DIGEST_KEY } from './import/delta.ts'
+export type { Delta, Assessment, Verdict } from './import/delta.ts'

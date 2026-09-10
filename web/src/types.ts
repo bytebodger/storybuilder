@@ -159,6 +159,15 @@ export interface PlanGroup {
 export interface GroupedPlan {
   groups: PlanGroup[]
   alreadyPresent: { name: string; matched: string }[]
+  /** How the plan sits against what the universe already holds. */
+  delta?: {
+    new: number
+    update: number
+    unchanged: number
+    edited: number
+    authored: number
+    missing: string[]
+  }
   counts: { sourceType: string; container: string; found: number; included: number }[]
   warnings: string[]
   total: number
