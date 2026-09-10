@@ -66,8 +66,25 @@ describe('frames come out of the import', () => {
     assert.ok(box.y1 > 400)
   })
 
-  it('gives one to nothing else, since only a country has an extent here', () => {
-    assert.equal(find('Blandbury').attributes?.mapFrame, undefined)
+  it('gives a settlement one too, centred on where it stands', () => {
+    // A settlement is a point rather than an extent, so the frame is the
+    // smallest readable one around it: where it is, and what it sits among.
+    const box = frameFromAttribute(find('Blandbury').attributes!.mapFrame)!
+    assert.ok(box, 'a settlement gets a frame')
+
+    const cell = JSON_EXPORT.pack.cells.find((c) => c.i === 10)!
+    const [x, y] = cell.p
+    assert.ok(box.x0 < x && box.x1 > x, 'the settlement is inside its frame')
+    assert.ok(box.y0 < y && box.y1 > y)
+    // Within a pixel: a frame is stored as four rounded integers, so its centre
+    // can sit half a pixel off. On a frame this size that is nothing.
+    assert.ok(Math.abs((box.x0 + box.x1) / 2 - x) <= 1, 'and centred in it')
+    assert.ok(Math.abs((box.y0 + box.y1) / 2 - y) <= 1)
+  })
+
+  it('frames a settlement wide enough to read', () => {
+    const box = frameFromAttribute(find('Blandbury').attributes!.mapFrame)!
+    assert.ok(box.x1 - box.x0 >= 80, `${box.x1 - box.x0}px across`)
   })
 })
 

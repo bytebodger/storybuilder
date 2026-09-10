@@ -232,7 +232,20 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
     tally(key.replace(/s$/, ''), container, found.length, admit(at) ? found.length : 0)
   }
 
-  addSettlements({ burgs, provinces, cellById, provinceName, stateName, rate, tier, minPopulation, withProvinces, candidates, tally })
+  addSettlements({
+    burgs,
+    provinces,
+    cellById,
+    provinceName,
+    stateName,
+    rate,
+    tier,
+    minPopulation,
+    withProvinces,
+    canvas,
+    candidates,
+    tally,
+  })
   addGeography({
     pack,
     tier,
@@ -379,6 +392,22 @@ function courseFrame(
   )
 }
 
+/**
+ * Where a settlement stands.
+ *
+ * A burg records its own position; its cell is the fallback for one that does
+ * not, since every burg has a cell even when its coordinates went missing.
+ */
+function burgPoint(burg: Row, cell: Row | undefined): { x: number; y: number }[] {
+  const x = Number(burg.x)
+  const y = Number(burg.y)
+  if (Number.isFinite(x) && Number.isFinite(y)) return [{ x, y }]
+
+  const p = cell?.p
+  if (Array.isArray(p) && p.length >= 2) return [{ x: Number(p[0]), y: Number(p[1]) }]
+  return []
+}
+
 /** The window onto anything with a scatter of points on the canvas. */
 function pointsFrame(
   points: { x: number; y: number }[] | undefined,
@@ -416,6 +445,7 @@ interface SectionArgs {
   tier: Tier
   minPopulation: number
   withProvinces: boolean
+  canvas: { width: number; height: number }
   candidates: ImportCandidate[]
   tally: (sourceType: string, container: string, found: number, included: number) => void
 }
@@ -428,7 +458,7 @@ interface SectionArgs {
  * guessed from coordinates.
  */
 function addSettlements(a: SectionArgs): void {
-  const { burgs, provinces, cellById, provinceName, stateName, rate, tier, minPopulation, withProvinces, candidates, tally } = a
+  const { burgs, provinces, cellById, provinceName, stateName, rate, tier, minPopulation, withProvinces, canvas, candidates, tally } = a
   const real = burgs.filter(usable)
 
   const capitals = real.filter((b) => b.capital)
@@ -458,6 +488,10 @@ function addSettlements(a: SectionArgs): void {
         walls: b.walls ? true : undefined,
         citadel: b.citadel ? true : undefined,
         temple: b.temple ? true : undefined,
+        // A settlement is a point, not an extent, so its frame is the smallest
+        // readable one centred on it - which answers where it is, and what it
+        // sits among.
+        ...(pointsFrame(burgPoint(b, cell), canvas) ?? {}),
       },
       source: 'json',
       sourceType: 'burg',
