@@ -74,6 +74,15 @@ export interface ForgeResult {
   error?: string
 }
 
+/** What a die settled about one article, before any of it was written. */
+export interface Skeleton {
+  values: Record<string, unknown>
+  /** Fields this one simply does not have. Never asked for. */
+  omit: string[]
+  /** Facts for the generator that are not fields: trade, station, era. */
+  notes: string[]
+}
+
 export interface NavItem {
   id: string
   name: string

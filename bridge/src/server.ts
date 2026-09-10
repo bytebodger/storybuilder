@@ -18,6 +18,7 @@ import {
   draftToPatch,
   fieldsFor,
   flatten,
+  rollFor,
   treeOf,
   subtree,
   spanOf,
@@ -114,6 +115,25 @@ async function canonBrief(universe: string): Promise<string> {
     parts.push(`TIMELINES: ${timelines.map((t) => t.name).join(', ')}`)
   }
   return parts.join(NL + NL)
+}
+
+/**
+ * The rolled facts, framed so they read as settled rather than suggested.
+ *
+ * The wording matters more than it looks. Handed a list of facts with no
+ * instruction, a model treats them as a starting point and improves on them -
+ * which puts back exactly the salience-seeking the roll was there to remove.
+ */
+function rolledBlock(notes: string[]): string {
+  return [
+    'ALREADY DECIDED, BY A DIE, ABOUT THIS PARTICULAR ARTICLE.',
+    'These are not suggestions and not a starting point. They were chosen at random on purpose,',
+    'so that this article is not the most obvious article this world could produce. Write around',
+    'them. Do not improve on them, do not steer back toward whatever the universe is best known',
+    'for, and do not quietly drop one because a more interesting option occurs to you.',
+    '',
+    ...notes.map((n) => `- ${n}`),
+  ].join(NL)
 }
 
 /**
@@ -707,6 +727,26 @@ const server = createServer(async (req, res) => {
       return send(res, 200, { created, skipped })
     }
 
+    /**
+     * The part of an article a die can decide, decided before anything is asked
+     * of a model.
+     *
+     * Separate from the forge on purpose. It costs milliseconds where a
+     * generation costs a minute, so the form can show a trade, a birthplace and
+     * a lifespan the instant the button is pressed, and write the prose around
+     * facts that are already on screen.
+     */
+    if (req.method === 'GET' && url.pathname === '/api/skeleton') {
+      const container = url.searchParams.get('container') ?? ''
+      const store = await openUniverse(url.searchParams.get('universe') ?? '')
+      const skeleton = rollFor(container, {
+        universe: await store.manifest(),
+        items: await store.list(),
+        timelines: await store.timelines(),
+      })
+      return send(res, 200, { skeleton })
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/universe/forge') {
       const body = await readJson<ForgeRequest>(req)
       body.container ||= 'universe'
@@ -719,6 +759,9 @@ const server = createServer(async (req, res) => {
       // Read here, where the store already is, rather than leaving the skill to
       // shell out for the same facts a turn at a time.
       if (body.universe) body.canon = await canonBrief(body.universe)
+      // What the die already settled, so the prose is written around it rather
+      // than reaching past it for something more dramatic.
+      if (body.rolled?.length) body.canon = `${body.canon ?? ''}${NL}${NL}${rolledBlock(body.rolled)}`
 
       const run = await runClaude(buildForgePrompt(body))
       if (run.error) return send(res, 200, { values: {}, dropped: [], error: run.error })

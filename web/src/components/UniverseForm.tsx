@@ -20,6 +20,8 @@ export function UniverseForm({ universeId, onSaved, onCancel }: Props) {
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /** Per field, every value the author has regenerated away from this session. */
+  const [rejected, setRejected] = useState<Record<string, unknown[]>>({})
   const [showBrief, setShowBrief] = useState(false)
   const [briefText, setBriefText] = useState<string | null>(null)
 
@@ -70,11 +72,14 @@ export function UniverseForm({ universeId, onSaved, onCancel }: Props) {
     setNote(null)
     setError(null)
     try {
-      // What is being replaced, so a regenerate is a different question from the
-      // one just asked. An identical prompt comes back with an identical answer.
-      const avoid = Object.fromEntries(
-        fill.map((k) => [k, values[k]]).filter(([, v]) => !isEmpty(v)),
-      )
+      // Everything these fields have offered and had turned down, not just the
+      // value on screen: sending only the latest buys one step and then cycles.
+      const avoid: Record<string, unknown[]> = {}
+      for (const key of fill) {
+        const seen = [...(rejected[key] ?? []), values[key]].filter((v) => !isEmpty(v))
+        if (seen.length) avoid[key] = seen
+      }
+      setRejected((prev) => ({ ...prev, ...avoid }))
       // Clear first, so a regenerated field is replaced rather than merged into.
       setValues((v) => ({ ...v, ...Object.fromEntries(fill.map((k) => [k, null])) }))
       const current = Object.fromEntries(Object.entries(values).filter(([k]) => !fill.includes(k)))

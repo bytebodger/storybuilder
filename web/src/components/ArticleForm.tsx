@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { containerFields, defaultsFrom, forge, getItem, saveItem, timelines } from '../api'
-import type { TimelineNode, UniverseDraft, UniverseField } from '../types'
+import { containerFields, defaultsFrom, forge, getItem, saveItem, skeleton, timelines } from '../api'
+import type { Skeleton, TimelineNode, UniverseDraft, UniverseField } from '../types'
 import { FieldRow } from './FieldRow'
 
 interface Props {
@@ -52,6 +52,8 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   const [lines, setLines] = useState<TimelineNode[]>([])
   /** Which batch of a sectioned generation is running, for the button. */
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
+  /** Per field, every value the author has regenerated away from this session. */
+  const [rejected, setRejected] = useState<Record<string, unknown[]>>({})
 
   useEffect(() => {
     containerFields(container).then((spec) => {
@@ -139,24 +141,78 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
     return sized.length ? sized : [fill]
   }
 
-  async function generate(fill: string[]) {
+  /**
+   * Roll first, then write.
+   *
+   * The die settles what a die can settle - a trade, a birthplace, a lifespan,
+   * whether this person has a title at all - and those land on the form at
+   * once, before a single request goes out. Then the prose is written around
+   * facts that are already on screen.
+   *
+   * Two things come of that. Every person is no longer the most obvious person
+   * this world could produce; and something appears immediately instead of two
+   * minutes later.
+   */
+  async function fillWholeForm() {
+    let roll: Skeleton | null = null
+    try {
+      roll = await skeleton(universe, container)
+    } catch {
+      // A world with nothing to roll from is not a failure. Generate as before.
+    }
+
+    if (roll) {
+      const settled = Object.fromEntries(
+        Object.entries(roll.values).filter(
+          ([key, v]) => !isEmpty(v) && !locked.has(key) && isEmpty(values[key]),
+        ),
+      )
+      setValues((v) => ({ ...v, ...settled }))
+      await generate(
+        unlockedEmpty.filter((k) => !(k in settled)),
+        { ...roll, values: settled },
+      )
+      return
+    }
+    await generate(unlockedEmpty)
+  }
+
+  async function generate(fill: string[], roll?: Skeleton | null) {
     if (fill.length === 0) {
       setNote('Nothing to generate — every field is locked or already filled.')
+      return
+    }
+    /*
+     * What the die settled is not asked for, and what it says this person does
+     * not have is not asked for either.
+     *
+     * The second half is the one that matters. A model handed an optional field
+     * fills it: asked for an honorific it returns one, and every person in the
+     * world comes back a Captain with three swashbuckling nicknames. The only
+     * way to get a person with no title is to not ask for one.
+     */
+    if (roll) fill = fill.filter((k) => !(k in roll.values) && !roll.omit.includes(k))
+    if (fill.length === 0) {
+      setNote('The roll settled everything there was to settle.')
       return
     }
     const runs = batches(fill)
 
     /*
-     * What these fields held before they were cleared.
+     * Everything these fields have offered and had turned down.
      *
-     * Clicking Regenerate on a field asks the same question the form asked a
-     * moment ago, and an identical question gets an identical answer - a given
-     * name came back "Maren" three times running. Sending the rejected value is
-     * what makes the second ask a different one.
+     * Clicking Regenerate asks the same question the form asked a moment ago,
+     * and an identical question gets an identical answer. Sending only the
+     * value on screen buys exactly one step and then cycles: reject Halvard and
+     * get Elkirk, reject Elkirk and Halvard is fair game again. So the whole
+     * history is kept, per field, for as long as the form is open.
      */
-    const avoid = Object.fromEntries(
-      fill.map((k) => [k, values[k]]).filter(([, v]) => !isEmpty(v)),
-    )
+    const avoid: Record<string, unknown[]> = {}
+    for (const key of fill) {
+      const seen = [...(rejected[key] ?? []), values[key]].filter((v) => !isEmpty(v))
+      if (seen.length) avoid[key] = seen
+    }
+    setRejected((prev) => ({ ...prev, ...avoid }))
 
     setBusy(fill.length === 1 ? fill[0] : 'form')
     setNote(null)
@@ -196,7 +252,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       const [head, ...rest] = runs
       if (runs.length > 1) setProgress({ done: 0, total: runs.length })
 
-      const first = await forge(head, settled, container, universe, avoid)
+      const first = await forge(head, settled, container, universe, avoid, roll?.notes)
       if (first.error) {
         setError(first.error)
         return
@@ -212,7 +268,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       const workers = Array.from({ length: Math.min(3, queue.length) }, async () => {
         for (let run = queue.shift(); run; run = queue.shift()) {
           try {
-            let result = await forge(run, settled, container, universe, avoid)
+            let result = await forge(run, settled, container, universe, avoid, roll?.notes)
             /*
              * One retry when a batch comes back with nothing.
              *
@@ -222,7 +278,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
              * and usually gets one; asking twice would be a policy of grinding.
              */
             if (result.error || !Object.keys(result.values).length) {
-              result = await forge(run, settled, container, universe, avoid)
+              result = await forge(run, settled, container, universe, avoid, roll?.notes)
             }
             // One batch failing is not the others failing. Whatever came back
             // stays on the form and the rest is reported.
@@ -287,7 +343,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
             className="icon"
             disabled={!!busy}
             title="Generate every unlocked field that is still empty"
-            onClick={() => generate(unlockedEmpty)}
+            onClick={fillWholeForm}
           >
             {busy !== 'form' ?
               `Fill ${unlockedEmpty.length} empty field(s)`

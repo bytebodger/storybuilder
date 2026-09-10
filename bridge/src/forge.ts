@@ -27,8 +27,12 @@ export interface ForgeRequest {
    * one given name three times against an identical prompt, the model returned
    * "Maren" three times - not a cache, just the same question answered the same
    * way. What makes a regenerate a different question is saying what it rejects.
+   *
+   * Every value rejected so far, not just the one on screen. Sending only the
+   * latest buys one step and then cycles: rejecting Halvard gives Elkirk, and
+   * rejecting Elkirk puts Halvard back on the table.
    */
-  avoid?: Record<string, unknown>
+  avoid?: Record<string, unknown[]>
   /**
    * The universe's canon, read by the caller and handed over.
    *
@@ -39,6 +43,8 @@ export interface ForgeRequest {
    * already in the prompt.
    */
   canon?: string
+  /** Notes from the roll: what a die already settled about this article. */
+  rolled?: string[]
 }
 
 export interface ForgeResult {
@@ -70,7 +76,9 @@ export function buildForgePrompt(req: ForgeRequest): string {
   )
 
   const rejected = Object.fromEntries(
-    Object.entries(req.avoid ?? {}).filter(([key, v]) => req.fill.includes(key) && !isEmptyValue(v)),
+    Object.entries(req.avoid ?? {})
+      .map(([key, list]) => [key, (list ?? []).filter((v) => !isEmptyValue(v))] as const)
+      .filter(([key, list]) => req.fill.includes(key) && list.length),
   )
 
   return [
@@ -90,9 +98,11 @@ export function buildForgePrompt(req: ForgeRequest): string {
         ? 'The form is empty. Decide the centre of the world first, then derive the rest from it.'
         : 'The form is empty. Ground the article in the universe canon before inventing anything.',
     Object.keys(rejected).length
-      ? `The author has already seen these answers for these fields and asked for something else. ` +
-        `Do not return them again, and do not return a near variant - a different name, not a ` +
-        `respelling of the same one:` + NL + JSON.stringify(rejected, null, 2)
+      ? `The author has already seen every one of these answers for these fields and asked for ` +
+        `something else each time. Do not return any of them again, and do not return a near ` +
+        `variant - a different name, not a respelling of the same one. If the list is long, it ` +
+        `means the obvious answers are exhausted and you should reach further:` +
+        NL + JSON.stringify(rejected, null, 2)
       : '',
     `Reply with a single JSON object containing exactly these keys: ${req.fill.join(', ')}. No other text.`,
   ]

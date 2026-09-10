@@ -15,6 +15,7 @@ import type {
   UniverseField,
   TimelineNode,
   Chronology,
+  Skeleton,
 } from './types'
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
@@ -132,17 +133,30 @@ export const saveUniverse = (draft: UniverseDraft, id?: string) =>
   )
 
 /** Generate values for `fill` only. The bridge discards anything else. */
+/**
+ * The part of an article a die can decide. Null for a container with no roll.
+ *
+ * Milliseconds, against a minute for a generation - so it lands on the form
+ * before the writing starts rather than after it.
+ */
+export const skeleton = (universe: string, container: string) =>
+  json<{ skeleton: Skeleton | null }>(
+    `/skeleton?universe=${encodeURIComponent(universe)}&container=${encodeURIComponent(container)}`,
+  ).then((r) => r.skeleton)
+
 export const forge = (
   fill: string[],
   current: UniverseDraft,
   container = 'universe',
   universe?: string,
-  /** What these fields held before, when this is a regenerate rather than a fill. */
-  avoid?: UniverseDraft,
+  /** Everything these fields have offered and had rejected, not just the last. */
+  avoid?: Record<string, unknown[]>,
+  /** Notes from the roll, so the prose is written around what was settled. */
+  rolled?: string[],
 ) =>
   json<ForgeResult>('/universe/forge', {
     method: 'POST',
-    body: JSON.stringify({ container, universe, fill, current, avoid }),
+    body: JSON.stringify({ container, universe, fill, current, avoid, rolled }),
   })
 
 export const nav = (universe: string) =>

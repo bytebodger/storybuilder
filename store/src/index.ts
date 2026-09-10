@@ -19,6 +19,14 @@ export { FIELD_SPECS, fieldsFor, fieldIn, containersWithFields } from './fields.
 export { draftToItem, itemToDraft, draftToPatch, defaultValues, type ArticleValues } from './article.ts'
 export { normalizeTerm, singularize, matchTerm, termExists, type TermMatch } from './terms.ts'
 export {
+  rollPerson,
+  rollFor,
+  ROLLED,
+  type Skeleton,
+  type RollContext,
+  type Random,
+} from './skeleton.ts'
+export {
   treeOf,
   flatten,
   childrenOf,
