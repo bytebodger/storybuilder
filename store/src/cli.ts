@@ -15,7 +15,16 @@ import { matchTerm } from './terms.ts'
 import { buildImportPlan } from './import/azgaar.ts'
 import type { Tier } from './import/types.ts'
 import { readFile, writeFile } from 'node:fs/promises'
-import { boxOf, cropSvg, enclosure, gridSampler, growToShore, pad, type Box } from './import/crop.ts'
+import {
+  boxOf,
+  cropSvg,
+  enclosure,
+  gridSampler,
+  growToShore,
+  pad,
+  relabelCoordinates,
+  type Box,
+} from './import/crop.ts'
 import { readAddedLabels } from './import/azgaar-svg.ts'
 
 type Row = Record<string, unknown>
@@ -56,7 +65,7 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
 
   sb crop-map <map.svg> <map.json> --out <file.svg>
               [--state <name> | --label <name> | --box x0,y0,x1,y1]
-              [--pad 0.08] [--enclose 0.9]
+              [--pad 0.08] [--enclose 0.9] [--no-coordinates]
         Cut a region out of a map, keeping full vector detail. A state is
         framed by its own cells; a hand-added label by its curve, grown outward
         until land rings the frame. --enclose is how much of each edge must be
@@ -321,7 +330,10 @@ async function main(argv: string[]): Promise<number> {
 
       const fraction = one(a, 'pad') === undefined ? 0.08 : Number(one(a, 'pad'))
       const framed = pad(box, fraction, canvas)
-      await writeFile(out, cropSvg(svg, framed), 'utf8')
+      // Relabel before cropping: the labels are placed in canvas coordinates,
+      // and the frame is what decides where the edges now are.
+      const relabelled = a.flags['no-coordinates'] ? svg : relabelCoordinates(svg, framed)
+      await writeFile(out, cropSvg(relabelled, framed), 'utf8')
 
       const w = Math.round(framed.x1 - framed.x0)
       const h = Math.round(framed.y1 - framed.y0)

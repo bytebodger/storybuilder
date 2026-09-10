@@ -263,3 +263,55 @@ export function cropSvg(svg: string, box: Box): string {
   )
   return svg.slice(0, open.index) + tag + svg.slice(open.index + open[0].length)
 }
+
+/**
+ * Move the coordinate labels onto the edges of a cropped frame.
+ *
+ * Azgaar writes them once, along the top and left of the whole canvas: meridian
+ * labels at y=7, parallel labels at x=15. Crop anywhere but the corner and the
+ * graticule survives while its numbers do not - dashed lines across a map with
+ * nothing to say which lines they are.
+ *
+ * The labels are moved rather than recomputed, so the degrees shown are exactly
+ * the ones the generator worked out, and a label whose line falls outside the
+ * frame is dropped instead of pointing at nothing.
+ */
+export function relabelCoordinates(svg: string, box: Box, inset = 9): string {
+  const group = /<g id="coordinateLabels"([^>]*)>([\s\S]*?)<\/g>/.exec(svg)
+  if (!group) return svg
+
+  const [whole, attrs, body] = group
+  const kept: string[] = []
+
+  for (const match of body.matchAll(/<text\b([^>]*)>([\s\S]*?)<\/text>/g)) {
+    const [, textAttrs, label] = match
+    const x = Number(/\bx="(-?[\d.]+)"/.exec(textAttrs)?.[1])
+    const y = Number(/\by="(-?[\d.]+)"/.exec(textAttrs)?.[1])
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue
+
+    // Which edge it was written against says which coordinate it names.
+    const isMeridian = y < 20
+    let moved: string | null = null
+
+    // A label sits on the line it names, so a line hard against the frame's
+    // edge would have its label half outside. Nudged just inside instead: a few
+    // pixels off its line still reads as belonging to it; a clipped glyph does
+    // not read at all.
+    if (isMeridian && x >= box.x0 && x <= box.x1) {
+      moved = setXY(textAttrs, clamp(x, box.x0 + inset * 2.5, box.x1 - inset * 2.5), box.y0 + inset)
+    } else if (!isMeridian && y >= box.y0 && y <= box.y1) {
+      moved = setXY(textAttrs, box.x0 + inset * 1.7, clamp(y, box.y0 + inset, box.y1 - inset))
+    }
+    if (moved) kept.push(`<text${moved}>${label}</text>`)
+  }
+
+  return svg.replace(whole, `<g id="coordinateLabels"${attrs}>${kept.join('')}</g>`)
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10
+const clamp = (n: number, lo: number, hi: number) => (lo > hi ? n : Math.min(hi, Math.max(lo, n)))
+
+const setXY = (attrs: string, x: number, y: number) =>
+  attrs
+    .replace(/\bx="[-\d.]+"/, `x="${round1(x)}"`)
+    .replace(/\by="[-\d.]+"/, `y="${round1(y)}"`)

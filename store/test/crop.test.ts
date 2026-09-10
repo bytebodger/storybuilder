@@ -1,6 +1,14 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { boxOf, cropSvg, enclosure, gridSampler, growToShore, pad } from '../src/import/crop.ts'
+import {
+  boxOf,
+  cropSvg,
+  enclosure,
+  gridSampler,
+  growToShore,
+  pad,
+  relabelCoordinates,
+} from '../src/import/crop.ts'
 
 const canvas = { width: 1000, height: 1000 }
 const SVG = '<?xml version="1.0"?><svg id="fantasyMap" width="1000" height="1000" version="1.1"><g/></svg>'
@@ -105,5 +113,99 @@ describe('applying the frame to the file', () => {
 
   it('refuses a file that is not an svg', () => {
     assert.throws(() => cropSvg('<html></html>', { x0: 0, y0: 0, x1: 10, y1: 10 }), /No <svg>/)
+  })
+})
+
+describe('coordinate labels on a cropped frame', () => {
+  /** Azgaar writes meridians along the top (y=7) and parallels down the left (x=15). */
+  const LABELLED = [
+    '<svg width="1000" height="1000">',
+    '<g id="coordinateLabels" style="font:12px monospace">',
+    '<text x="200" y="7">120°W</text>',
+    '<text x="600" y="7">30°E</text>',
+    '<text x="900" y="7">90°E</text>',
+    '<text x="15" y="300">60°N</text>',
+    '<text x="15" y="700">30°S</text>',
+    '</g></svg>',
+  ].join('')
+
+  const labelsIn = (svg: string) =>
+    [...svg.matchAll(/<text\b([^>]*)>([^<]*)<\/text>/g)].map((m) => ({
+      x: Number(/x="([-\d.]+)"/.exec(m[1])?.[1]),
+      y: Number(/y="([-\d.]+)"/.exec(m[1])?.[1]),
+      text: m[2],
+    }))
+
+  it('brings a meridian label down to the top of the frame', () => {
+    const out = relabelCoordinates(LABELLED, { x0: 500, y0: 400, x1: 800, y1: 600 })
+    const [label] = labelsIn(out)
+    assert.equal(label.text, '30°E')
+    assert.equal(label.x, 600, 'it stays on its own line')
+    assert.ok(label.y > 400 && label.y < 420, `and sits just inside the top edge: ${label.y}`)
+  })
+
+  it('brings a parallel label across to the left of the frame', () => {
+    // This frame keeps a meridian too, so pick the one being tested.
+    const out = relabelCoordinates(LABELLED, { x0: 500, y0: 200, x1: 800, y1: 400 })
+    const label = labelsIn(out).find((l) => l.text === '60°N')!
+    assert.ok(label, 'the parallel survived')
+    assert.equal(label.y, 300, 'it stays on its own line')
+    assert.ok(label.x > 500 && label.x < 540, `and sits just inside the left edge: ${label.x}`)
+  })
+
+  it('drops labels whose lines are not in the frame', () => {
+    const out = relabelCoordinates(LABELLED, { x0: 500, y0: 400, x1: 800, y1: 600 })
+    const texts = labelsIn(out).map((l) => l.text)
+    // 120°W and 90°E are outside horizontally; 60°N and 30°S vertically.
+    assert.deepEqual(texts, ['30°E'])
+  })
+
+  it('keeps every label when the frame is the whole map', () => {
+    const out = relabelCoordinates(LABELLED, { x0: 0, y0: 0, x1: 1000, y1: 1000 })
+    assert.equal(labelsIn(out).length, 5)
+  })
+
+  it('shows the degrees the generator worked out, not ones it recomputed', () => {
+    const out = relabelCoordinates(LABELLED, { x0: 0, y0: 0, x1: 1000, y1: 1000 })
+    assert.deepEqual(labelsIn(out).map((l) => l.text), ['120°W', '30°E', '90°E', '60°N', '30°S'])
+  })
+
+  it('leaves a map with no coordinate layer alone', () => {
+    const bare = '<svg width="10" height="10"><g id="terrain"/></svg>'
+    assert.equal(relabelCoordinates(bare, { x0: 0, y0: 0, x1: 10, y1: 10 }), bare)
+  })
+})
+
+describe('labels against the edge of a frame', () => {
+  const EDGY = [
+    '<svg width="1000" height="1000"><g id="coordinateLabels">',
+    '<text x="500" y="7">30°E</text>',
+    '<text x="15" y="402">60°N</text>',
+    '</g></svg>',
+  ].join('')
+  const at = (svg: string, text: string) => {
+    const m = new RegExp(`<text\\b([^>]*)>${text}</text>`).exec(svg)!
+    return { x: Number(/x="([-\d.]+)"/.exec(m[1])![1]), y: Number(/y="([-\d.]+)"/.exec(m[1])![1]) }
+  }
+
+  it('nudges a parallel inside when its line hugs the top edge', () => {
+    // The line is 2px below the frame's top; centred there, half the text
+    // would be cut off.
+    const out = relabelCoordinates(EDGY, { x0: 100, y0: 400, x1: 900, y1: 900 })
+    const label = at(out, '60°N')
+    assert.ok(label.y >= 406, `moved inside the frame: ${label.y}`)
+    assert.ok(label.y < 420, 'but still reads as belonging to its line')
+  })
+
+  it('nudges a meridian inside when its line hugs the side', () => {
+    const out = relabelCoordinates(EDGY, { x0: 495, y0: 0, x1: 900, y1: 900 })
+    const label = at(out, '30°E')
+    assert.ok(label.x > 500, `moved inside the frame: ${label.x}`)
+  })
+
+  it('leaves a label alone when its line is well inside', () => {
+    const out = relabelCoordinates(EDGY, { x0: 100, y0: 100, x1: 900, y1: 900 })
+    assert.equal(at(out, '30°E').x, 500)
+    assert.equal(at(out, '60°N').y, 402)
   })
 })

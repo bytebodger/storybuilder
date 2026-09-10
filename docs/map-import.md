@@ -187,6 +187,30 @@ use --box to frame it yourself.
   397 x 544 of 2560 x 1279 (7% of the map)
 ```
 
+### The graticule keeps its numbers
+
+Azgaar writes the coordinate labels once, along the top and left of the whole canvas — meridians at
+`y=7`, parallels at `x=15`. Crop anywhere but the corner and the dashed lines survive while their
+numbers do not, which leaves a grid across a map with nothing to say which lines it is.
+
+So the labels are moved onto the edges of the frame, and any whose line falls outside it are dropped
+rather than left pointing at nothing:
+
+```
+Watia - Sontersea.svg          frame 604x589 at (934,425)
+     30°N  at ( 949, 434)  left edge
+     30°W  at (1067, 434)  top edge
+     0     at (1280, 434)  top edge
+     30°E  at (1493, 434)  top edge
+     0     at ( 949, 640)  left edge
+     30°S  at ( 949, 853)  left edge
+```
+
+They are **moved, not recomputed**, so the degrees shown are exactly the ones the generator worked
+out. A label sitting on a line that hugs the frame's edge is nudged a few pixels inside — still
+plainly belonging to its line, where a clipped glyph would read as nothing at all. `--no-coordinates`
+leaves the layer untouched.
+
 ### A crop is not smaller
 
 The file keeps its full geometry and only the window moves, so a 4% crop is still 12.7 MB. The bulk is
