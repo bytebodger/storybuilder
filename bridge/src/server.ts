@@ -17,6 +17,8 @@ import {
   draftToItem,
   draftToPatch,
   fieldsFor,
+  flatten,
+  treeOf,
   isEmptyValue,
   itemToDraft,
   containerType,
@@ -275,6 +277,63 @@ const server = createServer(async (req, res) => {
     }
 
     // Saving never generates. A field the author left blank stays blank.
+    /*
+     * Timelines: the buckets history events are filed into, as a tree.
+     *
+     * Returned in tree order with a depth on each rather than nested, because
+     * every consumer so far wants to draw an indented list, and because the
+     * arranging is done by one tested function in the store rather than a
+     * second one in the browser that can disagree with it.
+     */
+    if (req.method === 'GET' && url.pathname === '/api/timelines') {
+      const store = await openUniverse(url.searchParams.get('universe') ?? '')
+      const timelines = await store.timelines()
+      return send(res, 200, {
+        timelines: flatten(treeOf(timelines)).map(({ children, ...node }) => node),
+      })
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/timelines') {
+      const body = await readJson<{ universe: string; name?: string; parent?: string }>(req)
+      const store = await openUniverse(body.universe ?? '')
+      try {
+        const timeline = await store.addTimeline({ name: body.name ?? '', parent: body.parent })
+        return send(res, 200, { timeline })
+      } catch (e: unknown) {
+        // A rejected placement is an answer, not a fault: the tree said no.
+        return send(res, 400, { error: e instanceof Error ? e.message : String(e) })
+      }
+    }
+
+    if (req.method === 'PATCH' && url.pathname === '/api/timelines') {
+      const body = await readJson<{
+        universe: string
+        id: string
+        name?: string
+        parent?: string
+      }>(req)
+      const store = await openUniverse(body.universe ?? '')
+      try {
+        const timeline = await store.updateTimeline(body.id ?? '', {
+          name: body.name,
+          parent: body.parent,
+        })
+        return send(res, 200, { timeline })
+      } catch (e: unknown) {
+        return send(res, 400, { error: e instanceof Error ? e.message : String(e) })
+      }
+    }
+
+    if (req.method === 'DELETE' && url.pathname === '/api/timelines') {
+      const store = await openUniverse(url.searchParams.get('universe') ?? '')
+      try {
+        await store.removeTimeline(url.searchParams.get('id') ?? '')
+        return send(res, 200, { ok: true })
+      } catch (e: unknown) {
+        return send(res, 400, { error: e instanceof Error ? e.message : String(e) })
+      }
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/universe') {
       const body = await readJson<{ id?: string; draft: UniverseDraft }>(req)
       const draft = body.draft ?? {}

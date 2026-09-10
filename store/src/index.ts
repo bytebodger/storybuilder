@@ -18,6 +18,19 @@ export { isEmptyValue, type FieldSpec, type FieldKind } from './field-spec.ts'
 export { FIELD_SPECS, fieldsFor, fieldIn, containersWithFields } from './fields.ts'
 export { draftToItem, itemToDraft, draftToPatch, defaultValues, type ArticleValues } from './article.ts'
 export { normalizeTerm, singularize, matchTerm, termExists, type TermMatch } from './terms.ts'
+export {
+  treeOf,
+  flatten,
+  childrenOf,
+  subtree,
+  ancestors,
+  spanOf,
+  isRoot,
+  rootTimeline,
+  assertValidPlacement,
+  type TimelineNode,
+  type Span,
+} from './timelines.ts'
 export { linkify, buildIndex, type Segment, type LinkTarget, type LinkifyOptions } from './linkify.ts'
 export { buildImportPlan, type BuildOptions } from './import/azgaar.ts'
 export { readAddedLabels, guessGeographyKind, type AddedLabel } from './import/azgaar-svg.ts'

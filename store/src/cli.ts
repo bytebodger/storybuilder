@@ -14,6 +14,7 @@ import { renderBrief, renderUniverseBrief } from './brief.ts'
 import { validate } from './validate.ts'
 import { CanonViolation, type ClosureState } from './types.ts'
 import { matchTerm } from './terms.ts'
+import { flatten, isRoot, treeOf } from './timelines.ts'
 import type { Store } from './store.ts'
 import { buildImportPlan } from './import/azgaar.ts'
 import { assess, countBy, importedAttributes } from './import/delta.ts'
@@ -68,6 +69,15 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
         religions, cities, characters and the like open: they accrete.
   sb remove <id>
   sb validate
+
+  sb timelines                              The universe's timelines, as a tree
+  sb new-timeline <name> [--under <ref>]    Defaults to the Universal History
+  sb rename-timeline <ref> --name <new>
+  sb move-timeline <ref> --under <ref>      Reassign under a different parent
+  sb remove-timeline <ref>                  Its children move up to take its place
+        A <ref> is a timeline id or its name. Timelines are buckets for history
+        events, not containers: they hold no articles and carry no dates of
+        their own, since a timeline spans whatever its events span.
 
   sb crop-map <map.svg> <map.json> --out <file.svg>
               [--state <name> | --label <name> | --box x0,y0,x1,y1]
@@ -482,6 +492,71 @@ async function main(argv: string[]): Promise<number> {
       return 0
     }
 
+    case 'timelines': {
+      const s = await store(a)
+      for (const node of flatten(treeOf(await s.timelines()))) {
+        const mark = isRoot(node.id) ? '' : `  [${node.id}]`
+        console.log(`${'  '.repeat(node.depth)}${node.name}${mark}`)
+      }
+      return 0
+    }
+
+    case 'new-timeline': {
+      const s = await store(a)
+      const name = rest.join(' ').trim()
+      if (!name) throw new Error('Usage: sb new-timeline <name> [--under <ref>]')
+      const under = one(a, 'under')
+      const added = await s.addTimeline({
+        name,
+        ...(under ? { parent: await timelineRef(s, under) } : {}),
+      })
+      const parent = (await s.timelines()).find((t) => t.id === added.parent)
+      console.log(`Added "${added.name}" [${added.id}] under ${parent?.name}.`)
+      return 0
+    }
+
+    case 'rename-timeline': {
+      const s = await store(a)
+      const name = one(a, 'name')
+      if (!rest[0] || !name) throw new Error('Usage: sb rename-timeline <ref> --name <new>')
+      const was = await timelineRef(s, rest.join(' '))
+      const renamed = await s.updateTimeline(was, { name })
+      console.log(`Renamed to "${renamed.name}" [${renamed.id}].`)
+      return 0
+    }
+
+    case 'move-timeline': {
+      const s = await store(a)
+      const under = one(a, 'under')
+      if (!rest[0] || !under) throw new Error('Usage: sb move-timeline <ref> --under <ref>')
+      const moved = await s.updateTimeline(await timelineRef(s, rest.join(' ')), {
+        parent: await timelineRef(s, under),
+      })
+      const parent = (await s.timelines()).find((t) => t.id === moved.parent)
+      console.log(`"${moved.name}" now sits under ${parent?.name}.`)
+      return 0
+    }
+
+    case 'remove-timeline': {
+      const s = await store(a)
+      if (!rest[0]) throw new Error('Usage: sb remove-timeline <ref>')
+      const id = await timelineRef(s, rest.join(' '))
+      const list = await s.timelines()
+      const timeline = list.find((t) => t.id === id)!
+      const inherited = list.filter((t) => t.parent === id)
+
+      await s.removeTimeline(id)
+      const parent = list.find((t) => t.id === timeline.parent)
+      console.log(
+        `Removed "${timeline.name}".` +
+          (inherited.length
+            ? ` ${inherited.length} timeline(s) moved up to ${parent?.name}: ` +
+              `${inherited.map((t) => t.name).join(', ')}.`
+            : ''),
+      )
+      return 0
+    }
+
     case 'validate': {
       const s = await store(a)
       const issues = await validate(s)
@@ -495,6 +570,26 @@ async function main(argv: string[]): Promise<number> {
       console.error(`Unknown command "${cmd}"\n\n${USAGE}`)
       return 1
   }
+}
+
+/**
+ * A timeline by id or by name.
+ *
+ * Ids are what the store speaks and names are what an author does, and a
+ * timeline has few enough of both that trying each in turn is honest rather
+ * than ambiguous - names are unique within a universe.
+ */
+async function timelineRef(s: Store, ref: string): Promise<string> {
+  const list = await s.timelines()
+  const term = ref.trim().toLowerCase()
+  const hit =
+    list.find((t) => t.id === ref.trim()) ?? list.find((t) => t.name.toLowerCase() === term)
+  if (!hit) {
+    throw new Error(
+      `No timeline "${ref}". This universe has: ${list.map((t) => t.name).join(', ')}`,
+    )
+  }
+  return hit.id
 }
 
 main(process.argv.slice(2)).then(

@@ -13,11 +13,22 @@ import {
   type Neighborhood,
   type NewItem,
   type RelationSet,
+  type Timeline,
   type Universe,
+  ROOT_TIMELINE_ID,
+  ROOT_TIMELINE_NAME,
 } from './types.ts'
+import { assertValidPlacement, childrenOf, isRoot, rootTimeline } from './timelines.ts'
 
 const MANIFEST = 'universe.json'
 const CONTAINER_DIR = 'store'
+/*
+ * Beside the manifest rather than inside `store/`, because `containers()` reads
+ * that directory and every file in it is a container. A timeline is not one -
+ * it holds no articles - and filing it there would put "timelines" in the nav
+ * as a thing to write articles about.
+ */
+const TIMELINES = 'timelines.json'
 
 /**
  * File-backed Store: one JSON file per container, inside one universe directory.
@@ -62,6 +73,7 @@ export class JsonFileStore implements Store {
       createdAt: new Date().toISOString(),
     }
     await writeFile(join(root, MANIFEST), stringify(manifest), 'utf8')
+    await writeFile(join(root, TIMELINES), stringify([rootTimeline()]), 'utf8')
     return new JsonFileStore(root)
   }
 
@@ -327,6 +339,102 @@ export class JsonFileStore implements Store {
 ` +
         `     sb set-closure ${owner.id} ${key} open --reason "..."`,
     )
+  }
+
+  // --- timelines ----------------------------------------------------------
+
+  /**
+   * Read the timelines, creating the Universal History if there is none.
+   *
+   * Healing on read rather than in a migration step: a universe made before
+   * timelines existed, or one whose file was deleted by hand, comes back with
+   * a root and everything that reads timelines can assume there is one. The
+   * write only happens when something was actually missing.
+   */
+  async timelines(): Promise<Timeline[]> {
+    let list: Timeline[]
+    try {
+      list = await this.readJson<Timeline[]>(join(this.root, TIMELINES))
+    } catch (e: unknown) {
+      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e
+      list = []
+    }
+    if (list.some((t) => isRoot(t.id))) return list
+
+    const healed = [rootTimeline(), ...list]
+    await this.writeTimelines(healed)
+    return healed
+  }
+
+  async addTimeline(input: { name: string; parent?: string }): Promise<Timeline> {
+    const list = await this.timelines()
+    assertValidPlacement(list, input)
+
+    const timeline: Timeline = {
+      id: await this.mintTimelineId(list),
+      name: input.name.trim(),
+      parent: input.parent ?? ROOT_TIMELINE_ID,
+      createdAt: new Date().toISOString(),
+    }
+    await this.writeTimelines([...list, timeline])
+    return timeline
+  }
+
+  async updateTimeline(id: string, patch: { name?: string; parent?: string }): Promise<Timeline> {
+    const list = await this.timelines()
+    const current = list.find((t) => t.id === id)
+    if (!current) throw new StoreError(`No timeline with id "${id}" in universe "${this.universeId}"`)
+
+    if (isRoot(id)) {
+      // Named and placed by the tool, not by the author. Everything else in the
+      // tree is described by where it sits relative to this, so it has nowhere
+      // to be moved to and renaming it would rename the frame of reference.
+      throw new StoreError(`${ROOT_TIMELINE_NAME} cannot be renamed or moved`)
+    }
+
+    const next: Timeline = {
+      ...current,
+      name: (patch.name ?? current.name).trim(),
+      parent: patch.parent ?? current.parent ?? ROOT_TIMELINE_ID,
+      updatedAt: new Date().toISOString(),
+    }
+    assertValidPlacement(list, { name: next.name, parent: next.parent }, id)
+
+    await this.writeTimelines(list.map((t) => (t.id === id ? next : t)))
+    return next
+  }
+
+  async removeTimeline(id: string): Promise<void> {
+    const list = await this.timelines()
+    const timeline = list.find((t) => t.id === id)
+    if (!timeline) throw new StoreError(`No timeline with id "${id}" in universe "${this.universeId}"`)
+    if (isRoot(id)) throw new StoreError(`${ROOT_TIMELINE_NAME} cannot be removed`)
+
+    // Children take the removed timeline's place rather than going with it.
+    // Deleting the Reign of King Tarinian says the reign is not a useful
+    // grouping; it does not say the War of the Stewards never happened.
+    const inherited = timeline.parent ?? ROOT_TIMELINE_ID
+    const moved = childrenOf(list, id).map((c) => c.id)
+    const stamp = new Date().toISOString()
+
+    await this.writeTimelines(
+      list
+        .filter((t) => t.id !== id)
+        .map((t) => (moved.includes(t.id) ? { ...t, parent: inherited, updatedAt: stamp } : t)),
+    )
+  }
+
+  private async writeTimelines(list: Timeline[]): Promise<void> {
+    await mkdir(this.root, { recursive: true })
+    await writeFile(join(this.root, TIMELINES), stringify(list), 'utf8')
+  }
+
+  private async mintTimelineId(list: Timeline[]): Promise<string> {
+    const taken = new Set(list.map((t) => t.id))
+    for (;;) {
+      const id = randomBytes(4).toString('hex')
+      if (!taken.has(id)) return id
+    }
   }
 
   private async require(id: string): Promise<Item> {

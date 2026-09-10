@@ -113,6 +113,11 @@ rest - are
 listed in [docs/containers.md](docs/containers.md), along with what separates a reference article from
 a tale, and why items carry a free-form `kind`.
 
+**Timelines** sit beside that model rather than inside it. A timeline is not a container - it holds no
+article - but a tree of buckets that history events are filed into, rooted at a Universal History
+every universe is given and cannot delete. It carries no dates of its own: a timeline spans whatever
+its events span. See [docs/timelines.md](docs/timelines.md).
+
 It is JSON files inside each universe today, behind a `Store` interface. Swapping in Postgres or a
 document store later means writing one class behind that interface and changing nothing that calls
 it.
@@ -189,18 +194,20 @@ Scaffolding and foundation. What exists:
 - [x] Skill catalog read from `.claude/skills/`, so the console offers only skills that exist
 - [x] Container catalog and per-universe navigation, including empty sections
 - [x] Kinds, so coarse containers can still carry fine completeness claims
-- [x] Generic field specs: one form, one generator, any container. `universe`, `fauna` and `locations` have specs
+- [x] Generic field specs: one form, one generator, any container. `universe`, `fauna`, `locations` and `people` have specs
 - [x] Stubs: a third state between absent and described, with reference scanning on save
 - [x] Two-round save flow: loose ends first, then a canon check that reads the result. See [docs/save-flow.md](docs/save-flow.md)
 - [x] Cross-references: article prose links to the articles it mentions, stubs included. See [docs/cross-references.md](docs/cross-references.md)
 - [x] Map import from Azgaar exports, tiered, with hand-added labels always included. See [docs/map-import.md](docs/map-import.md)
 - [x] Re-import as a delta: only what changed is written, and authored work is never overwritten. See [docs/re-import.md](docs/re-import.md)
+- [x] Timelines: a tree of buckets for history, rooted at each universe's Universal History. See [docs/timelines.md](docs/timelines.md)
 - [x] Worked example universe (`universes/phonon`)
 - [x] Frontend and bridge scaffolds, wired to the store
 - [ ] The remaining skills: `name-forge`, `outline`, `scene-draft`, `continuity-pass`, `world-brief`, `timeline`
 - [ ] Temporal queries — dates are recorded and surfaced, not yet filtered on
 - [ ] Named ages and eras ("Year 432 of the First Age")
-- [ ] Field specs for the remaining fifteen containers
+- [ ] The `history` container, and the UI that draws events along their timelines
+- [ ] Field specs for the remaining fourteen containers
 - [ ] Author-defined container types
 - [ ] The story-building workflow, grounded in established canon
 - [ ] Canon indexing, so large universes don't re-read the corpus on every call

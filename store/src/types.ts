@@ -156,6 +156,47 @@ export interface Universe {
 /** The editable half of a manifest: everything the form can set. */
 export type UniverseDraft = Partial<Omit<Universe, 'id' | 'createdAt' | 'updatedAt'>>
 
+/**
+ * A bucket for history, and a place in a tree of them.
+ *
+ * Not a container. A timeline holds no article and describes nothing; it says
+ * which stretch of a universe's history an event belongs to, and which larger
+ * stretch that one sits inside:
+ *
+ *   Universal History
+ *     History of Waresia
+ *       Reign of King Tarinian
+ *         War of the Stewards
+ *
+ * It carries no dates of its own. A timeline's span is whatever its events say
+ * it is - the earliest year under it to the latest - so it cannot disagree with
+ * its own contents, and a reign that turns out to have started a year earlier
+ * does not have to be corrected in two places.
+ */
+export interface Timeline {
+  id: string
+  name: string
+  /**
+   * The timeline this one sits under. Absent on the root and on nothing else:
+   * every universe has exactly one Universal History, and everything else
+   * hangs off it.
+   */
+  parent?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+/**
+ * The one timeline every universe has.
+ *
+ * A fixed id rather than a minted one, so an event can default to it without a
+ * lookup and code can recognise it without asking the store. Ids are per
+ * universe - a store handle is bound to one - so the same id in every universe
+ * collides with nothing.
+ */
+export const ROOT_TIMELINE_ID = 'universal'
+export const ROOT_TIMELINE_NAME = 'Universal History'
+
 export interface NewItem {
   container: string
   name: string

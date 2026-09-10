@@ -29,6 +29,10 @@ written; a nav built from the catalog shows them what their world has not yet sa
 | **Terminology** | Terms particular to this universe — what the locals call the swamps they live beside. |
 | **Tales** | Works of in-universe fiction. The only narrative container. |
 
+History events are additionally filed into **timelines** — a tree of buckets rooted at each universe's
+Universal History, described in [timelines.md](timelines.md). A timeline is not a container: it holds
+no article and has no field spec.
+
 The list is a starting point, not a fixed schema. The store never refused an unlisted container, and
 the nav shows anything it finds under one, labelled as outside the catalog. Author-defined container
 types are a later feature; for now, adding one means adding it to the catalog.

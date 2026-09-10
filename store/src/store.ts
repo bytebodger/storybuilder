@@ -1,4 +1,12 @@
-import type { Item, ItemPatch, Neighborhood, NewItem, Universe, ClosureState } from './types.ts'
+import type {
+  Item,
+  ItemPatch,
+  Neighborhood,
+  NewItem,
+  Timeline,
+  Universe,
+  ClosureState,
+} from './types.ts'
 
 /**
  * The seam.
@@ -49,4 +57,30 @@ export interface Store {
 
   /** An item and everything related to it, grouped by type, with closure flags. */
   neighborhood(id: string): Promise<Neighborhood>
+
+  // --- timelines ----------------------------------------------------------
+
+  /**
+   * Every timeline in this universe, flat. Always at least one: a universe
+   * without a Universal History is given one on the way out, so no caller ever
+   * has to handle the empty case or create the root itself.
+   */
+  timelines(): Promise<Timeline[]>
+
+  /** Add a timeline. Defaults to sitting directly under the Universal History. */
+  addTimeline(input: { name: string; parent?: string }): Promise<Timeline>
+
+  /**
+   * Rename a timeline, move it under a different parent, or both.
+   *
+   * The root can do neither: it is the one timeline whose name and place are
+   * fixed, because everything else is defined relative to it.
+   */
+  updateTimeline(id: string, patch: { name?: string; parent?: string }): Promise<Timeline>
+
+  /**
+   * Remove a timeline. Its children move up to take its place, so removing a
+   * stretch of history never orphans the stretches inside it.
+   */
+  removeTimeline(id: string): Promise<void>
 }
