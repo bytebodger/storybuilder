@@ -22,6 +22,7 @@ import {
   gridSampler,
   growToShore,
   pad,
+  fitVignette,
   relabelCoordinates,
   type Box,
 } from './import/crop.ts'
@@ -65,7 +66,7 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
 
   sb crop-map <map.svg> <map.json> --out <file.svg>
               [--state <name> | --label <name> | --box x0,y0,x1,y1]
-              [--pad 0.08] [--enclose 0.9] [--no-coordinates]
+              [--pad 0.08] [--enclose 0.9] [--no-coordinates] [--vignette]
         Cut a region out of a map, keeping full vector detail. A state is
         framed by its own cells; a hand-added label by its curve, grown outward
         until land rings the frame. --enclose is how much of each edge must be
@@ -332,8 +333,9 @@ async function main(argv: string[]): Promise<number> {
       const framed = pad(box, fraction, canvas)
       // Relabel before cropping: the labels are placed in canvas coordinates,
       // and the frame is what decides where the edges now are.
-      const relabelled = a.flags['no-coordinates'] ? svg : relabelCoordinates(svg, framed)
-      await writeFile(out, cropSvg(relabelled, framed), 'utf8')
+      let fitted = a.flags['no-coordinates'] ? svg : relabelCoordinates(svg, framed)
+      fitted = fitVignette(fitted, framed, !!a.flags.vignette)
+      await writeFile(out, cropSvg(fitted, framed), 'utf8')
 
       const w = Math.round(framed.x1 - framed.x0)
       const h = Math.round(framed.y1 - framed.y0)

@@ -211,6 +211,29 @@ out. A label sitting on a line that hugs the frame's edge is nudged a few pixels
 plainly belonging to its line, where a clipped glyph would read as nothing at all. `--no-coordinates`
 leaves the layer untouched.
 
+### Percentages do not follow the viewBox
+
+One layer in an Azgaar export writes its geometry as a share of the viewport:
+
+```html
+<g id="vignette" mask="url(#vignette-mask)" opacity="0.3" fill="#000000">
+  <rect x="0" y="0" width="100%" height="100%"/>
+</g>
+```
+
+A percentage resolves against the viewport, but that rect still begins at user space **(0,0)** — and a
+`viewBox` moves where the view starts without moving the origin. Crop a region overlapping the
+top-left of the canvas and the overlay covers only the overlap: a darker band across the top of the
+frame, ending in mid-air. Crop anywhere else and it misses the frame entirely, which is why three
+crops looked perfect before a fourth reached back toward the origin.
+
+The vignette is therefore **removed by default** — it is a flourish for a whole map, and on a region
+crop it darkens exactly the coastline the crop exists to show. `--vignette` keeps it, rewritten into
+user space along with its mask so it fits the frame.
+
+It is the only percentage geometry in the body of the file; a crop now asserts that none is left.
+Anything else added to a map with `%` sizes or a `(0,0)` anchor will need the same treatment.
+
 ### A crop is not smaller
 
 The file keeps its full geometry and only the window moves, so a 4% crop is still 12.7 MB. The bulk is

@@ -8,6 +8,7 @@ import {
   growToShore,
   pad,
   relabelCoordinates,
+  fitVignette,
 } from '../src/import/crop.ts'
 
 const canvas = { width: 1000, height: 1000 }
@@ -207,5 +208,56 @@ describe('labels against the edge of a frame', () => {
     const out = relabelCoordinates(EDGY, { x0: 100, y0: 100, x1: 900, y1: 900 })
     assert.equal(at(out, '30°E').x, 500)
     assert.equal(at(out, '60°N').y, 402)
+  })
+})
+
+describe('the vignette, whose geometry is a share of the viewport', () => {
+  const VIGNETTED = [
+    '<svg width="1000" height="1000">',
+    '<defs><mask id="vignette-mask">',
+    '<rect x="0" y="0" width="100%" height="100%" fill="white"/>',
+    '<rect id="vignette-rect" fill="black" x="0.3%" y="0.4%" width="99.6%" height="99.2%" rx="5%" ry="5%" filter="blur(20px)"/>',
+    '</mask></defs>',
+    '<g id="terrain"><path d="M0,0"/></g>',
+    '<g id="vignette" mask="url(#vignette-mask)" opacity="0.3" fill="#000000">',
+    '<rect x="0" y="0" width="100%" height="100%"/>',
+    '</g></svg>',
+  ].join('')
+
+  it('is taken off by default, being a flourish for a whole map', () => {
+    const out = fitVignette(VIGNETTED, { x0: 100, y0: 500, x1: 900, y1: 900 })
+    assert.equal(/<g id="vignette"/.test(out), false)
+    // Everything else survives untouched.
+    assert.match(out, /<g id="terrain">/)
+    assert.match(out, /vignette-mask/, 'the mask definition is harmless and stays')
+  })
+
+  it('is refitted to the frame when asked for, in user space', () => {
+    const out = fitVignette(VIGNETTED, { x0: 100, y0: 500, x1: 900, y1: 900 }, true)
+    const layer = /<g id="vignette"[\s\S]*?<\/g>/.exec(out)![0]
+
+    // The overlay must start where the view starts, not at the canvas origin.
+    assert.match(layer, /x="100"/)
+    assert.match(layer, /y="500"/)
+    assert.match(layer, /width="800"/)
+    assert.match(layer, /height="400"/)
+    assert.equal(/100%/.test(layer), false, 'no percentage geometry survives')
+  })
+
+  it('moves the mask with it, so the soft edge lands on the overlay', () => {
+    const out = fitVignette(VIGNETTED, { x0: 100, y0: 500, x1: 900, y1: 900 }, true)
+    const mask = /<mask id="vignette-mask">[\s\S]*?<\/mask>/.exec(out)![0]
+
+    assert.match(mask, /<rect x="100" y="500" width="800" height="400" fill="white"\/>/)
+    assert.equal(/"[\d.]+%"/.test(mask), false, 'the mask is in user space too')
+    // The dark rect sits just inside the frame, as it did inside the canvas.
+    const inner = /<rect id="vignette-rect"[^>]*\/>/.exec(mask)![0]
+    assert.match(inner, /x="103\.2"/)
+    assert.match(inner, /width="793\.6"/)
+  })
+
+  it('leaves a map with no vignette alone', () => {
+    const bare = '<svg><g id="terrain"/></svg>'
+    assert.equal(fitVignette(bare, { x0: 0, y0: 0, x1: 10, y1: 10 }), bare)
   })
 })

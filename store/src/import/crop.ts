@@ -315,3 +315,64 @@ const setXY = (attrs: string, x: number, y: number) =>
   attrs
     .replace(/\bx="[-\d.]+"/, `x="${round1(x)}"`)
     .replace(/\by="[-\d.]+"/, `y="${round1(y)}"`)
+
+/**
+ * Fit the vignette to a cropped frame, or take it off.
+ *
+ * The vignette is the one layer whose geometry is written in percentages:
+ *
+ *   <g id="vignette" mask="url(#vignette-mask)" opacity="0.3" fill="#000000">
+ *     <rect x="0" y="0" width="100%" height="100%"/>
+ *   </g>
+ *
+ * A percentage resolves against the viewport, but the rect still starts at user
+ * space (0,0) - and a viewBox moves where the view begins without moving that
+ * origin. Crop a region that overlaps the top-left of the canvas and the overlay
+ * covers only part of the frame: a darker band across the top, ending in mid-air.
+ * Crop anywhere else and it misses the frame entirely, which is why this went
+ * unnoticed until a frame reached back toward the origin.
+ *
+ * By default it is removed. It is a flourish for a whole map, and on a region
+ * crop it darkens exactly the coastline the crop was made to show.
+ */
+export function fitVignette(svg: string, box: Box, keep = false): string {
+  const layer = /<g id="vignette"[\s\S]*?<\/g>/.exec(svg)
+  if (!layer) return svg
+  if (!keep) return svg.replace(layer[0], '')
+
+  const x = round1(box.x0)
+  const y = round1(box.y0)
+  const w = round1(box.x1 - box.x0)
+  const h = round1(box.y1 - box.y0)
+  const inset = 0.004
+
+  // The overlay, in user space rather than as a share of a viewport whose
+  // origin it does not share.
+  let out = svg.replace(
+    layer[0],
+    layer[0].replace(
+      /<rect\b[^>]*\/>/,
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}"/>`,
+    ),
+  )
+
+  // The mask that shapes it has to move with it, or the soft edge lands
+  // somewhere the overlay no longer is.
+  const mask = /<mask id="vignette-mask">[\s\S]*?<\/mask>/.exec(out)
+  if (mask) {
+    const fitted = mask[0]
+      .replace(
+        /<rect\b[^>]*fill="white"[^>]*\/>/,
+        `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="white"/>`,
+      )
+      .replace(
+        /<rect id="vignette-rect"[^>]*\/>/,
+        `<rect id="vignette-rect" fill="black" x="${round1(box.x0 + w * inset)}" ` +
+          `y="${round1(box.y0 + h * inset)}" width="${round1(w * (1 - inset * 2))}" ` +
+          `height="${round1(h * (1 - inset * 2))}" rx="${round1(w * 0.05)}" ` +
+          `ry="${round1(h * 0.05)}" filter="blur(20px)"/>`,
+      )
+    out = out.replace(mask[0], fitted)
+  }
+  return out
+}
