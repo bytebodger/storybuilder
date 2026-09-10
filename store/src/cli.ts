@@ -41,7 +41,8 @@ const USAGE = `sb - storybuilder canon store
   sb universes                              List universes
   sb new-universe <id> --name <name> [--years N] [--genre g]... [--tone t]
                      [--theme t]... [--scale s] [--laws x] [--origins x]
-                     [--geography x] [--cultures x] [--inspiration x]...
+                     [--geography x] [--cultures x] [--profession p]...
+                     [--inspiration x]...
 
 Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
 
@@ -145,6 +146,7 @@ async function main(argv: string[]): Promise<number> {
         origins: one(a, 'origins'),
         geography: one(a, 'geography'),
         cultures: one(a, 'cultures'),
+        professions: many(a, 'profession'),
         inspiration: many(a, 'inspiration'),
       })
       console.log(`Created universe "${id}"`)

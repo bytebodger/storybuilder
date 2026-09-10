@@ -119,6 +119,28 @@ export const UNIVERSE_FIELDS: FieldSpec[] = [
       'the detail - that belongs to the cultures recorded in the store.',
   },
   {
+    key: 'professions',
+    label: 'Profession(s)',
+    kind: 'list',
+    required: false,
+    default: [],
+    help:
+      'The work people do in this universe. A list, comma separated, and worth being generous with - ' +
+      'it is what stops a character being given a trade the world has no room for. Include the ' +
+      'ordinary alongside the strange: a world is mostly farmers and clerks, and the alchemists are ' +
+      'interesting because of them. Coin the ones only this world would have.',
+    examples: [
+      'farmer',
+      'blacksmith',
+      'scribe',
+      'fishmonger',
+      'tax collector',
+      'alchemist',
+      'root singer',
+      'ebny processor',
+    ],
+  },
+  {
     key: 'inspiration',
     label: 'Inspiration',
     kind: 'list',

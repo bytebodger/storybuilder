@@ -514,3 +514,34 @@ describe('validate', () => {
     assert.deepEqual(await validate(store), [])
   })
 })
+
+describe('the professions a universe has room for', () => {
+  it('is kept as a list on the manifest', async () => {
+    const store = await createUniverse(
+      'spec-trades',
+      { name: 'Exoria', professions: ['farmer', 'root singer', 'tax collector'] },
+      root,
+    )
+    assert.deepEqual((await store.manifest()).professions, ['farmer', 'root singer', 'tax collector'])
+  })
+
+  it('is named in full in every brief, not counted', async () => {
+    // A skill choosing a character's trade needs the list itself; "3
+    // professions" would not stop it inventing a fourth.
+    const store = await createUniverse(
+      'spec-trades-brief',
+      { name: 'Exoria', professions: ['farmer', 'root singer'] },
+      root,
+    )
+    const text = await renderUniverseBrief(store)
+
+    assert.match(text, /PROFESSIONS/)
+    assert.match(text, /the only trades to draw on/)
+    assert.match(text, /farmer, root singer/)
+  })
+
+  it('says nothing when the author has not listed any', async () => {
+    const store = await createUniverse('spec-no-trades', { name: 'Exoria' }, root)
+    assert.doesNotMatch(await renderUniverseBrief(store), /PROFESSIONS/)
+  })
+})

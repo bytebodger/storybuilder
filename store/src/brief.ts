@@ -108,6 +108,14 @@ export async function renderUniverseBrief(store: Store): Promise<string> {
   line('Scale', m.scale)
   line('Inspiration', m.inspiration)
 
+  // Named rather than summarised: a skill choosing a character's trade needs
+  // the list itself, and "47 professions" would not stop it inventing a
+  // forty-eighth.
+  if (m.professions?.length) {
+    out.push('', `PROFESSIONS - the work done here, and the only trades to draw on:`)
+    out.push(`  ${m.professions.join(', ')}`)
+  }
+
   const blocks: [string, string | undefined][] = [
     ['NATURAL LAWS', m.naturalLaws],
     ['ORIGINS', m.origins],

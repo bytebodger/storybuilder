@@ -143,6 +143,11 @@ export interface Universe {
   origins?: string
   geography?: string
   cultures?: string
+  /**
+   * The work people do here. Carried into every brief, because a trade the
+   * world has no room for is exactly the kind of thing that gets invented.
+   */
+  professions?: string[]
   inspiration?: string[]
   createdAt: string
   updatedAt?: string

@@ -26,11 +26,52 @@ change.
 | Origins | no | — | How the universe came to be. |
 | Geography | no | — | Dominant features of the physical environment. |
 | Culture(s) | no | — | Global features of the cultures with the most sway — not the detail. |
+| Profession(s) | no | — | The work people do here. Comma separated. |
 | Inspiration | no | — | Real-world works whose influence should be felt. |
 
 The pronunciation rides on the name in every brief a skill reads — `UNIVERSE: The Phonon Cycle (said
 "FOH-non")` — rather than taking a line of its own. It earns that place where dialogue has to say the
 word, and stays out of the way everywhere else.
+
+## Professions
+
+A comma-separated list of the trades this world has room for, kept on the manifest and **named in
+full in every brief** — not counted. A skill choosing a character's work needs the list itself;
+telling it there are forty-seven professions would not stop it inventing a forty-eighth.
+
+Be generous with it, and include the ordinary alongside the strange. A world is mostly farmers and
+clerks, and its alchemists are interesting *because* of them. The coined ones are what make it this
+world rather than any world: `root singer`, `ebny processor`, `saltfoot`.
+
+<details>
+<summary>A starting list, for a pre-industrial setting — paste and cut what does not fit</summary>
+
+actuary, alchemist, alewife, ambassador, amputeer, archaenist, armorer, arsonist, artist, assassin,
+astrologer, bailiff, baker, bandit, bard, barker, barrister, bartender, beggar, blacksmith, boatswain,
+boatwright, bodger, bodyguard, bookbinder, bookie, bottler, bounty hunter, bower, brewer, butcher,
+butler, calligrapher, candlemaker, captain, carpenter, cartographer, cartwright, chamberlain,
+chancellor, chef, citizen, clerk, cobbler, cognosci, con artist, conscript, constable, consultant,
+cook, courier, courtesan, crier, deckhand, detonatrix, diver, drill instructor, ebny processor,
+educator, elder, embroiderer, engraver, escort, evangelist, executioner, explorer, farmer, farmhand,
+ferry operator, fish herder, fisherman, fishmonger, flogger, fortune teller, fowler, furrier,
+gardener, general, gladiator, governor, grave digger, grocer, groomer, guard, guide, healer, herald,
+herbalist, herder, hermit, historian, hobbler, hunter, innkeeper, jailer, janitor, jester, jeweler,
+judge, juggler, lamplighter, landlord, leecher, lender, lieutenant, locksmith, lookout, lumberjack,
+marshal, mason, master, medium, mercenary, merchant, messenger, miller, minstrel, minter, monk,
+mortician, netminder, noble, painter, peasant, peddler, physician, pickpocket, pilgrim, pioneer,
+playwright, poacher, poet, porter, potter, priest, privateer, quartermaster, raker, ranger, reaper,
+reeve, resistance fighter, roofer, root pusher, root singer, saltfoot, scale inspector, scaler,
+scavenger, scout, scribe, scrivener, scullion, servant, settler, sheriff, singer, smuggler, socialite,
+soldier, solicitor, spinster, spiritualist, squatter, squire, steward, stonecutter, summoner, tailor,
+tamer, tanner, tax collector, theologian, thespian, thief, thug, tomb raider, torturer, trader,
+trainer, translator, trapper, treasurer, trencher, troubadour, tutor, union steward, valet, wagoner,
+war counsel, warden, watchman, weaver, webber, wheelwright, whisperer, wrangler, writer, yeoman
+
+</details>
+
+Left blank, briefs say nothing about professions — silence rather than an invitation to invent one.
+Like every field on this form it can be generated, and a generated list is steered by the genre, tone
+and natural laws already set: a world with no metalworking has no blacksmiths.
 
 **Total years** is not a naturalistic age. A planet may be billions of years old while its canon
 covers a hundred; enter what the canon spans. It does not constrain when stories are set — a
