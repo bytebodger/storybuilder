@@ -162,6 +162,11 @@ Whether a label is framed by its curve or grown to its shores comes from the map
 points of the curve are sampled against the height grid, and the majority decides. A range sits on
 land and keeps its curve; the Sontersea sits on water and reaches for its coasts.
 
+`crop-map --label` and the importer share that decision, from the same function. They did not at
+first, and a peninsula showed why: growing toward a shore never closes around one — water on three
+sides is what a peninsula *is* — so the CLI fell back to a frame twice the size of the article's. A
+crop of a label and the map on that label's article should not be two different pictures.
+
 ### A frame has to be a shape worth looking at
 
 A country's outline is roughly square and needs only padding. A river is a line — six hundred pixels

@@ -24,9 +24,9 @@ import {
   cropSvg,
   enclosure,
   gridSampler,
-  growToShore,
   pad,
   fitVignette,
+  labelFrame,
   relabelCoordinates,
   type Box,
 } from './import/crop.ts'
@@ -292,6 +292,7 @@ async function main(argv: string[]): Promise<number> {
       let box: Box
       let what: string
       let sample: ReturnType<typeof gridSampler> | undefined
+      let alreadyPadded = false
 
       const explicit = one(a, 'box')
       const stateName = one(a, 'state')
@@ -315,27 +316,27 @@ async function main(argv: string[]): Promise<number> {
           (l) => l.name.toLowerCase() === labelName.toLowerCase(),
         )
         if (!label) throw new Error(`No hand-added label named "${labelName}" in this SVG`)
-        // A label over water names a stretch of sea the generator has no object
-        // for, so the frame is found by walking out until the coasts close
-        // around it - sampled on the regular lattice, since the packed cells
-        // are too sparse in open sea to say what is there.
+        // The same decision the importer makes, from the same code: a label
+        // over land keeps its curve, one over water reaches for its shores.
+        // A crop of a label and the map on that label's article should not be
+        // two different pictures.
         const grid = json.grid ?? {}
         sample = gridSampler(
           (grid.cells ?? []).map((c: Row) => Number(c?.h ?? 0)),
           { spacing: Number(grid.spacing ?? 1), cellsX: Number(grid.cellsX ?? 1) },
         )
-        const grown = growToShore(boxOf(label.points.length ? label.points : [label]), sample, canvas, {
-          enclose: one(a, 'enclose') === undefined ? 0.9 : Number(one(a, 'enclose')),
-        })
-        box = grown.box
-        what = grown.closed
-          ? `${label.name}, grown from its label until the coasts closed around it`
-          : `${label.name} — ${grown.reason}; use --box to frame it yourself`
+        box = labelFrame(label, sample, canvas)
+        // Already padded by the shared framing, so this path adds none of its
+        // own unless it is asked for. Otherwise the CLI and the article would
+        // show the same label at two different sizes.
+        alreadyPadded = true
+        what = `${label.name}, framed as the importer frames it`
       } else {
         throw new Error('Say what to crop to: --state, --label, or --box')
       }
 
-      const fraction = one(a, 'pad') === undefined ? 0.08 : Number(one(a, 'pad'))
+      const fraction =
+        one(a, 'pad') !== undefined ? Number(one(a, 'pad')) : alreadyPadded ? 0 : 0.08
       const framed = pad(box, fraction, canvas)
       // Relabel before cropping: the labels are placed in canvas coordinates,
       // and the frame is what decides where the edges now are.

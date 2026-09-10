@@ -28,6 +28,7 @@ export {
   relabelCoordinates,
   fitVignette,
   frameBox,
+  labelFrame,
   gridSampler,
   growToShore,
   type Box,

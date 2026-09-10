@@ -10,6 +10,7 @@ import {
   relabelCoordinates,
   fitVignette,
   frameBox,
+  labelFrame,
 } from '../src/import/crop.ts'
 
 const canvas = { width: 1000, height: 1000 }
@@ -334,5 +335,46 @@ describe('shaping a frame around a thing', () => {
     const box = frameBox({ x0: 0, y0: 0, x1: 20, y1: 20 }, canvas)
     assert.ok(box.x0 >= 0 && box.y0 >= 0)
     assert.ok(box.x1 <= canvas.width && box.y1 <= canvas.height)
+  })
+})
+
+describe('framing a hand-added label', () => {
+  const canvas = { width: 1000, height: 1000 }
+  /** An enclosed sea: land everywhere but a basin in the lower middle. */
+  const isLand = (x: number, y: number) => !(x > 300 && x < 700 && y > 550 && y < 900)
+
+  const label = (points: [number, number][]) => ({
+    x: points[0][0],
+    y: points[0][1],
+    points: points.map(([x, y]) => ({ x, y })),
+  })
+
+  it('keeps a label over land on its own curve', () => {
+    // A range, or a peninsula: it has a shape, and the curve traces it.
+    const box = labelFrame(label([[300, 200], [500, 220], [700, 200]]), isLand, canvas)
+    assert.ok(box.x0 <= 300 && box.x1 >= 700, 'the whole label is in view')
+    assert.ok(box.x1 - box.x0 < 700, 'and it stays close to the label')
+  })
+
+  it('reaches for the shores of a label over water', () => {
+    // The label sits in the basin; the frame should find the coasts around it
+    // rather than stopping at the words.
+    const overWater = labelFrame(label([[450, 700], [550, 700]]), isLand, canvas)
+    assert.ok(overWater.x0 < 320 && overWater.x1 > 680, 'it found the east and west shores')
+    assert.ok(overWater.y0 < 570 && overWater.y1 > 880, 'and the north and south ones')
+
+    const overLand = labelFrame(label([[450, 200], [550, 200]]), isLand, canvas)
+    assert.ok(
+      overWater.x1 - overWater.x0 > overLand.x1 - overLand.x0,
+      'a sea frames wider than a label written across land',
+    )
+  })
+
+  it('does not try to close a shore around a peninsula', () => {
+    // Water on three sides: growing toward a shore would never close, and the
+    // fallback would be a frame far bigger than the thing it names.
+    const peninsula = (x: number, y: number) => y < 300 || (x > 450 && x < 550 && y < 800)
+    const box = labelFrame(label([[470, 600], [530, 700]]), peninsula, canvas)
+    assert.ok(box.x1 - box.x0 < 500, `held to the peninsula itself: ${Math.round(box.x1 - box.x0)}`)
   })
 })

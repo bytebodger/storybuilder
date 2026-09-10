@@ -9,7 +9,7 @@
 import { readAddedLabels, guessGeographyKind } from './azgaar-svg.ts'
 import { normalizeTerm } from '../terms.ts'
 import { readStateGeography, statesAlong, statesUnder, type StateGeography } from './azgaar-geo.ts'
-import { boxOf, frameBox, gridSampler, growToShore, pad } from './crop.ts'
+import { boxOf, frameBox, gridSampler, labelFrame, pad } from './crop.ts'
 import { frameToAttribute } from './media.ts'
 import type { ImportCandidate, ImportPlan, Tier } from './types.ts'
 
@@ -354,28 +354,6 @@ function chain(
   return [provinces.get(cell.province as number), states.get(cell.state as number)].filter(
     (n): n is string => !!n && n.toLowerCase() !== self?.toLowerCase(),
   )
-}
-
-/**
- * The window onto the map for a hand-added label.
- *
- * A label over land names something with a shape - a range, a forest - and its
- * curve traces it, so the curve is the frame. A label over water names a stretch
- * of sea the generator has no object for, and the useful frame is the one that
- * reaches its shores. Which it is comes from the map rather than from the words:
- * the points of the curve are sampled, and the majority decides.
- */
-function labelFrame(
-  label: { x: number; y: number; points: { x: number; y: number }[] },
-  isLand: (x: number, y: number) => boolean,
-  canvas: { width: number; height: number },
-) {
-  const points = label.points.length ? label.points : [label]
-  const overLand = points.filter((p) => isLand(p.x, p.y)).length
-  const box = boxOf(points)
-
-  if (overLand * 2 >= points.length) return frameBox(box, canvas)
-  return frameBox(growToShore(box, isLand, canvas).box, canvas, { pad: 0.04 })
 }
 
 /** The window onto a run of cells - a river's course. */

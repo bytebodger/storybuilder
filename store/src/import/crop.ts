@@ -429,3 +429,32 @@ export function frameBox(
   }
   return pad(centred, padding, canvas)
 }
+
+/**
+ * The window onto the map for a hand-added label.
+ *
+ * A label over land names something with a shape - a range, a peninsula - and
+ * its curve traces it, so the curve is the frame. A label over water names a
+ * stretch of sea the generator has no object for, and the useful frame is the
+ * one that reaches its shores.
+ *
+ * Which it is comes from the map rather than from the words: the points of the
+ * curve are sampled against the height grid, and the majority decides. A
+ * peninsula is land, so it keeps its curve - growing it toward a shore would
+ * never close, since a peninsula has water on three sides by definition.
+ *
+ * Shared by the importer and by `crop-map --label`, because a crop of a label
+ * and the map on that label's article should not be two different pictures.
+ */
+export function labelFrame(
+  label: { x: number; y: number; points: { x: number; y: number }[] },
+  isLand: LandAt,
+  canvas: CropSource,
+): Box {
+  const points = label.points.length ? label.points : [label]
+  const overLand = points.filter((p) => isLand(p.x, p.y)).length
+  const box = boxOf(points)
+
+  if (overLand * 2 >= points.length) return frameBox(box, canvas)
+  return frameBox(growToShore(box, isLand, canvas).box, canvas, { pad: 0.04 })
+}
