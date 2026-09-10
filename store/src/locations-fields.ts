@@ -61,9 +61,11 @@ export const LOCATION_FIELDS: FieldSpec[] = [
     default: null,
     storeAs: 'endDate',
     help:
-      'When it ceased to be - fell, drowned, was abandoned. Leave blank for a place that still ' +
-      'stands. Filling it in is what stops the place turning up, intact, in a later scene.',
-    examples: ['812', 'Year 1104'],
+      'When it ceased to be - fell, drowned, was abandoned. Blank means no end is recorded, which ' +
+      'covers a place that still stands and a place whose fate nobody wrote down. Where it is known ' +
+      'to be gone but the year is not, say that here rather than leaving it empty: an empty field ' +
+      'is what lets a drowned city turn up intact in a later scene.',
+    examples: ['812', 'Year 1104', 'unknown', 'some time in the long winter'],
   },
   {
     key: 'population',

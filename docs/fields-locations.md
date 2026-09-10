@@ -14,7 +14,7 @@ field here describes the terrain a place sits in and names the features it sits 
 | Parent Location | attribute | The larger place it sits inside. Links itself when that has an article. |
 | Description | item summary | The opening paragraph. Shown wherever the place is mentioned elsewhere. |
 | Existed Since | **`beginDate`** | When it came to be. Defaults to `0` — the start of recorded canon. |
-| Existed Until | **`endDate`** | When it ceased to be. Blank means it still stands. |
+| Existed Until | **`endDate`** | When it ceased to be. Blank means no end is recorded — which is not the same as still standing. |
 | Population | attribute | How many live there, and when that was counted. |
 | Founders | attribute (list) | Who established it. Each name links separately. |
 | Geography | attribute | The terrain it sits in and the features it sits among. |

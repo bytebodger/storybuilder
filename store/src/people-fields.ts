@@ -174,9 +174,12 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     default: null,
     storeAs: 'endDate',
     help:
-      'The year they died. Stored as the item’s end date, so leaving it blank is a claim: this ' +
-      'person is still alive. Filling it in is what stops them walking into a later scene.',
-    examples: ['478', 'Year 1160'],
+      'The year they died. Stored as the item’s end date, which records that a life ended and when. ' +
+      'Blank means neither is recorded — they may be alive, or their death may simply be unknown, ' +
+      'and the blank does not say which. Where the death is known but the year is not, say so here ' +
+      'rather than leaving it empty: that is the difference between a philosopher long dead and one ' +
+      'who could walk into a later scene.',
+    examples: ['478', 'Year 1160', 'unknown', 'some years after 1104'],
   },
   {
     key: 'deathDay',

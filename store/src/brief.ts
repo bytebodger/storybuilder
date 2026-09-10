@@ -73,10 +73,21 @@ function roleSuffix(owner: Item, related: Item): string {
  * Membership and existence are different claims, so a brief has to make both.
  * A member that has ended stays in the list - it really was one of them - but
  * saying so without saying when would put a sunken continent back on the map.
+ *
+ * An absent end date is the one thing here that is not a claim. It covers a
+ * thing that is still going and a thing whose ending nobody recorded, and it
+ * does not say which - Lao Tzu is as certainly dead as anyone, and no year of
+ * it survives. So the span reads `from 412`, not `since 412`: the first states
+ * where the record starts, the second quietly asserts it never stopped.
+ *
+ * An author who knows a thing has ended and not when should write that in the
+ * end date - `unknown`, `some years after 1104` - which is why the column is a
+ * string. `(1913 - probably 1975; NO LONGER EXTANT)` is exactly right, and no
+ * date arithmetic depends on it being a number.
  */
 function span(i: Item): string {
   if (i.endDate) return ` (${i.beginDate ? `${i.beginDate} - ` : 'ended '}${i.endDate}; NO LONGER EXTANT)`
-  if (i.beginDate) return ` (since ${i.beginDate})`
+  if (i.beginDate) return ` (from ${i.beginDate})`
   return ''
 }
 

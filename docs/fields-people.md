@@ -56,8 +56,23 @@ Aldrica Corvane Vane III - people - id 026f6105 (412 - 478; NO LONGER EXTANT)
 Also known as: the Ashkeeper, Red Aldrica
 ```
 
-Leaving **Death Year** blank is a claim, not an omission: this person is still alive. Filling it in is
-what stops them walking into a later scene.
+**A blank Death Year is the one field here that makes no claim.** It covers a person who is alive and
+a person whose death nobody recorded, and it does not say which. Lao Tzu is as certainly dead as
+anyone and no year of it survives; Jimmy Hoffa almost certainly died in 1975 and might not have.
+
+So the year is a *string*, and an author who knows a life ended without knowing when should say so
+rather than leave the field empty:
+
+```
+Aldrica Vane - people - id 8ae285ba (from 412)
+Jimmy Hoffa  - people - id 11a756af (1913 - probably 1975; NO LONGER EXTANT)
+Lao Tzu      - people - id abd4d8da (about -570 - unknown; NO LONGER EXTANT)
+```
+
+Nothing does arithmetic on these, so `unknown` and `some years after 1104` are as usable as `478`.
+What matters is that *something* is there: an empty field is what lets a philosopher dead two
+millennia walk into a later scene. The brief reads `from 412` rather than `since 412` for the same
+reason — the first says where the record starts, the second quietly asserts it never stopped.
 
 **Birth Day** and **Death Day** stay ordinary attributes. Only the year is comparable across a
 calendar this tool knows nothing about, and a column that sometimes holds `412` and sometimes holds
