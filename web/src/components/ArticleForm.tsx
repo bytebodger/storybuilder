@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { containerFields, defaultsFrom, forge, getItem, saveItem } from '../api'
-import type { UniverseDraft, UniverseField } from '../types'
+import { containerFields, defaultsFrom, forge, getItem, saveItem, timelines } from '../api'
+import type { TimelineNode, UniverseDraft, UniverseField } from '../types'
 import { FieldRow } from './FieldRow'
 
 interface Props {
@@ -33,6 +33,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [lines, setLines] = useState<TimelineNode[]>([])
 
   useEffect(() => {
     containerFields(container).then((spec) => {
@@ -42,6 +43,12 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       if (spec && !itemId) setValues(defaultsFrom(spec))
     }, (e: unknown) => setError(String(e)))
   }, [container, itemId])
+
+  // Only fetched for a spec that has somewhere to put them.
+  useEffect(() => {
+    if (!fields?.some((f) => f.kind === 'timeline')) return
+    timelines(universe).then(setLines, (e: unknown) => setError(String(e)))
+  }, [universe, fields])
 
   useEffect(() => {
     if (!itemId) return
@@ -167,6 +174,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
               value={values[f.key]}
               locked={locked.has(f.key)}
               busy={!!busy}
+              timelines={lines}
               onChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
               onToggleLock={() =>
                 setLocked((prev) => {

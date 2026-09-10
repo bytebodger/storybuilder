@@ -14,7 +14,7 @@ import { renderBrief, renderUniverseBrief } from './brief.ts'
 import { validate } from './validate.ts'
 import { CanonViolation, type ClosureState } from './types.ts'
 import { matchTerm } from './terms.ts'
-import { flatten, isRoot, treeOf } from './timelines.ts'
+import { eventsIn, flatten, isRoot, spanOf, subtree, treeOf } from './timelines.ts'
 import type { Store } from './store.ts'
 import { buildImportPlan } from './import/azgaar.ts'
 import { assess, countBy, importedAttributes } from './import/delta.ts'
@@ -74,7 +74,7 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
   sb new-timeline <name> [--under <ref>]    Defaults to the Universal History
   sb rename-timeline <ref> --name <new>
   sb move-timeline <ref> --under <ref>      Reassign under a different parent
-  sb remove-timeline <ref>                  Its children move up to take its place
+  sb remove-timeline <ref>                  Its children and events move up in its place
         A <ref> is a timeline id or its name. Timelines are buckets for history
         events, not containers: they hold no articles and carry no dates of
         their own, since a timeline spans whatever its events span.
@@ -494,9 +494,22 @@ async function main(argv: string[]): Promise<number> {
 
     case 'timelines': {
       const s = await store(a)
-      for (const node of flatten(treeOf(await s.timelines()))) {
+      const list = await s.timelines()
+      const items = await s.list()
+      const events = eventsIn(items)
+
+      for (const node of flatten(treeOf(list))) {
+        const span = spanOf(list, events, node.id)
+        // A timeline reports the span of everything under it, so a parent's
+        // count is its own events plus its descendants'. Nothing is filed in
+        // two places; the same event is simply within both.
+        const under = subtree(list, node.id)
+        const count = items.filter((i) => i.timeline && under.includes(i.timeline)).length
+        const when =
+          span ? `  ${span.first === span.last ? span.first : `${span.first} - ${span.last}`}` : ''
+        const tally = count ? `  (${count} event${count === 1 ? '' : 's'})` : ''
         const mark = isRoot(node.id) ? '' : `  [${node.id}]`
-        console.log(`${'  '.repeat(node.depth)}${node.name}${mark}`)
+        console.log(`${'  '.repeat(node.depth)}${node.name}${mark}${when}${tally}`)
       }
       return 0
     }
@@ -544,15 +557,18 @@ async function main(argv: string[]): Promise<number> {
       const list = await s.timelines()
       const timeline = list.find((t) => t.id === id)!
       const inherited = list.filter((t) => t.parent === id)
+      const events = (await s.list()).filter((i) => i.timeline === id)
 
       await s.removeTimeline(id)
       const parent = list.find((t) => t.id === timeline.parent)
+      const moved = [
+        inherited.length ? `${inherited.length} timeline(s): ${inherited.map((t) => t.name).join(', ')}` : '',
+        events.length ? `${events.length} event(s): ${events.map((e) => e.name).join(', ')}` : '',
+      ].filter(Boolean)
+
       console.log(
         `Removed "${timeline.name}".` +
-          (inherited.length
-            ? ` ${inherited.length} timeline(s) moved up to ${parent?.name}: ` +
-              `${inherited.map((t) => t.name).join(', ')}.`
-            : ''),
+          (moved.length ? ` Moved up to ${parent?.name} - ${moved.join('; ')}.` : ''),
       )
       return 0
     }

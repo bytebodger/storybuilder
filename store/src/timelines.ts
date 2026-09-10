@@ -102,6 +102,52 @@ export interface Span {
 }
 
 /**
+ * The year in a free-form date, or null when there is none to be had.
+ *
+ * Dates in this tool are text, because fictional calendars are not ISO dates:
+ * `Year 412`, `January 1, 1139`, `Third Age, 2941`, `about -570`. A timeline's
+ * span still has to be a pair of numbers, so one has to be read out of that.
+ *
+ * The rule is the **longest run of digits**, with a minus sign if one is
+ * against it, and the first of them if two runs tie. It is a heuristic and it
+ * is stated rather than hidden: `January 1, 1139` gives 1139 because four
+ * digits beat one, and `1139 to 1141` gives 1139 because a begin date names
+ * when a thing started. What it cannot read it says it cannot read, and
+ * `sb validate` reports every date it could not - a heuristic that fails
+ * loudly is a heuristic; one that fails quietly is a bug waiting to be found
+ * by a reader who trusts a timeline that is wrong.
+ */
+export function yearOf(date: string | undefined): number | null {
+  if (!date) return null
+
+  let best: { at: number; digits: string } | null = null
+  for (const match of date.matchAll(/-?\d+/g)) {
+    const digits = match[0].replace('-', '')
+    if (!best || digits.length > best.digits.length) {
+      best = { at: match.index, digits }
+    }
+  }
+  if (!best) return null
+
+  const found = date.slice(best.at).match(/^-?\d+/)![0]
+  const year = Number(found)
+  return Number.isFinite(year) ? year : null
+}
+
+/** The events among a set of items: filed under a timeline, with a readable year. */
+export function eventsIn(
+  items: { timeline?: string; beginDate?: string }[],
+): { timeline: string; year: number }[] {
+  const out: { timeline: string; year: number }[] = []
+  for (const item of items) {
+    if (!item.timeline) continue
+    const year = yearOf(item.beginDate)
+    if (year !== null) out.push({ timeline: item.timeline, year })
+  }
+  return out
+}
+
+/**
  * What a timeline spans, according to its events.
  *
  * The earliest and latest year anywhere in its subtree, so a reign covers the

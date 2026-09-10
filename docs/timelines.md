@@ -58,9 +58,10 @@ A timeline with no events has *no* span rather than a zero-length one. "Nothing 
 yet" and "everything here happened in year 0" are different claims, and only one of them is usually
 true.
 
-`spanOf` takes years already numeric. What a year *is* belongs to the `history` spec, not to this: a
-universe may count in years, reigns or ages, and whatever turns one into something comparable belongs
-beside the field that holds it.
+`spanOf` takes years already numeric. Turning a free-text begin date into one is `yearOf`, which lives
+beside the field that holds it — see
+[fields-history.md](fields-history.md#reading-a-year-out-of-a-date). `eventsIn(items)` does both
+steps: it keeps the items that are filed under a timeline and whose date yields a year.
 
 ## The rules, and where they live
 
@@ -89,10 +90,10 @@ Removed "History of Waresia". 2 timeline(s) moved up to Universal History:
 Reign of King Tarinian, War of the Stewards.
 ```
 
-**Still open:** what happens to the *events* filed under a removed timeline. Nothing can be filed
-under one yet, so there is nothing to strand; when the `history` container lands, removal will have to
-either move its events up alongside its children or refuse while any remain. That is a decision about
-history, not about timelines, and it belongs with the spec that introduces them.
+Its **events** move up too, for the same reason and at the same time — see
+[fields-history.md](fields-history.md#removing-a-timeline-moves-its-events). Moving rather than
+refusing, because promoting stays true: an event filed under the war did happen during the reign that
+contained it.
 
 ### Reading a broken tree
 
@@ -133,7 +134,21 @@ the store's own message: the tree said no, which is an answer rather than a faul
 directory is a container, and `containers()` reads it by listing files — so filing timelines there
 would put *timelines* in the nav as a thing to write articles about.
 
+## What is filed into them
+
+Events: items in the `history` container, one per thing that happened, each with a begin date and a
+duration in days. See [fields-history.md](fields-history.md).
+
+From the command line the whole shape is readable today:
+
+```
+$ sb timelines
+Universal History  412 - 431  (5 events)
+  History of Waresia  [b46a96b3]  412 - 431  (5 events)
+    Reign of King Tarinian  [5ce21481]  425 - 431  (4 events)
+      War of the Stewards  [71580945]  429 - 431  (2 events)
+```
+
 ## Not yet built
 
-The **UI**. Timelines are worth looking at alongside the events in them, and there are no events yet.
-See [containers.md](containers.md) for where `history` will sit.
+The **chronological view** — events drawn along their timelines rather than listed under them.

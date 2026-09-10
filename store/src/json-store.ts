@@ -153,6 +153,7 @@ export class JsonFileStore implements Store {
   async add(input: NewItem): Promise<Item> {
     if (!input.container.trim()) throw new StoreError('container is required')
     if (!input.name.trim()) throw new StoreError('name is required')
+    await this.assertTimelineExists(input.timeline)
 
     const now = new Date().toISOString()
     const item: Item = {
@@ -165,6 +166,7 @@ export class JsonFileStore implements Store {
       summary: input.summary,
       beginDate: input.beginDate,
       endDate: input.endDate,
+      timeline: input.timeline,
       attributes: input.attributes,
       tags: [],
       closure: input.closure,
@@ -186,6 +188,8 @@ export class JsonFileStore implements Store {
 
   async update(id: string, patch: ItemPatch): Promise<Item> {
     const item = await this.require(id)
+
+    await this.assertTimelineExists(patch.timeline)
 
     const file = await this.readContainer(item.container)
     const idx = file.items.findIndex((i) => i.id === id)
@@ -417,10 +421,36 @@ export class JsonFileStore implements Store {
     const moved = childrenOf(list, id).map((c) => c.id)
     const stamp = new Date().toISOString()
 
+    // The events filed under it move up for exactly the same reason, and they
+    // move rather than block the removal: an event filed under the reign did
+    // happen during whatever contained the reign, so promoting it stays true.
+    // Refusing instead would mean re-filing every event by hand to be rid of a
+    // grouping that turned out to be a bad idea.
+    const events = (await this.list()).filter((i) => i.timeline === id)
+    for (const event of events) await this.update(event.id, { timeline: inherited })
+
     await this.writeTimelines(
       list
         .filter((t) => t.id !== id)
         .map((t) => (moved.includes(t.id) ? { ...t, parent: inherited, updatedAt: stamp } : t)),
+    )
+  }
+
+  /**
+   * An item may only be filed under a timeline this universe has.
+   *
+   * Checked here rather than in the field spec because it is a question about
+   * the world, not about the shape of a form: whether this universe has a
+   * timeline by this id is something only the store can answer, and an event
+   * filed under one that does not exist is filed nowhere.
+   */
+  private async assertTimelineExists(id: string | undefined): Promise<void> {
+    if (id === undefined) return
+    const list = await this.timelines()
+    if (list.some((t) => t.id === id)) return
+    throw new StoreError(
+      `No timeline with id "${id}" in universe "${this.universeId}". ` +
+        `It has: ${list.map((t) => `${t.name} [${t.id}]`).join(', ')}`,
     )
   }
 

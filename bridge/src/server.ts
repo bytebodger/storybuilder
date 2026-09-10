@@ -166,6 +166,15 @@ const server = createServer(async (req, res) => {
       const spec = fieldsFor(item.container)
       const values = filledFields(item)
 
+      // A timeline is stored as an id and read as a name. The id is what makes
+      // the filing unambiguous and is exactly what nobody wants to look at.
+      // Found through the spec rather than by key, so a container is free to
+      // call its timeline field whatever suits it.
+      for (const field of spec?.filter((f) => f.kind === 'timeline') ?? []) {
+        const line = (await store.timelines()).find((t) => t.id === values[field.key])
+        if (line) values[field.key] = line.name
+      }
+
       // Spec order where there is a spec, so an article always reads the same
       // way; insertion order otherwise, which is all a container without one has.
       const ordered = spec

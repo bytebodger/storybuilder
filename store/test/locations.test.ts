@@ -87,7 +87,7 @@ describe('when a place existed', () => {
   it('carries the dates through an update, so clearing one takes effect', () => {
     const patch = draftToPatch('locations', dol)
     assert.deepEqual(Object.keys(patch).sort(), [
-      'aliases', 'attributes', 'beginDate', 'endDate', 'kind', 'name', 'summary',
+      'aliases', 'attributes', 'beginDate', 'endDate', 'kind', 'name', 'summary', 'timeline',
     ])
     assert.equal(patch.endDate, undefined)
   })

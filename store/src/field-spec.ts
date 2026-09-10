@@ -6,7 +6,14 @@
  * data. The form renders from a spec, the generator is briefed from it, and the
  * bridge validates writes against it; adding a field to a list is all three.
  */
-export type FieldKind = 'text' | 'longtext' | 'list' | 'number'
+/**
+ * How a field is entered and read.
+ *
+ * `timeline` is the one that is not a shape of text: its value is the id of one
+ * of this universe's timelines, chosen from them, because a timeline that does
+ * not exist is not a typo to be caught later but an event filed nowhere.
+ */
+export type FieldKind = 'text' | 'longtext' | 'list' | 'number' | 'timeline'
 
 export interface FieldSpec {
   key: string
@@ -44,7 +51,7 @@ export interface FieldSpec {
    * to be one string to be the title of an article and to be found by anything
    * looking for it.
    */
-  storeAs?: 'name' | 'summary' | 'kind' | 'beginDate' | 'endDate' | 'aliases'
+  storeAs?: 'name' | 'summary' | 'kind' | 'beginDate' | 'endDate' | 'aliases' | 'timeline'
 }
 
 /** True when a field holds nothing a generator should preserve. */

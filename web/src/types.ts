@@ -1,4 +1,4 @@
-export type FieldKind = 'text' | 'longtext' | 'list' | 'number'
+export type FieldKind = 'text' | 'longtext' | 'list' | 'number' | 'timeline'
 
 /** Mirrors the field spec the bridge serves from the store. */
 export interface UniverseField {
@@ -11,6 +11,14 @@ export interface UniverseField {
   examples?: string[]
   /** The form section this field belongs to. Absent on short specs. */
   group?: string
+}
+
+/** One of a universe's timelines, in tree order with its depth. */
+export interface TimelineNode {
+  id: string
+  name: string
+  parent?: string
+  depth: number
 }
 
 export interface Universe {

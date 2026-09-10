@@ -13,6 +13,7 @@ import type {
   Universe,
   UniverseDraft,
   UniverseField,
+  TimelineNode,
 } from './types'
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
@@ -45,6 +46,18 @@ export function defaultsFrom(fields: UniverseField[]): UniverseDraft {
   for (const f of fields) if (f.default !== null && f.default !== undefined) values[f.key] = f.default
   return values
 }
+
+/**
+ * A universe's timelines, in tree order with a depth on each.
+ *
+ * Arranged by the store rather than here: a second implementation of "what is
+ * under what" in the browser is one that can disagree with the one that
+ * enforces it.
+ */
+export const timelines = (universe: string) =>
+  json<{ timelines: TimelineNode[] }>(
+    `/timelines?universe=${encodeURIComponent(universe)}`,
+  ).then((r) => r.timelines)
 
 export const getItem = (universe: string, id: string) =>
   json<{ item: { id: string; name: string; kind?: string }; values: UniverseDraft }>(

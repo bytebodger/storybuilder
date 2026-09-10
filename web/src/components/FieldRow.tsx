@@ -1,10 +1,12 @@
-import type { UniverseField } from '../types'
+import type { TimelineNode, UniverseField } from '../types'
 
 interface Props {
   field: UniverseField
   value: unknown
   locked: boolean
   busy: boolean
+  /** The universe's timelines, for a field whose value is one of them. */
+  timelines?: TimelineNode[]
   onChange: (value: unknown) => void
   onToggleLock: () => void
   onRegenerate: () => void
@@ -26,7 +28,17 @@ function fromInput(field: UniverseField, raw: string): unknown {
   return raw
 }
 
-export function FieldRow({ field, value, locked, busy, onChange, onToggleLock, onRegenerate, onClear }: Props) {
+export function FieldRow({
+  field,
+  value,
+  locked,
+  busy,
+  timelines,
+  onChange,
+  onToggleLock,
+  onRegenerate,
+  onClear,
+}: Props) {
   const text = toInput(value)
   const set = (raw: string) => onChange(fromInput(field, raw))
 
@@ -68,7 +80,30 @@ export function FieldRow({ field, value, locked, busy, onChange, onToggleLock, o
         </div>
       </div>
 
-      {field.kind === 'longtext' ? (
+      {field.kind === 'timeline' ? (
+        /*
+         * Chosen, never typed. A timeline that does not exist is not a typo to
+         * be caught on save - it is an event filed nowhere - and the store
+         * refuses one anyway, so offering a free text box would only be a way
+         * of finding that out later.
+         */
+        <select
+          id={field.key}
+          value={typeof value === 'string' ? value : ''}
+          disabled={locked || !timelines?.length}
+          onChange={(e) => onChange(e.target.value || null)}
+        >
+          {!timelines?.length && <option value="">Loading…</option>}
+          {timelines?.map((t) => (
+            // Indented so the nesting is visible in a flat list: an event is
+            // filed against one timeline, and which one that is only means
+            // something relative to the ones above it.
+            <option key={t.id} value={t.id}>
+              {'  '.repeat(t.depth) + t.name}
+            </option>
+          ))}
+        </select>
+      ) : field.kind === 'longtext' ? (
         <textarea id={field.key} rows={4} value={text} disabled={locked} onChange={(e) => set(e.target.value)} />
       ) : (
         <input

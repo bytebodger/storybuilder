@@ -40,10 +40,10 @@ types are a later feature; for now, adding one means adding it to the catalog.
 ## Fields
 
 A container may declare a field spec: the form the author fills in, and the list the generator is
-briefed from. Four exist so far — the universe manifest ([universe-form.md](universe-form.md)),
-[fauna](fields-fauna.md), [locations](fields-locations.md) and [people](fields-people.md). A container
-without one is not broken; its entries are the name, summary and tags every container supports, and a
-spec can be added later without migrating anything.
+briefed from. Five exist so far — the universe manifest ([universe-form.md](universe-form.md)),
+[fauna](fields-fauna.md), [locations](fields-locations.md), [people](fields-people.md) and
+[history](fields-history.md). A container without one is not broken; its entries are the name, summary
+and tags every container supports, and a spec can be added later without migrating anything.
 
 Specs are data, in [store/src/fields.ts](../store/src/fields.ts). Adding a container's spec makes its
 form appear, makes its fields generatable, and makes them accepted on save, with nothing else to

@@ -93,6 +93,15 @@ export interface Item {
    */
   beginDate?: string
   endDate?: string
+  /**
+   * The timeline this is filed under, for the things that are filed into one.
+   *
+   * A column rather than an attribute, for the same reason the dates are: the
+   * span of a timeline has to be readable from its events without knowing which
+   * container they came from or what that container calls its fields. Only
+   * events carry one today; nothing stops something else from later.
+   */
+  timeline?: string
   /** Free-form structured facts: population, climate, founding year. */
   attributes?: Record<string, unknown>
   tags: Tag[]
@@ -206,6 +215,7 @@ export interface NewItem {
   summary?: string
   beginDate?: string
   endDate?: string
+  timeline?: string
   attributes?: Record<string, unknown>
   sources?: string[]
   /** Edges to create as part of the add. Routed through `link`, so closure is enforced. */

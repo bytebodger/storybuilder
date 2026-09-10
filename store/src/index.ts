@@ -25,6 +25,8 @@ export {
   subtree,
   ancestors,
   spanOf,
+  yearOf,
+  eventsIn,
   isRoot,
   rootTimeline,
   assertValidPlacement,

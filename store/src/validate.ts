@@ -1,5 +1,6 @@
 import type { Store } from './store.ts'
 import { groupKey, type Item } from './types.ts'
+import { yearOf } from './timelines.ts'
 
 export interface Issue {
   severity: 'error' | 'warning'
@@ -77,6 +78,36 @@ export async function validate(store: Store): Promise<Issue[]> {
           message: `"${item.name}" closes ${type} with no reason recorded - a later session cannot tell whether it may be reopened`,
         })
       }
+    }
+  }
+
+  /*
+   * Every event has to be readable as a point on its timeline.
+   *
+   * Two ways it can fail to be, and both are silent without this. A timeline
+   * that has been removed by hand leaves its events filed nowhere; and a begin
+   * date with no year in it - "midwinter", "the long winter" - reads as a date
+   * to a person and as nothing to `yearOf`, so the event simply drops out of
+   * every span its timeline reports without anything looking wrong.
+   */
+  const timelines = new Set((await store.timelines()).map((t) => t.id))
+  for (const item of items) {
+    if (item.timeline && !timelines.has(item.timeline)) {
+      issues.push({
+        severity: 'error',
+        itemId: item.id,
+        message: `"${item.name}" is filed under timeline "${item.timeline}", which does not exist in this universe`,
+      })
+    }
+    if (item.timeline && yearOf(item.beginDate) === null) {
+      issues.push({
+        severity: 'warning',
+        itemId: item.id,
+        message:
+          `"${item.name}" has no year that can be read out of its begin date ` +
+          `(${item.beginDate ? `"${item.beginDate}"` : 'which is empty'}) - ` +
+          `it will not count toward the span of any timeline`,
+      })
     }
   }
 
