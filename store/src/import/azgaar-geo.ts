@@ -118,3 +118,53 @@ export function readStateGeography(
 }
 
 const round = (n: number) => (Number.isFinite(n) ? Math.round(n * 10) / 10 : 0)
+
+/**
+ * The states a run of cells passes through, in the order first met.
+ *
+ * Exact rather than inferred: a river carries the cells it flows along, so the
+ * countries it crosses are a lookup, not a guess about where a line went.
+ */
+export function statesAlong(
+  cellIds: number[],
+  byId: Map<number, Row>,
+  stateName: Map<number, string>,
+): string[] {
+  const seen = new Set<string>()
+  for (const id of cellIds) {
+    const name = stateName.get(byId.get(id)?.state as number)
+    if (name) seen.add(name)
+  }
+  return [...seen]
+}
+
+/**
+ * The states beneath a set of points on the canvas.
+ *
+ * Used for hand-added labels, whose curve traces the feature they name. Each
+ * point falls to the nearest cell, so a range labelled across a border reports
+ * both countries rather than whichever one its midpoint happened to land in.
+ */
+export function statesUnder(
+  points: { x: number; y: number }[],
+  cells: Row[],
+  stateName: Map<number, string>,
+): string[] {
+  const seen = new Set<string>()
+  for (const p of points) {
+    let best: Row | undefined
+    let bestDist = Infinity
+    for (const c of cells) {
+      const at = c.p
+      if (!Array.isArray(at) || at.length < 2) continue
+      const d = (Number(at[0]) - p.x) ** 2 + (Number(at[1]) - p.y) ** 2
+      if (d < bestDist) {
+        bestDist = d
+        best = c
+      }
+    }
+    const name = stateName.get(best?.state as number)
+    if (name) seen.add(name)
+  }
+  return [...seen]
+}

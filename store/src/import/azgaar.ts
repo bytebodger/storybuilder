@@ -8,7 +8,7 @@
  */
 import { readAddedLabels, guessGeographyKind } from './azgaar-svg.ts'
 import { normalizeTerm } from '../terms.ts'
-import { readStateGeography, type StateGeography } from './azgaar-geo.ts'
+import { readStateGeography, statesAlong, statesUnder, type StateGeography } from './azgaar-geo.ts'
 import type { ImportCandidate, ImportPlan, Tier } from './types.ts'
 
 /** Placeholders the generator uses for "none of the above". Never articles. */
@@ -114,17 +114,21 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
 
   const added = readAddedLabels(svg)
   for (const label of added) {
-    const cell = nearestCell(cells, label.x, label.y)
-    const parent = chain(cell, provinceName, stateName)
+    // The whole curve, not its midpoint: a range labelled across a border
+    // belongs to both countries, and the label's own path says which.
+    const crossed = statesUnder(label.points.length ? label.points : [label], cells, stateName)
     candidates.push({
       name: label.name,
       container: 'geography',
       kind: guessGeographyKind(label.name),
       tier: 0,
-      parentNames: parent,
+      relations: crossed.map((name) => ({ name, role: 'crosses', reverseRole: 'crossed by' })),
       source: 'svg',
       sourceType: 'hand-added label',
-      attributes: { mapPosition: `${Math.round(label.x)}, ${Math.round(label.y)}` },
+      attributes: {
+        mapPosition: `${Math.round(label.x)}, ${Math.round(label.y)}`,
+        ...(crossed.length ? { spans: crossed } : {}),
+      },
     })
   }
   tally('hand-added label', 'geography', added.length, added.length)
@@ -310,21 +314,6 @@ function chain(
   )
 }
 
-function nearestCell(cells: Row[], x: number, y: number): Row | undefined {
-  let best: Row | undefined
-  let bestDist = Infinity
-  for (const c of cells) {
-    const p = c.p
-    if (!Array.isArray(p) || p.length < 2) continue
-    const d = (Number(p[0]) - x) ** 2 + (Number(p[1]) - y) ** 2
-    if (d < bestDist) {
-      bestDist = d
-      best = c
-    }
-  }
-  return best
-}
-
 const summarise = (parts: string[]) => parts.filter(Boolean).join(', ') + '.'
 
 /**
@@ -445,14 +434,27 @@ function addGeography(a: GeoArgs): void {
   const { pack, tier, withMarkers, candidates, tally, cellById, provinceName, stateName } = a
 
   const rivers = rows(pack.rivers).filter(usable)
+  const riverName = new Map(rivers.map((r) => [r.i as number, nameOf(r)]))
   if (tier >= 3) {
     for (const r of rivers) {
+      const crossed = statesAlong((r.cells as number[]) ?? [], cellById, stateName)
+      // A tributary names the river it joins. Azgaar marks a river as its own
+      // parent when it has none, which is not a relationship.
+      const parent = r.parent !== r.i ? riverName.get(r.parent as number) : undefined
+
       candidates.push({
         name: nameOf(r),
         container: 'geography',
         kind: 'river',
         tier: 3,
-        attributes: { length: r.length, discharge: r.discharge },
+        relations: [
+          ...crossed.map((name) => ({ name, role: 'flows through', reverseRole: 'watered by' })),
+          ...(parent && parent !== nameOf(r)
+            ? [{ name: parent, role: 'flows into', reverseRole: 'fed by' }]
+            : []),
+        ],
+        summary: crossed.length > 1 ? `A river crossing ${crossed.join(', ')}.` : undefined,
+        attributes: { length: r.length, discharge: r.discharge, ...(crossed.length ? { crosses: crossed } : {}) },
         source: 'json',
         sourceType: 'river',
       })

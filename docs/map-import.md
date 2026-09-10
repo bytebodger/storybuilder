@@ -31,9 +31,22 @@ Sontersea              1236, 668    Neutrals    -                  Marine
 
 `Sontersea` landing outside any state is the correlation working: it is open water.
 
-One caveat: the midpoint is where the *text* sits, not the centre of what it names. A label spanning
-three provinces is placed in whichever one it happens to cross. Good enough to suggest a parent, not
-good enough to assert an extent.
+A label arcs across the thing it names, and that curve is the closest thing to a shape it has. Every
+point along it is dropped into the cell grid, so a range labelled across a border reports **every**
+country it crosses rather than whichever one its midpoint landed in:
+
+```
+Arnborne Mountains   Waresia, Linbeck, Wigan Marches
+Eiriton Mountains    Granith, Whitmere
+The Eyrenes          Whitmere, Farn Ecton
+Imerald Range        Charnham
+Sontersea            (open water — no country)
+Strait of Arnock     (open water — no country)
+```
+
+Reading the midpoint alone gave Arnborne one country instead of three. Each crossing becomes a tag
+with the role `crosses` / `crossed by` — a peer relationship, since a range spanning three countries
+is not *inside* any of them.
 
 ## Tiers
 
@@ -56,7 +69,12 @@ npm run sb --silent -- --universe watia import-map map.svg map.json --tier 1
 ```
 
 Files are named by path rather than uploaded, in both places: the bridge runs on the author's own
-machine, and a Full export is 75 MB. Nothing is written without `--write`. The dry run prints what each source yielded against what the
+machine, and a Full export is 75 MB. Nothing is written without `--write`.
+
+A tier 3 import of Watia writes 2,864 articles with 3,471 links in about 80 seconds. That is slower
+than it sounds like it should be: the store reads from disk on every operation rather than caching,
+which is right for correctness and quadratic for bulk writes. Fine for a one-off import at this size;
+it would want a batch write path before anyone imports ten thousand. The dry run prints what each source yielded against what the
 tier admits, so the shape of the decision is visible before anything lands.
 
 ### Two things the generator makes that a story does not want
@@ -144,6 +162,22 @@ while the map was being built. That is a fact about the generator, not about a p
 in split one Ethnicities section into four meaningless ones. Culture types are dropped. Religion
 forms (folk, organized, cult, heresy) and zone types (flood, crusade, invasion) are kept, because
 those describe the thing rather than how it was placed.
+
+## Rivers, and what they run through
+
+A river carries the cells it flows along, so the countries it crosses are a lookup rather than a
+guess about where a line went. Of Watia's 1,126 rivers, 75 cross more than one country, and each gets
+a tag with the role `flows through` / `watered by`.
+
+614 of them are tributaries, and name the river they join (`flows into` / `fed by`). Azgaar marks a
+river as its own parent when it joins nothing, which is not a relationship — a self-link the store
+would refuse anyway, and a claim nobody should be making.
+
+```
+Conghambe — A river crossing Linbeck, Imperion.
+  COUNTRY (2)   Imperion (flows through), Linbeck (flows through)
+  RIVER (9)     Buckingley (fed by), Chipleton (fed by), Chishil (fed by), …
+```
 
 ## What a country carries beyond its name
 

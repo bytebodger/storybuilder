@@ -343,3 +343,83 @@ describe('what the map knows beyond names', () => {
     assert.ok(bounds.north > bounds.south || bounds.north === bounds.south)
   })
 })
+
+describe('features that cross borders', () => {
+  /** Cells placed under each end of the label curve in the SVG fixture. */
+  const CROSSING = {
+    ...JSON_EXPORT,
+    info: { mapName: 'Test', width: 1000, height: 1000 },
+    pack: {
+      ...JSON_EXPORT.pack,
+      states: [
+        { i: 0, name: 'Neutrals' },
+        { i: 1, name: 'Whitmere' },
+        { i: 2, name: 'Seedon' },
+      ],
+      burgs: [],
+      cells: [
+        { i: 10, p: [100, 200], state: 1 }, // under the start of the curve
+        { i: 11, p: [140, 240], state: 2 }, // under its end
+        { i: 12, p: [900, 900], state: 2 },
+        // Ocean, under the Sontersea label. A real export tiles the whole
+        // canvas, water included, and water cells belong to no state.
+        { i: 20, p: [410, 380], state: 0 },
+        { i: 21, p: [510, 380], state: 0 },
+        { i: 22, p: [460, 380], state: 0 },
+      ],
+      rivers: [
+        { i: 1, name: 'Conghambe', cells: [10, 11], parent: 1 },
+        { i: 2, name: 'Noston', cells: [11], parent: 1 },
+        { i: 3, name: 'Solitary', cells: [12], parent: 3 },
+      ],
+      markers: [],
+    },
+  }
+  const at = (tier: 0 | 1 | 2 | 3, name: string) =>
+    buildImportPlan(CROSSING, SVG, { tier }).candidates.find((c) => c.name === name)!
+
+  it('reads a range from its whole label, not from its midpoint', () => {
+    // The curve starts over Whitmere and ends over Seedon. A midpoint would
+    // have picked one country and lost the other.
+    const range = at(0, 'Arnborne Mountains')
+    assert.deepEqual((range.attributes!.spans as string[]).sort(), ['Seedon', 'Whitmere'])
+    assert.deepEqual(
+      range.relations!.map((r) => r.role),
+      ['crosses', 'crosses'],
+    )
+    assert.equal(range.relations![0].reverseRole, 'crossed by')
+  })
+
+  it('leaves a label over open water attached to nothing', () => {
+    // Sontersea's curve is far from any cell that belongs to a state.
+    const sea = at(0, 'Sontersea')
+    assert.deepEqual(sea.relations, [])
+  })
+
+  it('links a river to every country it flows through', () => {
+    const river = at(3, 'Conghambe')
+    const through = river.relations!.filter((r) => r.role === 'flows through').map((r) => r.name)
+    assert.deepEqual(through.sort(), ['Seedon', 'Whitmere'])
+    assert.match(river.summary!, /crossing Whitmere, Seedon|crossing Seedon, Whitmere/)
+  })
+
+  it('names the river a tributary joins', () => {
+    const noston = at(3, 'Noston')
+    assert.deepEqual(
+      noston.relations!.filter((r) => r.role === 'flows into'),
+      [{ name: 'Conghambe', role: 'flows into', reverseRole: 'fed by' }],
+    )
+  })
+
+  it('does not make a river a tributary of itself', () => {
+    // Azgaar marks a river as its own parent when it joins nothing, which is
+    // not a relationship and would be refused as a self-link anyway.
+    for (const name of ['Conghambe', 'Solitary']) {
+      assert.ok(!at(3, name).relations!.some((r) => r.role === 'flows into'), name)
+    }
+  })
+
+  it('says nothing in the summary for a river inside one country', () => {
+    assert.equal(at(3, 'Solitary').summary, undefined)
+  })
+})

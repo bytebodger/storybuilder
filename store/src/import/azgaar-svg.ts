@@ -14,6 +14,14 @@ export interface AddedLabel {
   /** Midpoint of the curve the text is set on, in canvas coordinates. */
   x: number
   y: number
+  /**
+   * Every point along that curve.
+   *
+   * The label arcs across the thing it names, so its path is a rough trace of
+   * the feature's extent - the closest thing to a shape a hand-added label has.
+   * A range spanning three countries has a curve that crosses all three.
+   */
+  points: { x: number; y: number }[]
 }
 
 /**
@@ -48,15 +56,22 @@ export function readAddedLabels(svg: string): AddedLabel[] {
 
     let x = xs.reduce((a, b) => a + b, 0) / xs.length
     let y = ys.reduce((a, b) => a + b, 0) / ys.length
+    const points = xs.map((px, i) => ({ x: px, y: ys[i] ?? y }))
 
     // The <text> may nudge the label off its path; the nudge is part of where
     // the reader sees it, so it is part of the position.
     const shift = /transform="translate\(\s*(-?[\d.]+)\s*,?\s*(-?[\d.]+)?\s*\)"/.exec(attrs)
     if (shift) {
-      x += Number(shift[1])
-      y += Number(shift[2] ?? 0)
+      const dx = Number(shift[1])
+      const dy = Number(shift[2] ?? 0)
+      x += dx
+      y += dy
+      for (const p of points) {
+        p.x += dx
+        p.y += dy
+      }
     }
-    labels.push({ name, x, y })
+    labels.push({ name, x, y, points })
   }
   return labels
 }
