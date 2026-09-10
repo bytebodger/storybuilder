@@ -34,6 +34,8 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lines, setLines] = useState<TimelineNode[]>([])
+  /** Which batch of a sectioned generation is running, for the button. */
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
 
   useEffect(() => {
     containerFields(container).then((spec) => {
@@ -85,26 +87,68 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
     return out
   }, [spec])
 
+  /*
+   * A whole form is generated a section at a time, not in one request.
+   *
+   * A person has fifty-eight fields, most of them prose. Asked for at once they
+   * are one enormous answer that takes minutes to arrive, shows nothing while
+   * it does, and is lost entire if anything goes wrong in it. Asked for by
+   * section they arrive in pieces a reader can watch land, each one keeping
+   * whatever came before.
+   *
+   * Each batch is given everything settled so far, the previous batches
+   * included, so a life story still coheres with the name at the top of it.
+   */
+  function batches(fill: string[]): string[][] {
+    const order = sections.map((s) => s.fields.map((f) => f.key).filter((k) => fill.includes(k)))
+    const grouped = order.filter((b) => b.length)
+    if (grouped.length > 1) return grouped
+
+    // No sections to cut on. Fixed runs, so a long ungrouped spec is not one
+    // request either.
+    const out: string[][] = []
+    for (let i = 0; i < fill.length; i += 8) out.push(fill.slice(i, i + 8))
+    return out
+  }
+
   async function generate(fill: string[]) {
     if (fill.length === 0) {
       setNote('Nothing to generate — every field is locked or already filled.')
       return
     }
+    const runs = fill.length > 8 ? batches(fill) : [fill]
+
     setBusy(fill.length === 1 ? fill[0] : 'form')
     setNote(null)
     setError(null)
+    setValues((v) => ({ ...v, ...Object.fromEntries(fill.map((k) => [k, null])) }))
+
+    const dropped: string[] = []
+    const missed: string[] = []
+    // The running answer, because setValues is not synchronous and the next
+    // batch has to be told what the last one decided.
+    let settled = Object.fromEntries(Object.entries(values).filter(([k]) => !fill.includes(k)))
+
     try {
-      setValues((v) => ({ ...v, ...Object.fromEntries(fill.map((k) => [k, null])) }))
-      const current = Object.fromEntries(Object.entries(values).filter(([k]) => !fill.includes(k)))
-      const result = await forge(fill, current, container, universe)
+      for (const [i, run] of runs.entries()) {
+        if (runs.length > 1) setProgress({ done: i, total: runs.length })
+        const result = await forge(run, settled, container, universe)
 
-      if (result.error) setError(result.error)
-      setValues((v) => ({ ...v, ...result.values }))
+        if (result.error) {
+          // Whatever earlier batches produced is already on the form and stays
+          // there. Half a person is worth more than none.
+          setError(result.error)
+          break
+        }
+        settled = { ...settled, ...result.values }
+        setValues((v) => ({ ...v, ...result.values }))
+        dropped.push(...result.dropped)
+        missed.push(...run.filter((k) => !(k in result.values)))
+      }
 
-      const missed = fill.filter((k) => !(k in result.values))
       setNote(
         [
-          result.dropped.length ? `Ignored unrequested field(s): ${result.dropped.join(', ')}.` : '',
+          dropped.length ? `Ignored unrequested field(s): ${dropped.join(', ')}.` : '',
           missed.length ? `No value came back for: ${missed.join(', ')}.` : '',
         ]
           .filter(Boolean)
@@ -114,6 +158,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setBusy(null)
+      setProgress(null)
     }
   }
 
@@ -153,7 +198,14 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
             title="Generate every unlocked field that is still empty"
             onClick={() => generate(unlockedEmpty)}
           >
-            {busy === 'form' ? 'Generating…' : `Fill ${unlockedEmpty.length} empty field(s)`}
+            {busy !== 'form' ?
+              `Fill ${unlockedEmpty.length} empty field(s)`
+            : progress ?
+              // Silence for minutes reads as a hang. Saying which section is
+              // being written, and how many there are, is the difference
+              // between waiting and wondering.
+              `Generating ${progress.done + 1} of ${progress.total}…`
+            : 'Generating…'}
           </button>
           <button type="button" className="icon" onClick={onCancel} disabled={!!busy}>
             Cancel
@@ -161,6 +213,12 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
         </div>
       </div>
 
+      {busy === 'form' && (
+        <p className="note">
+          Writing a long form takes minutes — each section is a separate request, and the fields fill
+          in as they arrive. Anything already on the form is kept.
+        </p>
+      )}
       {note && <p className="note">{note}</p>}
       {error && <p className="error">{error}</p>}
 

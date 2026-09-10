@@ -81,6 +81,16 @@ const NL = String.fromCharCode(10)
 
 const ALLOWED_TOOLS = ['Bash(npm run sb:*)', 'Read', 'Glob', 'Grep'].join(',')
 
+/**
+ * How long a run may take before it is abandoned, in minutes.
+ *
+ * Generous, because writing a long article genuinely takes minutes and cutting
+ * one off at ninety seconds would be worse than waiting. But not unbounded: a
+ * run that wedges with no limit leaves a browser tab waiting on it forever,
+ * with nothing to distinguish that from a slow answer.
+ */
+const RUN_TIMEOUT_MS = Number(process.env.SB_RUN_TIMEOUT_MINUTES ?? 10) * 60_000
+
 function runClaude(prompt: string): Promise<{ output: string; error?: string }> {
   return new Promise((done) => {
     const child = spawn('claude', ['-p', prompt, '--allowedTools', ALLOWED_TOOLS], {
@@ -89,11 +99,31 @@ function runClaude(prompt: string): Promise<{ output: string; error?: string }> 
     })
     let out = ''
     let err = ''
+    let settled = false
+    const finish = (result: { output: string; error?: string }) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      done(result)
+    }
+
+    const timer = setTimeout(() => {
+      child.kill()
+      finish({
+        output: out,
+        // Says how long it waited, so the number is not a mystery to argue with.
+        error:
+          `The run was still going after ${Math.round(RUN_TIMEOUT_MS / 60_000)} minutes and was ` +
+          `stopped. Try asking for fewer fields at once, or raise ` +
+          `SB_RUN_TIMEOUT_MINUTES if this one legitimately takes longer.`,
+      })
+    }, RUN_TIMEOUT_MS)
+
     child.stdout.on('data', (d: Buffer) => (out += d))
     child.stderr.on('data', (d: Buffer) => (err += d))
-    child.on('error', (e) => done({ output: out, error: `Could not run the claude CLI: ${e.message}` }))
+    child.on('error', (e) => finish({ output: out, error: `Could not run the claude CLI: ${e.message}` }))
     child.on('close', (code) =>
-      done(code === 0 ? { output: out } : { output: out, error: err || `claude exited with ${code}` }),
+      finish(code === 0 ? { output: out } : { output: out, error: err || `claude exited with ${code}` }),
     )
   })
 }
