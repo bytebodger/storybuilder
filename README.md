@@ -173,6 +173,16 @@ visible.
 It talks to `bridge/`, a small local Node service that runs skills via the Claude Code CLI. The
 bridge is the only piece trusted with your working tree; the frontend is a static app.
 
+Both at once, from the repo root:
+
+```bash
+npm run dev
+```
+
+The console alone is not enough — it is a static app, and every request it makes goes to the bridge.
+Started separately, forgetting the bridge produces a page that looks fine and answers every request
+with a 500 from the dev proxy. Run them apart only if you want them apart:
+
 ```bash
 cd bridge && npm install && npm run dev
 ```

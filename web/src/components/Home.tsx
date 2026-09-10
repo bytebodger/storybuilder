@@ -18,8 +18,11 @@ export function Home({ universes, onEnter, onEdit, onCreate, error }: Props) {
         </button>
       </div>
 
-      {error && <p className="error">{error}</p>}
-
+      {/*
+        The error itself is reported once, above, with what to do about it. All
+        this has to do is not claim the list is empty when it is only unread -
+        "No universes yet" under a failed request is a lie about the world.
+      */}
       {universes.length === 0 && !error && (
         <p className="empty">No universes yet. Create one to start building.</p>
       )}

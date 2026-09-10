@@ -5,6 +5,7 @@
   "type": "module",
   "description": "A worldbuilding workbench: a canon store, the skills that read and write it, and a console for driving them.",
   "scripts": {
+    "dev": "node scripts/dev.mjs",
     "sb": "tsx store/src/cli.ts",
     "test": "npm --prefix store test && npm --prefix bridge test",
     "typecheck": "npm --prefix store run typecheck && npm --prefix bridge run typecheck && npm --prefix web run typecheck"
