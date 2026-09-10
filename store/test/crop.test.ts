@@ -9,6 +9,7 @@ import {
   pad,
   relabelCoordinates,
   fitVignette,
+  frameBox,
 } from '../src/import/crop.ts'
 
 const canvas = { width: 1000, height: 1000 }
@@ -293,5 +294,45 @@ describe('coordinate labels paint last', () => {
     const out = relabelCoordinates(LAYERED, { x0: 0, y0: 600, x1: 100, y1: 900 })
     assert.equal(/coordinateLabels/.test(out), false)
     assert.match(out, /<g id="terrain">/)
+  })
+})
+
+describe('shaping a frame around a thing', () => {
+  const canvas = { width: 1000, height: 1000 }
+  const span = (b: { x0: number; y0: number; x1: number; y1: number }) => ({
+    w: Math.round(b.x1 - b.x0),
+    h: Math.round(b.y1 - b.y0),
+  })
+
+  it('grows a frame too small to read', () => {
+    // A one-cell lake is a point; a frame on it must still show a place.
+    const { w, h } = span(frameBox({ x0: 500, y0: 500, x1: 500, y1: 500 }, canvas))
+    assert.ok(w >= 80 && h >= 80, `${w}x${h}`)
+  })
+
+  it('opens out a letterbox, so a river is not a slit', () => {
+    // 600 long and 20 wide: the bare extent shows the river and nothing it
+    // runs through.
+    const { w, h } = span(frameBox({ x0: 200, y0: 500, x1: 800, y1: 520 }, canvas))
+    assert.ok(w / h <= 2.6, `held to a sane aspect: ${w}x${h}`)
+    assert.ok(h > 200, `and the short side opened out: ${h}`)
+  })
+
+  it('keeps the thing centred while it grows', () => {
+    const box = frameBox({ x0: 400, y0: 480, x1: 600, y1: 520 }, canvas)
+    assert.equal(Math.round((box.x0 + box.x1) / 2), 500)
+    assert.equal(Math.round((box.y0 + box.y1) / 2), 500)
+  })
+
+  it('leaves a well-shaped extent alone but for padding', () => {
+    const { w, h } = span(frameBox({ x0: 200, y0: 200, x1: 700, y1: 700 }, canvas))
+    assert.ok(w > 500 && w < 620, `padded, not reshaped: ${w}`)
+    assert.equal(w, h)
+  })
+
+  it('never runs off the map', () => {
+    const box = frameBox({ x0: 0, y0: 0, x1: 20, y1: 20 }, canvas)
+    assert.ok(box.x0 >= 0 && box.y0 >= 0)
+    assert.ok(box.x1 <= canvas.width && box.y1 <= canvas.height)
   })
 })

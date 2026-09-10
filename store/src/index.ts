@@ -23,4 +23,12 @@ export { buildImportPlan, type BuildOptions } from './import/azgaar.ts'
 export { readAddedLabels, guessGeographyKind, type AddedLabel } from './import/azgaar-svg.ts'
 export { TIERS, type Tier, type ImportCandidate, type ImportPlan } from './import/types.ts'
 export { saveMapSource, mapSourcePath, frameToAttribute, frameFromAttribute } from './import/media.ts'
-export { cropSvg, relabelCoordinates, fitVignette, type Box } from './import/crop.ts'
+export {
+  cropSvg,
+  relabelCoordinates,
+  fitVignette,
+  frameBox,
+  gridSampler,
+  growToShore,
+  type Box,
+} from './import/crop.ts'

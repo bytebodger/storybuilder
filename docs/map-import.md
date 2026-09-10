@@ -132,14 +132,40 @@ when the story is over, so it goes to `geography`.
 Importing a map gives every country a **window onto it**, and the article shows that window as a
 compact figure. Clicking it opens the map full screen.
 
-The frame is computed at import — the same box `crop-map --state` would produce — and stored on the
-article as `attributes.mapFrame`, a `viewBox` string:
+Not only countries. Anything with an extent on the map gets a window onto it — **1,231 of Watia's
+2,864 articles** at tier 3:
 
 ```
-Charnham         1540 224 628 494
-Granith          1053 589 1124 690
-Fartherfeld      1043 0 796 952
+country          14 of    14      mountain-range    3 of     3
+river          1126 of  1126      sea               1 of     1
+lake             85 of    85      strait            1 of     1
 ```
+
+The frame is stored on the article as `attributes.mapFrame`, a `viewBox` string, and computed from
+whatever the thing's extent actually is:
+
+| | Extent comes from |
+| --- | --- |
+| A country | its own cells — the same box `crop-map --state` produces |
+| A river | the cells of its course |
+| A lake | the cells that claim its feature (a feature records *how many* cells it has, not which) |
+| A range | the curve its hand-added label is written along |
+| A sea | growing from that curve out to the surrounding shores |
+
+Whether a label is framed by its curve or grown to its shores comes from the map, not the words: the
+points of the curve are sampled against the height grid, and the majority decides. A range sits on
+land and keeps its curve; the Sontersea sits on water and reaches for its coasts.
+
+### A frame has to be a shape worth looking at
+
+A country's outline is roughly square and needs only padding. A river is a line — six hundred pixels
+long and twenty wide — and its bare extent is a letterbox nothing can be read in. A one-cell lake is a
+point with no extent at all.
+
+So a frame is grown to a workable minimum and held to an aspect no worse than 2.5:1 before it is
+padded, with the feature staying centred. The short side opens out rather than the long one being cut:
+a river's length is the thing worth seeing, and what surrounds it is most of why anyone looks at a
+river on a map.
 
 ### One map, many windows
 

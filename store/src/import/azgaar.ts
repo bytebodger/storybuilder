@@ -9,7 +9,7 @@
 import { readAddedLabels, guessGeographyKind } from './azgaar-svg.ts'
 import { normalizeTerm } from '../terms.ts'
 import { readStateGeography, statesAlong, statesUnder, type StateGeography } from './azgaar-geo.ts'
-import { pad } from './crop.ts'
+import { boxOf, frameBox, gridSampler, growToShore, pad } from './crop.ts'
 import { frameToAttribute } from './media.ts'
 import type { ImportCandidate, ImportPlan, Tier } from './types.ts'
 
@@ -114,6 +114,13 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
 
   // --- tier 0: the author's own labels, always -----------------------------
 
+  const canvas = { width: json.info?.width ?? 0, height: json.info?.height ?? 0 }
+  const grid = (json as { grid?: { cells?: Row[]; spacing?: number; cellsX?: number } }).grid ?? {}
+  const isLand = gridSampler(
+    (grid.cells ?? []).map((c) => Number(c?.h ?? 0)),
+    { spacing: Number(grid.spacing ?? 1), cellsX: Number(grid.cellsX ?? 1) },
+  )
+
   const added = readAddedLabels(svg)
   for (const label of added) {
     // The whole curve, not its midpoint: a range labelled across a border
@@ -130,6 +137,7 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
       attributes: {
         mapPosition: `${Math.round(label.x)}, ${Math.round(label.y)}`,
         ...(crossed.length ? { spans: crossed } : {}),
+        ...(canvas.width ? { mapFrame: frameToAttribute(labelFrame(label, isLand, canvas)) } : {}),
       },
     })
   }
@@ -181,12 +189,7 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
               // The window onto the map this country occupies. Stored rather
               // than rendered: a crop is a change of view, so fourteen country
               // maps would be fourteen copies of one drawing.
-              mapFrame: frameToAttribute(
-                pad(geo.boundsPx, 0.08, {
-                  width: json.info?.width ?? 0,
-                  height: json.info?.height ?? 0,
-                }),
-              ),
+              mapFrame: frameToAttribute(pad(geo.boundsPx, 0.08, canvas)),
               coast: geo.coast,
               seaPorts: geo.seaPorts || undefined,
               lakePorts: geo.lakePorts || undefined,
@@ -230,7 +233,18 @@ export function buildImportPlan(json: Azgaar, svg: string, options: BuildOptions
   }
 
   addSettlements({ burgs, provinces, cellById, provinceName, stateName, rate, tier, minPopulation, withProvinces, candidates, tally })
-  addGeography({ pack, tier, withMarkers, candidates, tally, rate, cellById, provinceName, stateName })
+  addGeography({
+    pack,
+    tier,
+    withMarkers,
+    candidates,
+    tally,
+    rate,
+    cellById,
+    provinceName,
+    stateName,
+    canvas,
+  })
 
   candidates.sort((a, b) => order(a) - order(b))
 
@@ -323,6 +337,55 @@ function chain(
   return [provinces.get(cell.province as number), states.get(cell.state as number)].filter(
     (n): n is string => !!n && n.toLowerCase() !== self?.toLowerCase(),
   )
+}
+
+/**
+ * The window onto the map for a hand-added label.
+ *
+ * A label over land names something with a shape - a range, a forest - and its
+ * curve traces it, so the curve is the frame. A label over water names a stretch
+ * of sea the generator has no object for, and the useful frame is the one that
+ * reaches its shores. Which it is comes from the map rather than from the words:
+ * the points of the curve are sampled, and the majority decides.
+ */
+function labelFrame(
+  label: { x: number; y: number; points: { x: number; y: number }[] },
+  isLand: (x: number, y: number) => boolean,
+  canvas: { width: number; height: number },
+) {
+  const points = label.points.length ? label.points : [label]
+  const overLand = points.filter((p) => isLand(p.x, p.y)).length
+  const box = boxOf(points)
+
+  if (overLand * 2 >= points.length) return frameBox(box, canvas)
+  return frameBox(growToShore(box, isLand, canvas).box, canvas, { pad: 0.04 })
+}
+
+/** The window onto a run of cells - a river's course. */
+function courseFrame(
+  cellIds: unknown,
+  byId: Map<number, Row>,
+  canvas: { width: number; height: number },
+): { mapFrame: string } | null {
+  // A river lists the cells it runs through; a feature stores only how many it
+  // has. The shape is checked rather than assumed.
+  if (!Array.isArray(cellIds)) return null
+  return pointsFrame(
+    cellIds
+      .map((id) => byId.get(id)?.p)
+      .filter((p): p is number[] => Array.isArray(p) && p.length >= 2)
+      .map((p) => ({ x: Number(p[0]), y: Number(p[1]) })),
+    canvas,
+  )
+}
+
+/** The window onto anything with a scatter of points on the canvas. */
+function pointsFrame(
+  points: { x: number; y: number }[] | undefined,
+  canvas: { width: number; height: number },
+): { mapFrame: string } | null {
+  if (!canvas.width || !points?.length) return null
+  return { mapFrame: frameToAttribute(frameBox(boxOf(points), canvas)) }
 }
 
 const summarise = (parts: string[]) => parts.filter(Boolean).join(', ') + '.'
@@ -432,6 +495,7 @@ interface GeoArgs {
   pack: Record<string, unknown[]>
   tier: Tier
   withMarkers: boolean
+  canvas: { width: number; height: number }
   candidates: ImportCandidate[]
   tally: SectionArgs['tally']
   rate: number
@@ -442,7 +506,7 @@ interface GeoArgs {
 
 /** Rivers, lakes, and the marked sites scattered over the map. */
 function addGeography(a: GeoArgs): void {
-  const { pack, tier, withMarkers, candidates, tally, cellById, provinceName, stateName } = a
+  const { pack, tier, withMarkers, candidates, tally, cellById, provinceName, stateName, canvas } = a
 
   const rivers = rows(pack.rivers).filter(usable)
   const riverName = new Map(rivers.map((r) => [r.i as number, nameOf(r)]))
@@ -465,13 +529,34 @@ function addGeography(a: GeoArgs): void {
             : []),
         ],
         summary: crossed.length > 1 ? `A river crossing ${crossed.join(', ')}.` : undefined,
-        attributes: { length: r.length, discharge: r.discharge, ...(crossed.length ? { crosses: crossed } : {}) },
+        attributes: {
+          length: r.length,
+          discharge: r.discharge,
+          ...(crossed.length ? { crosses: crossed } : {}),
+          // A river's course is its extent: the cells it runs through.
+          ...(courseFrame(r.cells, cellById, canvas) ?? {}),
+        },
         source: 'json',
         sourceType: 'river',
       })
     }
   }
   tally('river', 'geography', rivers.length, tier >= 3 ? rivers.length : 0)
+
+  /*
+   * A feature records `cells` as a count, not a list - so its extent has to be
+   * gathered from the other side, by asking which cells claim it. One pass, in
+   * case a universe has many lakes.
+   */
+  const featurePoints = new Map<number, { x: number; y: number }[]>()
+  for (const cell of cellById.values()) {
+    const f = cell.f as number
+    const p = cell.p
+    if (f === undefined || !Array.isArray(p) || p.length < 2) continue
+    const points = featurePoints.get(f) ?? []
+    points.push({ x: Number(p[0]), y: Number(p[1]) })
+    featurePoints.set(f, points)
+  }
 
   const lakes = rows(pack.features).filter((f) => usable(f) && f.type === 'lake')
   if (tier >= 3) {
@@ -482,6 +567,7 @@ function addGeography(a: GeoArgs): void {
         kind: 'lake',
         tier: 3,
         summary: f.subtype ? `A ${String(f.subtype)} lake.` : undefined,
+        attributes: pointsFrame(featurePoints.get(f.i as number), canvas) ?? undefined,
         source: 'json',
         sourceType: 'lake',
       })

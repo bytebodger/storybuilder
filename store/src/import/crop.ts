@@ -387,3 +387,45 @@ export function fitVignette(svg: string, box: Box, keep = false): string {
   }
   return out
 }
+
+/**
+ * Turn the extent of a thing into a frame worth looking at.
+ *
+ * A country's outline is roughly square and needs only padding. A river is a
+ * line - eight hundred pixels long and thirty wide - and its bare extent makes a
+ * letterbox nothing can be read in. A label's curve is the same shape problem in
+ * miniature.
+ *
+ * So a frame is grown to a workable minimum and held to a sane aspect before it
+ * is padded: the feature stays centred, and what surrounds it becomes visible,
+ * which is most of why anyone looks at a river on a map.
+ */
+export function frameBox(
+  box: Box,
+  canvas: CropSource,
+  options: { minSpan?: number; maxAspect?: number; pad?: number } = {},
+): Box {
+  const {
+    minSpan = canvas.width * 0.08,
+    maxAspect = 2.5,
+    pad: padding = 0.08,
+  } = options
+
+  let width = Math.max(box.x1 - box.x0, minSpan)
+  let height = Math.max(box.y1 - box.y0, minSpan)
+
+  // Widen whichever side is too thin for the other, rather than cropping the
+  // long one: a river's length is the thing worth seeing.
+  if (width / height > maxAspect) height = width / maxAspect
+  if (height / width > maxAspect) width = height / maxAspect
+
+  const cx = (box.x0 + box.x1) / 2
+  const cy = (box.y0 + box.y1) / 2
+  const centred = {
+    x0: cx - width / 2,
+    y0: cy - height / 2,
+    x1: cx + width / 2,
+    y1: cy + height / 2,
+  }
+  return pad(centred, padding, canvas)
+}

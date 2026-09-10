@@ -70,3 +70,80 @@ describe('frames come out of the import', () => {
     assert.equal(find('Blandbury').attributes?.mapFrame, undefined)
   })
 })
+
+describe('frames for things that are not countries', () => {
+  const SVG = [
+    '<svg><g id="textPaths">',
+    '<path id="textPath_addedLabel1" d="M100,100L300,120"/>',
+    '<path id="textPath_addedLabel2" d="M600,600L800,600"/>',
+    '</g><g id="labels-added">',
+    '<text id="addedLabel1" data-label-type="added"><textPath xlink:href="#textPath_addedLabel1">Arnborne Mountains</textPath></text>',
+    '<text id="addedLabel2" data-label-type="added"><textPath xlink:href="#textPath_addedLabel2">Sontersea</textPath></text>',
+    '</g></svg>',
+  ].join('')
+
+  /** Land in the top half, water below: the two labels sit one in each. */
+  const heights: number[] = []
+  for (let row = 0; row < 100; row++) for (let col = 0; col < 100; col++) heights.push(row < 50 ? 40 : 0)
+
+  const EXPORT = {
+    info: { mapName: 'T', width: 1000, height: 1000 },
+    settings: { populationRate: 1000 },
+    mapCoordinates: { latN: 90, latS: -90, lonW: -180, lonE: 180 },
+    grid: { cells: heights.map((h) => ({ h })), spacing: 10, cellsX: 100 },
+    pack: {
+      states: [{ i: 0, name: 'Neutrals' }],
+      provinces: [],
+      burgs: [],
+      cells: [
+        { i: 1, p: [200, 700], f: 9 },
+        { i: 2, p: [400, 760], f: 9 },
+        { i: 3, p: [700, 300], f: 4 },
+      ],
+      cultures: [],
+      religions: [],
+      zones: [],
+      routes: [],
+      rivers: [{ i: 1, name: 'Conghambe', cells: [1, 2], parent: 1 }],
+      // A feature records how many cells it has, not which ones.
+      features: [{ i: 4, name: 'Harden', type: 'lake', cells: 1 }],
+      markers: [],
+    },
+  }
+  const plan = buildImportPlan(EXPORT, SVG, { tier: 3 })
+  const frameOf = (name: string) =>
+    frameFromAttribute(plan.candidates.find((c) => c.name === name)?.attributes?.mapFrame)
+
+  it('frames a river along its course', () => {
+    const box = frameOf('Conghambe')!
+    assert.ok(box, 'a river gets a frame')
+    // Its cells run from (200,700) to (400,760); the frame contains both.
+    assert.ok(box.x0 <= 200 && box.x1 >= 400)
+    assert.ok(box.y0 <= 700 && box.y1 >= 760)
+  })
+
+  it('frames a lake, whose cells have to be found the other way round', () => {
+    // feature.cells is the count 1, so the extent comes from the cell claiming
+    // the feature - here (700,300).
+    const box = frameOf('Harden')!
+    assert.ok(box, 'a lake gets a frame')
+    assert.ok(box.x0 <= 700 && box.x1 >= 700)
+    assert.ok(box.y0 <= 300 && box.y1 >= 300)
+  })
+
+  it('frames a range on its own label curve', () => {
+    // Over land, so the curve is the shape: no growing outward.
+    const box = frameOf('Arnborne Mountains')!
+    assert.ok(box.x0 <= 100 && box.x1 >= 300)
+    assert.ok(box.x1 - box.x0 < 500, 'held close to the range itself')
+  })
+
+  it('frames a sea by reaching for its shores instead', () => {
+    // Over water, so the frame grows until land rings it - much wider than the
+    // label, and reaching up into the land above.
+    const range = frameOf('Arnborne Mountains')!
+    const sea = frameOf('Sontersea')!
+    assert.ok(sea.y0 < 500, 'it reached up to the coast')
+    assert.ok(sea.x1 - sea.x0 > range.x1 - range.x0, 'and is wider than a label')
+  })
+})
