@@ -146,6 +146,18 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
     }
     const runs = batches(fill)
 
+    /*
+     * What these fields held before they were cleared.
+     *
+     * Clicking Regenerate on a field asks the same question the form asked a
+     * moment ago, and an identical question gets an identical answer - a given
+     * name came back "Maren" three times running. Sending the rejected value is
+     * what makes the second ask a different one.
+     */
+    const avoid = Object.fromEntries(
+      fill.map((k) => [k, values[k]]).filter(([, v]) => !isEmpty(v)),
+    )
+
     setBusy(fill.length === 1 ? fill[0] : 'form')
     setNote(null)
     setError(null)
@@ -157,22 +169,73 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
     // batch has to be told what the last one decided.
     let settled = Object.fromEntries(Object.entries(values).filter(([k]) => !fill.includes(k)))
 
-    try {
-      for (const [i, run] of runs.entries()) {
-        if (runs.length > 1) setProgress({ done: i, total: runs.length })
-        const result = await forge(run, settled, container, universe)
+    /*
+     * The first batch alone, then the rest together.
+     *
+     * The first is the identity - the name, the overview, what this person is -
+     * and everything else hangs off it. Nothing else hangs off anything but it,
+     * so the remaining batches have no reason to wait for each other. Run in
+     * turn they were about four minutes; run together, about two.
+     *
+     * The cost is that the later batches cannot see each other, so a life story
+     * and a set of motivations are each coherent with who this is and only
+     * loosely with one another. That is the trade, and it is worth it: the
+     * identity carries most of the coherence, and nobody wants to sit through
+     * four minutes to find out what a stranger's hobbies are.
+     */
+    const merge = (result: { values: Record<string, unknown>; dropped: string[] }, run: string[]) => {
+      setValues((v) => ({ ...v, ...result.values }))
+      dropped.push(...result.dropped)
+      missed.push(...run.filter((k) => !(k in result.values)))
+    }
 
-        if (result.error) {
-          // Whatever earlier batches produced is already on the form and stays
-          // there. Half a person is worth more than none.
-          setError(result.error)
-          break
-        }
-        settled = { ...settled, ...result.values }
-        setValues((v) => ({ ...v, ...result.values }))
-        dropped.push(...result.dropped)
-        missed.push(...run.filter((k) => !(k in result.values)))
+    let done = 0
+    const step = () => setProgress({ done: ++done, total: runs.length })
+
+    try {
+      const [head, ...rest] = runs
+      if (runs.length > 1) setProgress({ done: 0, total: runs.length })
+
+      const first = await forge(head, settled, container, universe, avoid)
+      if (first.error) {
+        setError(first.error)
+        return
       }
+      settled = { ...settled, ...first.values }
+      merge(first, head)
+      step()
+
+      // Bounded, because each run is a separate CLI process holding a few
+      // hundred megabytes. Four at once is fine; forty would not be.
+      const failures: string[] = []
+      const queue = [...rest]
+      const workers = Array.from({ length: Math.min(3, queue.length) }, async () => {
+        for (let run = queue.shift(); run; run = queue.shift()) {
+          try {
+            let result = await forge(run, settled, container, universe, avoid)
+            /*
+             * One retry when a batch comes back with nothing.
+             *
+             * A run that produced no usable answer left a whole section of the
+             * form blank, and the only sign of it was a line at the bottom
+             * listing thirteen field names. Asking again costs one more request
+             * and usually gets one; asking twice would be a policy of grinding.
+             */
+            if (result.error || !Object.keys(result.values).length) {
+              result = await forge(run, settled, container, universe, avoid)
+            }
+            // One batch failing is not the others failing. Whatever came back
+            // stays on the form and the rest is reported.
+            if (result.error) failures.push(result.error)
+            else merge(result, run)
+          } catch (e: unknown) {
+            failures.push(e instanceof Error ? e.message : String(e))
+          }
+          step()
+        }
+      })
+      await Promise.all(workers)
+      if (failures.length) setError(failures[0])
 
       setNote(
         [
@@ -229,10 +292,10 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
             {busy !== 'form' ?
               `Fill ${unlockedEmpty.length} empty field(s)`
             : progress ?
-              // Silence for minutes reads as a hang. Saying which section is
-              // being written, and how many there are, is the difference
-              // between waiting and wondering.
-              `Generating ${progress.done + 1} of ${progress.total}…`
+              // Completions rather than position: the later sections run at the
+              // same time, so "3 of 5" is a count of what has landed, not of
+              // which one is in flight.
+              `Generated ${progress.done} of ${progress.total}…`
             : 'Generating…'}
           </button>
           <button type="button" className="icon" onClick={onCancel} disabled={!!busy}>
@@ -243,8 +306,9 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
 
       {busy === 'form' && (
         <p className="note">
-          Writing a long form takes minutes — each section is a separate request, and the fields fill
-          in as they arrive. Anything already on the form is kept.
+          Writing a long form takes a couple of minutes. The name and overview go first, then the
+          rest of the sections are written at the same time and fill in as they arrive. Anything
+          already on the form is kept.
         </p>
       )}
       {note && <p className="note">{note}</p>}

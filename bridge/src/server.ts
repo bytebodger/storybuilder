@@ -69,6 +69,54 @@ function buildPrompt(req: RunRequest): string {
 }
 
 /**
+ * The universe as a generator needs to see it: its standing constraints, then
+ * an inventory of what it already contains.
+ *
+ * This is what `article-forge` used to fetch for itself, one `sb` call and one
+ * model turn at a time. The bridge has the store open, so it costs a few
+ * milliseconds here and saves twenty-odd seconds there.
+ *
+ * Names only, not articles. What stops a generator inventing a fourteenth
+ * continent is knowing the thirteen; what any one of them is made of is a
+ * lookup it can still make if it turns out to matter.
+ */
+const INVENTORY_CAP = 60
+
+async function canonBrief(universe: string): Promise<string> {
+  const store = await openUniverse(universe)
+  const parts = [await renderUniverseBrief(store)]
+
+  const items = await store.list()
+  const byContainer = new Map<string, string[]>()
+  for (const item of items) {
+    const names = byContainer.get(item.container) ?? []
+    names.push(item.stub ? `${item.name} (stub)` : item.name)
+    byContainer.set(item.container, names)
+  }
+
+  if (byContainer.size) {
+    const lines = [...byContainer.entries()].sort().map(([container, names]) => {
+      names.sort()
+      const shown = names.slice(0, INVENTORY_CAP)
+      // A truncated list still has to say it is truncated, or the absence of a
+      // name reads as the thing not existing - which is the one mistake this
+      // whole inventory is here to prevent.
+      const more = names.length > shown.length ? `, and ${names.length - shown.length} more` : ''
+      return `${container} (${names.length}): ${shown.join(', ')}${more}`
+    })
+    parts.push(`WHAT THIS UNIVERSE ALREADY HOLDS${NL}${lines.join(NL)}`)
+  } else {
+    parts.push('This universe holds no articles yet. Anything you name will be the first of its kind.')
+  }
+
+  const timelines = await store.timelines()
+  if (timelines.length > 1) {
+    parts.push(`TIMELINES: ${timelines.map((t) => t.name).join(', ')}`)
+  }
+  return parts.join(NL + NL)
+}
+
+/**
  * What a skill run is allowed to do, declared here rather than inherited.
  *
  * A non-interactive run has nobody to answer a permission prompt, so the surface
@@ -668,6 +716,10 @@ const server = createServer(async (req, res) => {
       if (!fieldsFor(body.container)) {
         return send(res, 400, { error: `No field spec for container "${body.container}"` })
       }
+      // Read here, where the store already is, rather than leaving the skill to
+      // shell out for the same facts a turn at a time.
+      if (body.universe) body.canon = await canonBrief(body.universe)
+
       const run = await runClaude(buildForgePrompt(body))
       if (run.error) return send(res, 200, { values: {}, dropped: [], error: run.error })
       // Requested keys only - the author's locks are enforced here, not upstream.

@@ -137,10 +137,12 @@ export const forge = (
   current: UniverseDraft,
   container = 'universe',
   universe?: string,
+  /** What these fields held before, when this is a regenerate rather than a fill. */
+  avoid?: UniverseDraft,
 ) =>
   json<ForgeResult>('/universe/forge', {
     method: 'POST',
-    body: JSON.stringify({ container, universe, fill, current }),
+    body: JSON.stringify({ container, universe, fill, current, avoid }),
   })
 
 export const nav = (universe: string) =>

@@ -49,7 +49,19 @@ describe('reading the response', () => {
 
   it('returns nothing rather than guessing when there is no object', () => {
     assert.equal(extractJson('I could not think of anything.'), null)
-    assert.deepEqual(applyForgeResponse('nothing here', req(['tone'])), { values: {}, dropped: [] })
+  })
+
+  it('calls an answer with no object in it a failure, not an empty answer', () => {
+    // These are different things downstream. A blank result reads as "the
+    // generator chose to fill nothing in", and a whole batch of fields once
+    // came back that way, reported in a footnote and retried by nobody.
+    const result = applyForgeResponse('nothing here', req(['tone']))
+    assert.deepEqual(result.values, {})
+    assert.match(result.error ?? '', /no JSON object/)
+  })
+
+  it('says so when the run produced no output at all', () => {
+    assert.match(applyForgeResponse('', req(['tone'])).error ?? '', /returned nothing/)
   })
 
   it('coerces values into the shape the field declares', () => {

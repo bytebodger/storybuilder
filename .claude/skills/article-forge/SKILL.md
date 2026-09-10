@@ -35,17 +35,34 @@ caller discards anything else.
 
 ## Before generating
 
-1. **Read the universe.** `npm run sb --silent -- --universe $U intro` gives the premise, the natural
-   laws and the canon's year span. A creature that flies by magic in a world whose laws say there is
-   no magic is not a suggestion, it is a contradiction.
+**The canon is already in the prompt.** The caller reads the store directly and passes down the
+universe's premise, natural laws and year span, followed by an inventory of everything it holds:
+every article's name, by container, and the timelines. Work from that.
 
-2. **Find what the article should attach to.** If `current` names places, peoples or institutions,
-   resolve them: `find "<name>"`, then `brief <id>`. What comes back tells you what is actually
-   established about them — and what is closed.
+This matters for speed, not tidiness. Fetching the same facts costs a process launch and a model turn
+each, and measured on a single short field it was the difference between **thirty seconds and eight**.
+On a form of fifty-eight fields that is the difference between a wait and an afternoon.
 
-3. **Look at the neighbours.** `containers` and `list <container>` show what this world already has.
-   An article that mentions the continent, the peoples and the trade that genuinely exist reads as
-   part of a world; one that invents its own supporting cast reads as a fragment from somewhere else.
+So:
+
+1. **Read what you were given.** A creature that flies by magic in a world whose laws say there is no
+   magic is not a suggestion, it is a contradiction — and the laws are right there.
+
+2. **Use the inventory.** An article that mentions the continent, the peoples and the trade that
+   genuinely exist reads as part of a world; one that invents its own supporting cast reads as a
+   fragment from somewhere else. The names you may lean on are listed.
+
+3. **Look something up only when the name is not enough.** If the article turns on what is actually
+   established about one particular thing — whether a set is closed, what a place is like — then
+   `find "<name>"` and `brief <id>` are still there. One lookup that decides the answer is worth its
+   cost. Three that confirm what the inventory already told you are not.
+
+## When asked again
+
+A regenerate arrives with the answers the author has already rejected. Return something genuinely
+different, not a respelling: asked three times for a given name against an identical prompt, the
+answer came back `Maren`, `Maren`, `Maren`. The rejected values are listed so that cannot happen —
+treat them as ruled out, along with anything a reader would hear as the same name.
 
 ## Rules
 

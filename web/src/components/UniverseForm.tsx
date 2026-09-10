@@ -70,10 +70,15 @@ export function UniverseForm({ universeId, onSaved, onCancel }: Props) {
     setNote(null)
     setError(null)
     try {
+      // What is being replaced, so a regenerate is a different question from the
+      // one just asked. An identical prompt comes back with an identical answer.
+      const avoid = Object.fromEntries(
+        fill.map((k) => [k, values[k]]).filter(([, v]) => !isEmpty(v)),
+      )
       // Clear first, so a regenerated field is replaced rather than merged into.
       setValues((v) => ({ ...v, ...Object.fromEntries(fill.map((k) => [k, null])) }))
       const current = Object.fromEntries(Object.entries(values).filter(([k]) => !fill.includes(k)))
-      const result = await forge(fill, current)
+      const result = await forge(fill, current, 'universe', undefined, avoid)
 
       if (result.error) setError(result.error)
       setValues((v) => ({ ...v, ...result.values }))
