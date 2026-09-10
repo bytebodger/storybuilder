@@ -65,8 +65,8 @@ export function gridSampler(
   }
 }
 
-/** What share of a strip along one edge of a box is land. */
-function edgeLand(box: Box, side: Side, sample: LandAt, band: number, step = 4): number {
+/** Land and total sample counts for a strip along one edge of a box. */
+function edgeTally(box: Box, side: Side, sample: LandAt, band: number, step = 4): [number, number] {
   const { x0, y0, x1, y1 } = box
   const strip =
     side === 'N' ? { a: x0, b: y0, c: x1, d: y0 + band }
@@ -82,6 +82,31 @@ function edgeLand(box: Box, side: Side, sample: LandAt, band: number, step = 4):
       if (sample(x, y)) land++
     }
   }
+  return [land, total]
+}
+
+/** What share of a strip along one edge of a box is land. */
+function edgeLand(box: Box, side: Side, sample: LandAt, band: number, step = 4): number {
+  const [land, total] = edgeTally(box, side, sample, band, step)
+  return total === 0 ? 1 : land / total
+}
+
+/**
+ * What share of a frame's whole border is coast.
+ *
+ * The single number the framing turns on. Judging sides separately invites each
+ * to chase its own shore and the frame to slide off the thing it was framing;
+ * one figure for the border as a whole asks the only question worth asking of a
+ * named water - how much of what surrounds this view is land.
+ */
+function perimeterLand(box: Box, sample: LandAt, band: number): number {
+  let land = 0
+  let total = 0
+  for (const side of ['N', 'S', 'W', 'E'] as Side[]) {
+    const [l, t] = edgeTally(box, side, sample, band)
+    land += l
+    total += t
+  }
   return total === 0 ? 1 : land / total
 }
 
@@ -89,27 +114,32 @@ type Side = 'N' | 'S' | 'W' | 'E'
 
 export interface Grown {
   box: Box
-  /** True when land closed around the frame; false when the walk gave up. */
+  /** True when land rings the frame on every side; false when an edge stayed open. */
   closed: boolean
   /** Why it stopped, in a phrase, for a caller that has to explain itself. */
   reason: string
 }
 
 /**
- * Grow a frame until it is ringed by land.
+ * Grow a frame out from a label until its border is as much coast as it will be.
  *
  * For a label written across open water, naming a stretch of sea the generator
- * has no object for: a named sea is the space between coasts, so the frame is
- * the smallest one whose edges are mostly shore. Water still reaches the border
- * wherever the sea genuinely opens out - a mouth, a strait - and that is the
- * point rather than a fault.
+ * has no object for: a named water is the space between coasts, so the frame
+ * worth showing is the one whose edges are shore.
  *
- * The weakest edge grows first, so effort goes where the frame is most open,
- * and a side that has run off the canvas stops being counted.
+ * The frame grows evenly on all four sides, and the only figure watched is the
+ * share of its whole border that is land. That share rises as the frame reaches
+ * the coasts around the water, peaks when it is ringed by them, and falls again
+ * once it grows past them into whatever lies beyond - so the first peak is the
+ * feature, and the walk stops there.
  *
- * Not every named water closes. A strait is a passage, open at both ends by
- * definition, and a frame around one never becomes a ring of land - so the walk
- * gives up when growing stops helping, rather than swallowing the whole map.
+ * Growing the sides independently is the obvious alternative and it is wrong.
+ * A bay is a pocket of water joined to a larger one; its mouth is by definition
+ * an edge that never finds shore, so the side facing it grows across the sea
+ * outside until it fetches up on that sea's far coast, and the bay comes back
+ * framed as the sea. Held together, the same mouth costs a few points of border
+ * and the peak stays over the bay. It also keeps the label centred, which is
+ * where someone looking for it expects to find it.
  */
 export function growToShore(
   start: Box,
@@ -117,114 +147,169 @@ export function growToShore(
   canvas: CropSource,
   options: {
     step?: number
+    /** Border share at which the frame is ringed and there is no point growing on. */
     enclose?: number
     band?: number
-    maxSteps?: number
     /**
-     * How far one side may grow without finding shore before it gives up, in
-     * pixels. Defaults to 40% of the map's longer dimension - short enough to
-     * abandon a passage, long enough to cross an ocean to its far coast.
+     * How far the frame may grow, in pixels. Defaults to 40% of the map's longer
+     * dimension - short enough to abandon a passage, long enough to cross an
+     * ocean to its far coast.
      */
     reach?: number
-    /**
-     * No side may exceed this share of the canvas. Generous, because a sea can
-     * legitimately fill most of a map - and because a walk that hits this is
-     * not returning its sprawl anyway, only reporting that it failed.
-     */
-    maxSpan?: number
+    /** How far the border share must drop below its best to count as falling. */
+    prominence?: number
+    /** How many falling readings in a row settle it. Two, so one dip is not a peak. */
+    patience?: number
+    /** How much better a further-off coast must be before a side moves out to it. */
+    tolerance?: number
   } = {},
 ): Grown {
   const {
-    step = 20,
+    step = 8,
     enclose = 0.9,
     band = 12,
-    maxSteps = 500,
     reach = Math.max(canvas.width, canvas.height) * 0.4,
-    maxSpan = 0.8,
+    prominence = 0.05,
+    patience = 2,
+    tolerance = 0.03,
   } = options
-  const patience = Math.max(1, Math.ceil(reach / step))
-  const box = { ...start }
 
-  const sides: Side[] = ['N', 'S', 'W', 'E']
-  const settled = new Set<Side>()
-  const stale: Record<Side, number> = { N: 0, S: 0, W: 0, E: 0 }
-  const best: Record<Side, number> = { N: -1, S: -1, W: -1, E: -1 }
+  const frameAt = (t: number): Box => ({
+    x0: Math.max(0, start.x0 - t),
+    y0: Math.max(0, start.y0 - t),
+    x1: Math.min(canvas.width, start.x1 + t),
+    y1: Math.min(canvas.height, start.y1 + t),
+  })
 
-  const edgeAt = (side: Side) => ({ N: box.y0, S: box.y1, W: box.x0, E: box.x1 })[side]
-  const limitOf = (side: Side) => ({ N: 0, S: canvas.height, W: 0, E: canvas.width })[side]
+  let bestAt = 0
+  let best = -1
+  let falling = 0
 
-  for (let i = 0; i < maxSteps; i++) {
-    const open = sides
-      .filter((s) => !settled.has(s))
-      .map((side) => ({ side, land: edgeLand(box, side, sample, band) }))
-      .filter((s) => s.land < enclose)
+  for (let t = 0; t <= reach; t += step) {
+    const box = frameAt(t)
+    const share = perimeterLand(box, sample, band)
 
-    if (open.length === 0) break
-
-    if (box.x1 - box.x0 > canvas.width * maxSpan || box.y1 - box.y0 > canvas.height * maxSpan) {
-      return giveUp('the frame reached its size limit before land closed it')
+    if (share >= enclose) {
+      bestAt = t
+      best = share
+      break
     }
 
-    // The most open side grows first, so effort goes where the frame leaks.
-    const weakest = open.reduce((a, b) => (a.land <= b.land ? a : b))
-    const side = weakest.side
-
-    if (edgeAt(side) === limitOf(side)) {
-      // The water runs off the map here. Nothing further out to find.
-      settled.add(side)
-      continue
+    if (share > best) {
+      best = share
+      bestAt = t
+      falling = 0
+    } else if (share < best - prominence) {
+      falling++
+    } else {
+      falling = 0
     }
+    if (falling >= patience) break
 
-    if (side === 'N') box.y0 = Math.max(0, box.y0 - step)
-    else if (side === 'S') box.y1 = Math.min(canvas.height, box.y1 + step)
-    else if (side === 'W') box.x0 = Math.max(0, box.x0 - step)
-    else box.x1 = Math.min(canvas.width, box.x1 + step)
-
-    /*
-     * Staleness is judged per side, not per walk.
-     *
-     * A side crossing open water toward the map edge improves nothing for many
-     * steps and is still doing the right thing; a side that has grown a long
-     * way without finding shore is not going to. Judging the walk as a whole
-     * confuses the two and abandons a basin halfway to its coast.
-     */
-    const after = edgeLand(box, side, sample, band)
-    if (after > best[side] + 0.01) {
-      best[side] = after
-      stale[side] = 0
-    } else if (++stale[side] > patience) {
-      settled.add(side)
-    }
+    // Grown to the whole map. There is nothing further out to find.
+    if (box.x0 === 0 && box.y0 === 0 && box.x1 === canvas.width && box.y1 === canvas.height) break
   }
 
-  const ring = enclosure(box, sample, band)
-  if (sides.every((s) => ring[s] >= enclose)) {
-    return { box, closed: true, reason: 'land closed around the frame' }
-  }
-  return giveUp('the water stayed open however far the frame grew - a passage rather than a basin')
-
-  /**
-   * A frame that never closed is not improved by being enormous.
+  /*
+   * Even growth finds the scale of the water; it cannot find where the label
+   * was put in it. Someone writing a sea across its northern half leaves the
+   * frame overshooting north and short in the south by the same amount.
    *
-   * Half a map around a strait is worse than a close view of it: the caller is
-   * told the walk failed and given something usable to look at, and can pass an
-   * explicit box if it wants a different one.
+   * So each side is now settled onto the best coast within reach of where it
+   * landed - at most half the distance the frame grew, and never inside the
+   * label itself, which has to stay legible. Bounded that way it corrects a
+   * misplaced label without becoming a second search that can wander off.
    */
-  function giveUp(reason: string): Grown {
-    // Enough context to read the feature, with a floor so a short label still
-    // yields a usable view rather than a postage stamp.
-    const span = Math.max(start.x1 - start.x0, start.y1 - start.y0)
-    const margin = Math.max(span * 0.6, canvas.width * 0.05)
-    return {
-      box: {
-        x0: Math.max(0, start.x0 - margin),
-        y0: Math.max(0, start.y0 - margin),
-        x1: Math.min(canvas.width, start.x1 + margin),
-        y1: Math.min(canvas.height, start.y1 + margin),
-      },
-      closed: false,
-      reason,
+  const box = settle(frameAt(bestAt), bestAt / 2)
+
+  /*
+   * A peak that is only a little coast is a passage, not a basin: a strait is
+   * open at both ends by definition and no frame around one is ever ringed.
+   * Said plainly rather than papered over, because the caller may want to
+   * explain the picture it got.
+   */
+  const ring = enclosure(box, sample, band)
+  const closed = (['N', 'S', 'W', 'E'] as Side[]).every((s) => ring[s] >= enclose)
+  return {
+    box,
+    closed,
+    reason:
+      closed ? 'land closed around the frame'
+      : 'the water stayed open on some side - a passage rather than a basin',
+  }
+
+  /** Settle each side onto the nearest coast within `slack` of where it is. */
+  function settle(frame: Box, slack: number): Box {
+    if (slack < step) return frame
+    const out = { ...frame }
+
+    for (const side of ['N', 'S', 'W', 'E'] as Side[]) {
+      const at = (offset: number) => {
+        const probe = { ...out }
+        if (side === 'N') probe.y0 = frame.y0 + offset
+        else if (side === 'S') probe.y1 = frame.y1 - offset
+        else if (side === 'W') probe.x0 = frame.x0 + offset
+        else probe.x1 = frame.x1 - offset
+        return probe
+      }
+      // A positive offset draws the side in toward the label; a negative one
+      // pushes it further out.
+      const coastAt = (offset: number) => {
+        const probe = at(offset)
+        if (!holdsLabel(probe) || !onCanvas(probe)) return -1
+        return edgeLand(probe, side, sample, band)
+      }
+
+      let settled = 0
+      if (coastAt(0) >= enclose) {
+        /*
+         * Already standing on coast, so the only question left is how much dead
+         * land is behind it. Even growth reaches the far coast of a water by
+         * overshooting the near one by the same amount, and that overshoot is
+         * all inland. Drawn in while the edge is still coast, the side comes to
+         * rest just short of the water - and stops the moment it is not, so it
+         * can never take a bite out of what it is framing.
+         */
+        for (let d = step; d <= slack; d += step) {
+          if (coastAt(d) < enclose) break
+          settled = d
+        }
+      } else {
+        // Not on coast. Look for the nearest line that is, inward before
+        // outward at the same distance so the frame tightens by preference,
+        // and settle for the most coastal line going if none of them is.
+        let bestLand = -1
+        for (let d = 0; d <= slack && settled === 0; d += step) {
+          for (const offset of d === 0 ? [0] : [d, -d]) {
+            const land = coastAt(offset)
+            if (land < 0) continue
+            if (land >= enclose) {
+              settled = offset
+              break
+            }
+            if (land > bestLand + tolerance) {
+              bestLand = land
+              settled = offset
+            }
+          }
+        }
+      }
+
+      if (side === 'N') out.y0 = frame.y0 + settled
+      else if (side === 'S') out.y1 = frame.y1 - settled
+      else if (side === 'W') out.x0 = frame.x0 + settled
+      else out.x1 = frame.x1 - settled
     }
+    return out
+  }
+
+  /** The label is the subject of the picture and never falls outside it. */
+  function holdsLabel(b: Box): boolean {
+    return b.x0 <= start.x0 && b.y0 <= start.y0 && b.x1 >= start.x1 && b.y1 >= start.y1
+  }
+
+  function onCanvas(b: Box): boolean {
+    return b.x0 >= 0 && b.y0 >= 0 && b.x1 <= canvas.width && b.y1 <= canvas.height
   }
 }
 
@@ -456,5 +541,10 @@ export function labelFrame(
   const box = boxOf(points)
 
   if (overLand * 2 >= points.length) return frameBox(box, canvas)
-  return frameBox(growToShore(box, isLand, canvas).box, canvas, { pad: 0.04 })
+
+  // No minimum span on this path. The others need one because their extent can
+  // be a point or a single cell; a frame grown out to its coasts has already
+  // settled how big the thing is, and padding it up to a floor would put the
+  // sea a bay opens onto back in the picture the bay was pulled out of.
+  return frameBox(growToShore(box, isLand, canvas).box, canvas, { pad: 0.04, minSpan: 0 })
 }

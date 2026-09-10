@@ -154,7 +154,7 @@ whatever the thing's extent actually is:
 | A river | the cells of its course |
 | A lake | the cells that claim its feature (a feature records *how many* cells it has, not which) |
 | A range | the curve its hand-added label is written along |
-| A sea | growing from that curve out to the surrounding shores |
+| A sea, a bay | growing evenly from that curve until its border is coast |
 | A settlement | its own position — a point, not an extent |
 | A road | the course it records, as `[x, y, cell]` along its length |
 
@@ -177,6 +177,11 @@ So a frame is grown to a workable minimum and held to an aspect no worse than 2.
 padded, with the feature staying centred. The short side opens out rather than the long one being cut:
 a river's length is the thing worth seeing, and what surrounds it is most of why anyone looks at a
 river on a map.
+
+The minimum does not apply to a water grown out to its coasts. The others need one because their
+extent can be a point or a single cell; a grown frame has already settled how big the thing is, and
+padding it up to a floor would put the sea a bay opens onto back into the picture the bay was pulled
+out of.
 
 ### One map, many windows
 
@@ -216,18 +221,40 @@ drawn, everything inside keeps full vector detail, and the operation is reversib
 spans half the canvas, because all connected water is one feature. A named sea is not a thing the
 generator made — it is the space between coasts.
 
-So the frame starts at the label's own curve and grows until **land rings it**. The test is a property
-of the frame's perimeter, not of what lies beyond one edge: each side must be `--enclose` land
-(default 90%) before the walk stops, and the most open side always grows first. Water still reaches
-the border wherever the sea genuinely opens out — for the Sontersea, a narrow gap north and the two
-southwest outlets, one of which is the Strait of Arnock. That is the sea's shape, not a fault in the
-crop, which is why the result reports its edges:
+So the frame starts at the label's own curve and grows **evenly on all four sides**, watching one
+number: the share of its whole border that is land. That share climbs as the frame reaches the coasts
+around the water, peaks when they ring it, and falls again once the frame grows out past them — so the
+first peak is the feature, and the growth stops there. Water still reaches the border wherever the sea
+genuinely opens out; that is the sea's shape, not a fault in the crop, which is why the result reports
+its edges:
 
 ```
-Cropped to Sontersea, grown from its label until the coasts closed around it.
-  edges ringed by land: N 90% S 95% W 98% E 95%
-  604 x 589 of 2560 x 1279 (11% of the map), 8% overflow
+Cropped to Sontersea, framed as the importer frames it.
+  edges ringed by land: N 93% S 94% W 96% E 96%
+  603 x 620 of 2560 x 1279 (11% of the map), 0% overflow
 ```
+
+Even growth then leaves one thing wrong: it finds the scale of a water but not where in it the label
+was written. A sea labelled across its northern half comes back overshooting north and short in the
+south by the same amount. So each side is finally **settled onto the nearest coast**, by at most half
+the distance the frame grew and never inside the label itself. A side already standing on coast is
+drawn in while it stays on coast, which takes the dead land off the near side; a side that is not
+looks for the nearest line that is, tightening by preference.
+
+### A bay is not the sea it opens onto
+
+The obvious way to grow this frame is to move each side out until it finds shore, and it is wrong.
+
+A bay is a pocket of water joined to a larger one. The side facing the joint can never find shore —
+that is what a mouth *is* — so it crosses the mouth, crosses the sea beyond, and fetches up on that
+sea's far coast. Worse, the sides at right angles to it lengthen as it goes, which makes them read as
+more open, which grows them too. The Bay of Whispers came back as a 575 × 538 window on the Sontersea,
+within a few pixels of the crop for the Sontersea itself: two names, one picture.
+
+Held together, the same mouth costs the border a few points and the peak stays over the bay — which is
+now **182 × 133**, 1% of the map, 43% water, the bay in the middle of it. The Sontersea, framed by the
+identical rule, is 603 × 620. Growing evenly also keeps the label centred, which is where someone
+looking for it expects to find it.
 
 ### Sample the regular grid, never the packed cells
 
@@ -244,16 +271,17 @@ question.
 ### Not every water closes
 
 A strait is a passage, open at both ends by definition, and no frame around one is ever ringed by
-land. Each side gives up after growing `reach` without finding shore (40% of the map by default), and
-a walk that fails returns a **close view of the label** rather than its sprawl — half a map around a
-strait is worse than a tight one — along with the reason:
+land. Its border share peaks low and early — the frame is beside the passage's own banks and there is
+nothing further out to gain — so the growth stops there anyway, and the result is a **close view of the
+label** rather than half a map. The reason is reported rather than papered over:
 
 ```
-Cropped to Strait of Arnock — the frame reached its size limit before land closed it;
-use --box to frame it yourself.
-  edges ringed by land: N 22% S 0% W 59% E 40%
-  397 x 544 of 2560 x 1279 (7% of the map)
+Cropped to Strait of Arnock — the water stayed open on some side, a passage rather than a basin.
+  edges ringed by land: N 26% S 28% W 96% E 51%
+  132 x 296 of 2560 x 1279 (1% of the map)
 ```
+
+Growth is capped at `reach` (40% of the map's longer side) regardless, so nothing can run away.
 
 ### The graticule keeps its numbers
 

@@ -76,6 +76,44 @@ describe('growing a frame out to the shore', () => {
     assert.ok(grown.box.x1 - grown.box.x0 < canvas.width / 2, 'and stayed a close view')
   })
 
+  it('frames a bay as the bay, not as the sea it opens onto', () => {
+    // A sea across the top, a small bay below it, and a narrow mouth joining
+    // the two. The bay's own edge facing that mouth can never find shore - that
+    // is what a mouth is - so a frame that chases shore on each side alone
+    // crosses the mouth, crosses the sea, and fetches up on the sea's far
+    // coast, handing back the sea under the bay's name.
+    const sea = (x: number, y: number) => x > 100 && x < 900 && y > 100 && y < 500
+    const bay = (x: number, y: number) => x > 400 && x < 560 && y > 560 && y < 700
+    const mouth = (x: number, y: number) => x > 460 && x < 500 && y >= 500 && y <= 560
+    const coast = (x: number, y: number) => !(sea(x, y) || bay(x, y) || mouth(x, y))
+
+    const label = { x0: 430, y0: 600, x1: 530, y1: 660 }
+    const { box } = growToShore(label, coast, canvas)
+
+    assert.ok(box.y0 > 500, `the frame stayed south of the mouth: ${box.y0}`)
+    assert.ok(box.x1 - box.x0 < 400, `and stayed the size of a bay: ${box.x1 - box.x0}`)
+    assert.ok(box.x0 <= 430 && box.x1 >= 530, 'with the whole label still inside it')
+  })
+
+  it('still frames the sea itself when the label is written across it', () => {
+    // The same map, labelled in the open water above. Nothing about the walk
+    // changes; the coast it finds is simply further off.
+    const sea = (x: number, y: number) => x > 100 && x < 900 && y > 100 && y < 500
+    const bay = (x: number, y: number) => x > 400 && x < 560 && y > 560 && y < 700
+    const mouth = (x: number, y: number) => x > 460 && x < 500 && y >= 500 && y <= 560
+    const coast = (x: number, y: number) => !(sea(x, y) || bay(x, y) || mouth(x, y))
+
+    const { box } = growToShore({ x0: 450, y0: 290, x1: 550, y1: 310 }, coast, canvas)
+    assert.ok(box.x0 < 130 && box.x1 > 870, `reached both coasts: ${box.x0}-${box.x1}`)
+    assert.ok(box.y0 < 130 && box.y1 > 470, `and both shores: ${box.y0}-${box.y1}`)
+  })
+
+  it('keeps the label centred rather than sliding off it', () => {
+    const basinFrame = growToShore(middle, basin, canvas).box
+    const drift = Math.abs((basinFrame.x0 + basinFrame.x1) / 2 - (middle.x0 + middle.x1) / 2)
+    assert.ok(drift < 60, `the frame stayed on its label: off by ${drift}`)
+  })
+
   it('reads the world from a regular lattice, not from scattered points', () => {
     // Heights on a 4x4 grid of 10px cells: top half land, bottom half water.
     const heights = [30, 30, 30, 30, 30, 30, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0]
