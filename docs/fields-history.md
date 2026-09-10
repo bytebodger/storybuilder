@@ -129,8 +129,7 @@ decision about what to do with a name that has no article to point at. These fou
 candidates in the tool for being promoted to real edges; it is a discrete piece of work rather than
 part of this spec.
 
-## Not yet built
+## Where events are read
 
-The **chronological view** — events drawn along their timelines, which is the thing timelines and this
-spec were both built for. The data is all in place: `sb timelines` shows the shape of it from the
-command line today.
+`sb timelines` from the command line, and **Chronology** in the console — the lanes and the ordered
+list of events, described in [timelines.md](timelines.md#the-chronological-view).

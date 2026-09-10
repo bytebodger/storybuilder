@@ -149,6 +149,50 @@ Universal History  412 - 431  (5 events)
       War of the Stewards  [71580945]  429 - 431  (2 events)
 ```
 
-## Not yet built
+## The chronological view
 
-The **chronological view** — events drawn along their timelines rather than listed under them.
+`Chronology` in the console — [web/src/components/Chronology.tsx](../web/src/components/Chronology.tsx),
+fed by `GET /api/chronology`. Two halves that answer different questions.
+
+**The lanes.** One row per timeline against a *single shared year axis*, which is what makes the
+nesting visible as geometry: a war that occupied a quarter of its reign is drawn a quarter as wide. A
+lane's bar spans everything filed on it **or below it**; a mark is an event filed on that lane itself.
+Those are different, and the legend says so — without it the Universal History reads as broken, a
+full-width bar with no marks on it because everything is filed further down.
+
+Several events in one year on one lane become one mark carrying a count. At the scale of a whole
+history they would sit on top of each other anyway, and a mark that says *3* is more honest than three
+that overlap.
+
+**The chronology.** The events in year order beneath, each opening its article. Selecting a lane
+narrows the list to that timeline *and everything under it*, because that is what a timeline contains:
+an event under the War of the Stewards is part of the reign the war was fought in, and a view that
+made you click through four levels to discover that would be hiding the one relationship it exists to
+show.
+
+### Durations are not drawn
+
+The axis is years; a duration is days. A nine-day flood is a fraction of a pixel wide on a history six
+centuries long, so an event is a point on the line and its duration is text beside it. Drawing it
+would be inventing a width.
+
+### Events that cannot be placed
+
+Anything whose begin date yields no year is listed under **Not on the line**, with the date it does
+have. It is filed on its timeline and it counts toward that timeline's tally; it simply cannot be
+positioned. A view that quietly showed four of five events would be worse than one that shows the
+fifth and says why it is not on the line. `sb validate` reports the same thing from the command line.
+
+### Managing timelines lives here too
+
+Add, rename, reparent, remove. Not strictly part of "the view", but without it a console user cannot
+create a timeline at all — the only one that exists by default is the Universal History, so the field
+on a history article would offer a single choice forever.
+
+The parent dropdown omits the selected timeline's own descendants. The tree
+[refuses that move](#the-rules-and-where-they-live) anyway, and an option that always errors is a
+trap. Refusals that do get through arrive as the store's own sentence:
+
+> This universe already has a timeline called "War of the Stewards"
+
+The Universal History shows no controls, only a note that it is fixed.

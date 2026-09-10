@@ -21,6 +21,33 @@ export interface TimelineNode {
   depth: number
 }
 
+/** A timeline as the chronology draws it: its span, and how much is under it. */
+export interface TimelineLane extends TimelineNode {
+  /** The years its events reach, or null on a timeline that holds none. */
+  first: number | null
+  last: number | null
+  /** Events anywhere beneath it, undated ones included. */
+  count: number
+}
+
+export interface ChronologyEvent {
+  id: string
+  name: string
+  container: string
+  timeline: string
+  beginDate: string | null
+  /** null when no year could be read out of the begin date. */
+  year: number | null
+  durationDays: number | null
+  summary: string | null
+  stub: boolean
+}
+
+export interface Chronology {
+  timelines: TimelineLane[]
+  events: ChronologyEvent[]
+}
+
 export interface Universe {
   id: string
   name: string

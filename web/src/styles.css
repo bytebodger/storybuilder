@@ -496,3 +496,178 @@ pre {
 }
 .lightbox-bar .icon { color: #f4f1ec; border-color: rgba(255, 255, 255, 0.4); }
 .lightbox-bar .icon:hover { color: #fff; border-color: #fff; }
+
+/* --- the chronological view ------------------------------------------------
+   Lanes are one row per timeline against a single shared year axis, so the
+   nesting is visible as geometry: a war that occupied a quarter of its reign
+   is drawn a quarter as wide. Positions are percentages of that one range,
+   which is what keeps every lane comparable. */
+
+.chronology .lanes {
+  margin: 1rem 0 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem 0.75rem;
+  overflow-x: auto;
+}
+
+.lane,
+.lane-axis {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 32rem;
+  background: none;
+  border: 0;
+  padding: 0.15rem 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+/* The selection marks the label, not the track. A background band across the
+   whole row swallows the bar drawn on top of it - which is the one thing the
+   row exists to show. */
+.lane { cursor: pointer; border-radius: 4px; }
+.lane:hover .lane-name { color: var(--accent); }
+.lane.selected .lane-name { font-weight: 700; color: var(--accent); }
+.lane.selected .lane-name::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  width: 2px;
+  height: 0.9rem;
+  background: var(--accent);
+}
+
+.lane-name {
+  position: relative;
+  flex: 0 0 13rem;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lane-count { color: var(--muted); font-size: 0.72rem; }
+
+.lane-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 1.15rem;
+}
+
+.lane-axis .lane-track { height: 1.4rem; border-bottom: 1px solid var(--line); }
+
+.tick {
+  position: absolute;
+  bottom: 0.1rem;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* The span of everything filed on this timeline or under it. */
+.lane-bar {
+  position: absolute;
+  top: 0.44rem;
+  height: 0.26rem;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.3;
+}
+
+.lane.selected .lane-bar { opacity: 0.7; }
+.lane:hover .lane-bar { opacity: 0.5; }
+
+.lane-legend {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  margin: 0.6rem 0 0;
+  padding-left: 13.75rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.lane-legend span { display: flex; align-items: center; gap: 0.35rem; }
+.lane-legend i {
+  display: inline-block;
+  background: var(--accent);
+  font-style: normal;
+}
+.lane-legend .key-bar { width: 1.1rem; height: 0.26rem; border-radius: 2px; opacity: 0.5; }
+.lane-legend .key-mark { width: 0.65rem; height: 0.65rem; border-radius: 50%; }
+
+.lane-mark {
+  position: absolute;
+  top: 0.16rem;
+  transform: translateX(-50%);
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.58rem;
+  line-height: 0.8rem;
+  text-align: center;
+}
+
+.timeline-add,
+.timeline-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.timeline-add input { flex: 1 1 16rem; }
+.timeline-add label,
+.timeline-actions label { display: flex; align-items: center; gap: 0.35rem; color: var(--muted); }
+.timeline-actions .muted { color: var(--muted); }
+.icon.danger { color: #a33; }
+
+.chron-list { list-style: none; margin: 1rem 0 0; padding: 0; }
+
+.chron-list li {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr auto;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.chron-year { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.9rem; }
+
+.chron-name {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+.chron-name:hover { text-decoration: underline; }
+
+.chron-where, .chron-when { color: var(--muted); font-size: 0.78rem; }
+.chron-where { grid-column: 3; }
+.chron-when { grid-column: 2 / 4; }
+.chron-summary { grid-column: 2 / 4; margin: 0.2rem 0 0; font-size: 0.85rem; line-height: 1.45; }
+
+.chron-undated { margin-top: 1.5rem; }
+.chron-undated h4 { margin: 0 0 0.25rem; font-size: 0.8rem; }
+.chron-undated ul { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.chron-undated li { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.25rem 0; }

@@ -14,6 +14,7 @@ import type {
   UniverseDraft,
   UniverseField,
   TimelineNode,
+  Chronology,
 } from './types'
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
@@ -21,8 +22,28 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { 'content-type': 'application/json', ...init?.headers },
   })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`)
+  if (!res.ok) throw new Error(await failure(res))
   return res.json() as Promise<T>
+}
+
+/**
+ * What went wrong, in the words the bridge used.
+ *
+ * A refusal from the store is a sentence written for a person - "This universe
+ * already has a timeline called X" - and it arrives as `{"error": "..."}`.
+ * Showing the envelope instead of the message puts JSON on screen where an
+ * explanation should be. Anything that is not shaped that way falls back to the
+ * status line, which is all there is to say about it.
+ */
+async function failure(res: Response): Promise<string> {
+  const body = await res.text()
+  try {
+    const parsed = JSON.parse(body) as { error?: unknown }
+    if (typeof parsed.error === 'string' && parsed.error.trim()) return parsed.error
+  } catch {
+    // Not JSON. The raw body is more use than nothing.
+  }
+  return `${res.status} ${res.statusText}${body ? `: ${body}` : ''}`
 }
 
 export const listUniverses = () =>
@@ -58,6 +79,32 @@ export const timelines = (universe: string) =>
   json<{ timelines: TimelineNode[] }>(
     `/timelines?universe=${encodeURIComponent(universe)}`,
   ).then((r) => r.timelines)
+
+/** The timelines with their spans, and every event filed into one. */
+export const chronology = (universe: string) =>
+  json<Chronology>(`/chronology?universe=${encodeURIComponent(universe)}`)
+
+export const addTimeline = (universe: string, name: string, parent?: string) =>
+  json<{ timeline: TimelineNode }>('/timelines', {
+    method: 'POST',
+    body: JSON.stringify({ universe, name, parent }),
+  }).then((r) => r.timeline)
+
+export const editTimeline = (
+  universe: string,
+  id: string,
+  patch: { name?: string; parent?: string },
+) =>
+  json<{ timeline: TimelineNode }>('/timelines', {
+    method: 'PATCH',
+    body: JSON.stringify({ universe, id, ...patch }),
+  }).then((r) => r.timeline)
+
+export const dropTimeline = (universe: string, id: string) =>
+  json<{ ok: true }>(
+    `/timelines?universe=${encodeURIComponent(universe)}&id=${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+  )
 
 export const getItem = (universe: string, id: string) =>
   json<{ item: { id: string; name: string; kind?: string }; values: UniverseDraft }>(

@@ -207,7 +207,7 @@ Scaffolding and foundation. What exists:
 - [ ] Temporal queries — dates are recorded and surfaced, not yet filtered on
 - [ ] Named ages and eras ("Year 432 of the First Age")
 - [x] The `history` container: events with a duration rather than an end date, filed into timelines. See [docs/fields-history.md](docs/fields-history.md)
-- [ ] The chronological view — events drawn along their timelines
+- [x] The chronological view: timelines as lanes on one axis of years, events in order beneath. See [docs/timelines.md](docs/timelines.md#the-chronological-view)
 - [ ] Field specs for the remaining thirteen containers
 - [ ] Author-defined container types
 - [ ] The story-building workflow, grounded in established canon

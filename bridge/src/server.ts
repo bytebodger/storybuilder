@@ -19,6 +19,10 @@ import {
   fieldsFor,
   flatten,
   treeOf,
+  subtree,
+  spanOf,
+  eventsIn,
+  yearOf,
   isEmptyValue,
   itemToDraft,
   containerType,
@@ -300,6 +304,61 @@ const server = createServer(async (req, res) => {
       return send(res, 200, {
         timelines: flatten(treeOf(timelines)).map(({ children, ...node }) => node),
       })
+    }
+
+    /**
+     * Everything needed to draw a universe's history: the timelines, their
+     * spans, and every event with a year attached where one could be read.
+     *
+     * Assembled here rather than in the browser because every part of it -
+     * arranging the tree, reaching a span through a subtree, reading a year out
+     * of "January 1, 1139" - is a rule, and a second implementation of a rule
+     * is a second answer waiting to disagree with the first.
+     *
+     * Events whose date yields no year come back with `year: null` rather than
+     * being dropped. They are filed somewhere; they simply cannot be placed,
+     * and a view that quietly showed four of five events would be worse than
+     * one that shows the fifth and says why it is not on the line.
+     */
+    if (req.method === 'GET' && url.pathname === '/api/chronology') {
+      const store = await openUniverse(url.searchParams.get('universe') ?? '')
+      const lines = await store.timelines()
+      const items = await store.list()
+      const dated = eventsIn(items)
+
+      const timelines = flatten(treeOf(lines)).map((node) => {
+        const within = subtree(lines, node.id)
+        const span = spanOf(lines, dated, node.id)
+        return {
+          id: node.id,
+          name: node.name,
+          parent: node.parent,
+          depth: node.depth,
+          first: span?.first ?? null,
+          last: span?.last ?? null,
+          // Everything beneath it, undated events included: they are filed here
+          // whether or not they can be drawn.
+          count: items.filter((i) => i.timeline && within.includes(i.timeline)).length,
+        }
+      })
+
+      const events = items
+        .filter((i) => i.timeline)
+        .map((i) => ({
+          id: i.id,
+          name: i.name,
+          container: i.container,
+          timeline: i.timeline!,
+          beginDate: i.beginDate ?? null,
+          year: yearOf(i.beginDate),
+          durationDays:
+            typeof i.attributes?.durationDays === 'number' ? i.attributes.durationDays : null,
+          summary: i.summary ?? null,
+          stub: !!i.stub,
+        }))
+        .sort((a, b) => (a.year ?? Infinity) - (b.year ?? Infinity) || a.name.localeCompare(b.name))
+
+      return send(res, 200, { timelines, events })
     }
 
     if (req.method === 'POST' && url.pathname === '/api/timelines') {

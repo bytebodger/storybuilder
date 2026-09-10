@@ -11,6 +11,7 @@ import { ArticleForm } from './components/ArticleForm'
 import { StubReview } from './components/StubReview'
 import { CanonCheck } from './components/CanonCheck'
 import { ImportPanel } from './components/ImportPanel'
+import { Chronology } from './components/Chronology'
 
 type View = { name: 'home' } | { name: 'edit'; id?: string } | { name: 'inside'; id: string }
 
@@ -25,6 +26,7 @@ export function App() {
   /** An open article form: a new entry in a section, or an existing item being edited. */
   const [composing, setComposing] = useState<{ section: NavSection; itemId?: string } | null>(null)
   const [importing, setImporting] = useState(false)
+  const [chronology, setChronology] = useState(false)
   /**
    * The post-save sequence: stubs, then the canon check, then the article.
    *
@@ -61,6 +63,7 @@ export function App() {
     setComposing(null)
     setSaved(null)
     setImporting(false)
+    setChronology(false)
     intro(view.id).then(setPremise, () => setPremise(''))
     nav(view.id).then(setSections, () => setSections([]))
   }, [view])
@@ -134,23 +137,41 @@ export function App() {
                   setComposing(null)
                   setSaved(null)
                   setImporting(false)
+                  setChronology(false)
                   setArticle(item)
                 }}
                 onCreate={(section) => {
                   setArticle(null)
                   setSaved(null)
                   setImporting(false)
+                  setChronology(false)
                   setComposing({ section })
                 }}
               />
               <div className="sidebar-block">
                 <h4>Build</h4>
                 <button
+                  className={chronology ? 'skill selected' : 'skill'}
+                  onClick={() => {
+                    setArticle(null)
+                    setComposing(null)
+                    setSaved(null)
+                    setImporting(false)
+                    setChronology(true)
+                  }}
+                >
+                  <span className="skill-name">Chronology</span>
+                  <span className="skill-desc">
+                    The timelines and everything filed into them, drawn against one axis of years.
+                  </span>
+                </button>
+                <button
                   className={importing ? 'skill selected' : 'skill'}
                   onClick={() => {
                     setArticle(null)
                     setComposing(null)
                     setSaved(null)
+                    setChronology(false)
                     setImporting(true)
                   }}
                 >
@@ -167,11 +188,16 @@ export function App() {
                 {skills.map((s) => (
                   <button
                     key={s.name}
-                    className={!article && !composing && !importing && s.name === skill?.name ? 'skill selected' : 'skill'}
+                    className={
+                      !article && !composing && !importing && !chronology && s.name === skill?.name ?
+                        'skill selected'
+                      : 'skill'
+                    }
                     onClick={() => {
                       setSkill(s)
                       setArticle(null)
                       setComposing(null)
+                      setChronology(false)
                       setResult(null)
                     }}
                   >
@@ -189,7 +215,15 @@ export function App() {
               </div>
             </div>
 
-            {importing ? (
+            {chronology ? (
+              <Chronology
+                universe={view.id}
+                onOpen={(item) => {
+                  setChronology(false)
+                  setArticle(item)
+                }}
+              />
+            ) : importing ? (
               <ImportPanel
                 universe={view.id}
                 onDone={() => {
