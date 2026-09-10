@@ -15,9 +15,13 @@ import type { FieldSpec } from './field-spec.ts'
 export interface CommonField {
   field: FieldSpec
   /**
-   * The key this field follows. Position is part of the definition: a
-   * pronunciation belongs beside the name, not appended after the history.
-   * If the anchor is absent from a spec, the field goes to the end.
+   * What this field follows. Position is part of the definition: a pronunciation
+   * belongs beside the name, not appended after the history.
+   *
+   * Matched against a field's `storeAs` first and its `key` second, and the
+   * *last* match wins - so `'name'` means "after the name" whatever the name
+   * field is called, and lands after the final part of a name that arrives in
+   * pieces. If nothing matches, the field goes to the end.
    */
   after: string
 }
@@ -52,9 +56,17 @@ export function composeSpec(fields: FieldSpec[]): FieldSpec[] {
   for (const { field, after } of COMMON_FIELDS) {
     if (composed.some((f) => f.key === field.key)) continue
 
-    const at = composed.findIndex((f) => f.key === after)
-    if (at === -1) composed.push(field)
-    else composed.splice(at + 1, 0, field)
+    let at = -1
+    for (let i = 0; i < composed.length; i++) {
+      if (composed[i].storeAs === after || composed[i].key === after) at = i
+    }
+    if (at === -1) {
+      composed.push(field)
+      continue
+    }
+    // The field joins the section of whatever it was placed beside, so a spec
+    // that groups its form does not end up with one stray ungrouped row.
+    composed.splice(at + 1, 0, { ...field, group: composed[at].group })
   }
   return composed
 }

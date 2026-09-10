@@ -38,6 +38,7 @@ export function draftToItem(container: string, values: ArticleValues): NewItem {
 
   const item: NewItem = { container, name: '' }
   const attributes: Record<string, unknown> = {}
+  const nameParts: string[] = []
 
   for (const field of spec) {
     const value = coerce(field, values[field.key])
@@ -46,17 +47,37 @@ export function draftToItem(container: string, values: ArticleValues): NewItem {
     }
     if (value === null) continue
 
-    if (field.storeAs === 'name') item.name = String(value)
-    else if (field.storeAs === 'summary') item.summary = String(value)
+    if (field.storeAs === 'name') {
+      nameParts.push(String(value))
+      // A name in parts is also kept in parts, or the form could not offer them
+      // back to be edited separately. One string for everything that has to
+      // find or title the article; the pieces alongside it for whoever wrote
+      // them. See `composedName`.
+      if (composedName(spec)) attributes[field.key] = value
+    } else if (field.storeAs === 'summary') item.summary = String(value)
     else if (field.storeAs === 'kind') item.kind = String(value)
     else if (field.storeAs === 'beginDate') item.beginDate = String(value)
     else if (field.storeAs === 'endDate') item.endDate = String(value)
+    else if (field.storeAs === 'aliases') item.aliases = asList(value)
     else attributes[field.key] = value
   }
 
+  item.name = nameParts.join(' ')
   if (Object.keys(attributes).length) item.attributes = attributes
   return item
 }
+
+/**
+ * True when this container builds its item name out of several fields.
+ *
+ * Most containers have one Name field and the item's name is what was typed in
+ * it. A person's arrives as given, middle, family, suffix - four answers to
+ * four questions, one name at the end of them.
+ */
+const composedName = (spec: FieldSpec[]) => spec.filter((f) => f.storeAs === 'name').length > 1
+
+const asList = (value: unknown): string[] =>
+  Array.isArray(value) ? value.map(String) : [String(value)]
 
 /** The inverse: fill a form from a stored item. */
 export function itemToDraft(container: string, item: Item): ArticleValues {
@@ -64,7 +85,11 @@ export function itemToDraft(container: string, item: Item): ArticleValues {
   const values: ArticleValues = {}
 
   for (const field of spec) {
-    if (field.storeAs === 'name') values[field.key] = item.name
+    // A composed name is read back from the parts it was written from; the
+    // joined string on the item is the output of that, not the source of it.
+    if (field.storeAs === 'name') {
+      values[field.key] = composedName(spec) ? (item.attributes?.[field.key] ?? null) : item.name
+    } else if (field.storeAs === 'aliases') values[field.key] = item.aliases ?? []
     else if (field.storeAs === 'summary') values[field.key] = item.summary ?? null
     else if (field.storeAs === 'kind') values[field.key] = item.kind ?? null
     else if (field.storeAs === 'beginDate') values[field.key] = item.beginDate ?? null
@@ -98,6 +123,7 @@ export function draftToPatch(container: string, values: ArticleValues, existing?
     kind: draft.kind,
     beginDate: draft.beginDate,
     endDate: draft.endDate,
+    aliases: draft.aliases,
     attributes: Object.keys(attributes).length ? attributes : undefined,
   }
 }

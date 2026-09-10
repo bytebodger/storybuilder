@@ -59,6 +59,25 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   const required = spec.filter((f) => f.required)
   const missing = required.filter((f) => isEmpty(values[f.key]))
 
+  /*
+   * The spec, cut into the sections it declares.
+   *
+   * A run of fields sharing a group becomes one section, in spec order - the
+   * spec decides what follows what, and this only draws a line where the group
+   * changes. A spec that declares no groups comes back as a single untitled
+   * section and renders exactly as it did before sections existed.
+   */
+  const sections = useMemo(() => {
+    const out: { title: string; fields: UniverseField[] }[] = []
+    for (const field of spec) {
+      const title = field.group ?? ''
+      const last = out[out.length - 1]
+      if (last && last.title === title) last.fields.push(field)
+      else out.push({ title, fields: [field] })
+    }
+    return out
+  }, [spec])
+
   async function generate(fill: string[]) {
     if (fill.length === 0) {
       setNote('Nothing to generate — every field is locked or already filled.')
@@ -138,27 +157,30 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       {note && <p className="note">{note}</p>}
       {error && <p className="error">{error}</p>}
 
-      <div className="fields">
-        {spec.map((f) => (
-          <FieldRow
-            key={f.key}
-            field={f}
-            value={values[f.key]}
-            locked={locked.has(f.key)}
-            busy={!!busy}
-            onChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
-            onToggleLock={() =>
-              setLocked((prev) => {
-                const next = new Set(prev)
-                if (!next.delete(f.key)) next.add(f.key)
-                return next
-              })
-            }
-            onClear={() => setValues((prev) => ({ ...prev, [f.key]: f.kind === 'list' ? [] : null }))}
-            onRegenerate={() => generate([f.key])}
-          />
-        ))}
-      </div>
+      {sections.map(({ title, fields: rows }) => (
+        <div className="fields" key={title || '-'}>
+          {title && <h3 className="section">{title}</h3>}
+          {rows.map((f) => (
+            <FieldRow
+              key={f.key}
+              field={f}
+              value={values[f.key]}
+              locked={locked.has(f.key)}
+              busy={!!busy}
+              onChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
+              onToggleLock={() =>
+                setLocked((prev) => {
+                  const next = new Set(prev)
+                  if (!next.delete(f.key)) next.add(f.key)
+                  return next
+                })
+              }
+              onClear={() => setValues((prev) => ({ ...prev, [f.key]: f.kind === 'list' ? [] : null }))}
+              onRegenerate={() => generate([f.key])}
+            />
+          ))}
+        </div>
+      ))}
 
       <button type="button" className="primary" onClick={save} disabled={!!busy || missing.length > 0}>
         {busy === 'save' ? 'Saving…' : 'Save article'}

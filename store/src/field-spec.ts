@@ -19,6 +19,15 @@ export interface FieldSpec {
   /** Short examples. Calibration for the generator; never presented as the only options. */
   examples?: string[]
   /**
+   * The section of the form this field belongs to.
+   *
+   * Cosmetic, and only worth setting on a long spec. A person has fifty-odd
+   * fields and a single column of them is a wall; grouped, it is a handful of
+   * named sections a writer can skip past. Fields keep spec order within a
+   * group, and groups appear in the order their first field does.
+   */
+  group?: string
+  /**
    * Where the value is stored on an item. Most fields are free-form and live in
    * `attributes`; a few map onto columns the store already understands, so a
    * brief can show a name and a summary without knowing any container's spec.
@@ -28,8 +37,14 @@ export interface FieldSpec {
    * Began", "Founded" - and if each stored its own attribute, the brief could
    * not tell a reader that a fallen city is no longer standing. One column,
    * many labels.
+   *
+   * `name` may be declared on more than one field, and then the item's name is
+   * those fields joined in spec order. A person is the reason: a name that
+   * arrives in parts has to be stored in parts to be edited in parts, and has
+   * to be one string to be the title of an article and to be found by anything
+   * looking for it.
    */
-  storeAs?: 'name' | 'summary' | 'kind' | 'beginDate' | 'endDate'
+  storeAs?: 'name' | 'summary' | 'kind' | 'beginDate' | 'endDate' | 'aliases'
 }
 
 /** True when a field holds nothing a generator should preserve. */

@@ -9,6 +9,8 @@ export interface UniverseField {
   default: string | number | string[] | null
   help: string
   examples?: string[]
+  /** The form section this field belongs to. Absent on short specs. */
+  group?: string
 }
 
 export interface Universe {

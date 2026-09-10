@@ -36,10 +36,10 @@ types are a later feature; for now, adding one means adding it to the catalog.
 ## Fields
 
 A container may declare a field spec: the form the author fills in, and the list the generator is
-briefed from. Three exist so far — the universe manifest ([universe-form.md](universe-form.md)),
-[fauna](fields-fauna.md) and [locations](fields-locations.md). A container without one is
-not broken; its entries are the name, summary and tags every container supports, and a spec can be
-added later without migrating anything.
+briefed from. Four exist so far — the universe manifest ([universe-form.md](universe-form.md)),
+[fauna](fields-fauna.md), [locations](fields-locations.md) and [people](fields-people.md). A container
+without one is not broken; its entries are the name, summary and tags every container supports, and a
+spec can be added later without migrating anything.
 
 Specs are data, in [store/src/fields.ts](../store/src/fields.ts). Adding a container's spec makes its
 form appear, makes its fields generatable, and makes them accepted on save, with nothing else to
@@ -52,9 +52,13 @@ Some fields belong on anything with a name, and are declared once in
 **Pronunciation** is the first of them, and it reaches every container with a spec — the universe
 manifest included, since a world's own name is as invented as anything inside it.
 
-Each common field carries the key it follows, because position is part of the definition — a
-pronunciation belongs beside the name, not appended after the history. A container that declares the
-field itself keeps its own version, so a common field is a default rather than a rule.
+Each common field carries what it follows, because position is part of the definition — a
+pronunciation belongs beside the name, not appended after the history. The anchor is matched against a
+field's `storeAs` before its key, and the last match wins, so `'name'` means *after the name* whatever
+the name field is called — and lands after the final piece of a name that arrives in pieces, as
+[a person's](fields-people.md#a-name-in-parts) does. An inserted field also joins the form section of
+whatever it was placed beside. A container that declares the field itself keeps its own version, so a
+common field is a default rather than a rule.
 
 Composition happens once, where specs are registered, and the raw per-container arrays are not
 exported: `fieldsFor()` is the only way to read a spec, and it always returns the composed one. A
