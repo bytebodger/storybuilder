@@ -13,6 +13,22 @@ interface Props {
   onCancel: () => void
 }
 
+/**
+ * How many fields go into one generation request.
+ *
+ * Every request pays a large fixed cost - loading the CLI, the skill, and the
+ * universe brief - and it dominates: a batch of six short date fields was timed
+ * at 78 seconds, which is nearly all setup. So one request per section is too
+ * many requests. A person's ten sections take about thirteen minutes that way,
+ * against six for a single request for all fifty-eight fields.
+ *
+ * Fourteen merges those ten sections into five. That is roughly the wall-clock
+ * of the single request, with something arriving every minute or so instead of
+ * nothing arriving for six. A spec of fourteen fields or fewer is one request,
+ * exactly as before.
+ */
+const BATCH_SIZE = 14
+
 const isEmpty = (v: unknown) =>
   v === null ||
   v === undefined ||
@@ -100,15 +116,27 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
    * included, so a life story still coheres with the name at the top of it.
    */
   function batches(fill: string[]): string[][] {
-    const order = sections.map((s) => s.fields.map((f) => f.key).filter((k) => fill.includes(k)))
-    const grouped = order.filter((b) => b.length)
-    if (grouped.length > 1) return grouped
+    const runs: string[][] = []
 
-    // No sections to cut on. Fixed runs, so a long ungrouped spec is not one
-    // request either.
-    const out: string[][] = []
-    for (let i = 0; i < fill.length; i += 8) out.push(fill.slice(i, i + 8))
-    return out
+    for (const section of sections) {
+      const keys = section.fields.map((f) => f.key).filter((k) => fill.includes(k))
+      if (!keys.length) continue
+      // Adjacent sections ride together while they fit, which keeps related
+      // fields in one request without making that request enormous.
+      const last = runs[runs.length - 1]
+      if (last && last.length + keys.length <= BATCH_SIZE) last.push(...keys)
+      else runs.push([...keys])
+    }
+
+    // Nothing goes out over the size, section or no section - a spec that
+    // declares no groups is one long run otherwise.
+    const sized = runs.flatMap((run) => {
+      if (run.length <= BATCH_SIZE) return [run]
+      const split: string[][] = []
+      for (let i = 0; i < run.length; i += BATCH_SIZE) split.push(run.slice(i, i + BATCH_SIZE))
+      return split
+    })
+    return sized.length ? sized : [fill]
   }
 
   async function generate(fill: string[]) {
@@ -116,7 +144,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       setNote('Nothing to generate — every field is locked or already filled.')
       return
     }
-    const runs = fill.length > 8 ? batches(fill) : [fill]
+    const runs = batches(fill)
 
     setBusy(fill.length === 1 ? fill[0] : 'form')
     setNote(null)
