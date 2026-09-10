@@ -24,7 +24,7 @@ describe('framing a region', () => {
 
 describe('growing a frame out to the shore', () => {
   /** Water in the middle, land beyond x=700 and above y=300. */
-  const cells = []
+  const cells: { x: number; y: number; land: boolean }[] = []
   for (let x = 0; x < 1000; x += 10) {
     for (let y = 0; y < 1000; y += 10) {
       cells.push({ x, y, land: x > 700 || y < 300 })
