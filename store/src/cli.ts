@@ -14,7 +14,11 @@ import { CanonViolation, type ClosureState } from './types.ts'
 import { matchTerm } from './terms.ts'
 import { buildImportPlan } from './import/azgaar.ts'
 import type { Tier } from './import/types.ts'
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
+import { boxOf, cropSvg, growToShore, pad, type Box } from './import/crop.ts'
+import { readAddedLabels } from './import/azgaar-svg.ts'
+
+type Row = Record<string, unknown>
 
 const NL = String.fromCharCode(10)
 
@@ -47,6 +51,12 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
         religions, cities, characters and the like open: they accrete.
   sb remove <id>
   sb validate
+
+  sb crop-map <map.svg> <map.json> --out <file.svg>
+              [--state <name> | --label <name> | --box x0,y0,x1,y1] [--pad 0.08]
+        Cut a region out of a map, keeping full vector detail. A state is
+        framed by its own cells; a hand-added label by its curve, grown outward
+        until it meets a shore.
 
   sb import-map <map.svg> <map.json> [--tier 0|1|2|3] [--min-population N]
                                      [--with-provinces] [--with-markers]
@@ -243,6 +253,75 @@ async function main(argv: string[]): Promise<number> {
       const s = await store(a)
       await s.remove(rest[0])
       console.log(`Removed ${rest[0]}`)
+      return 0
+    }
+
+    case 'crop-map': {
+      const [svgPath, jsonPath] = rest
+      const out = one(a, 'out')
+      if (!svgPath || !jsonPath || !out) {
+        throw new Error('Usage: sb crop-map <map.svg> <map.json> --out <file.svg>')
+      }
+
+      const svg = await readFile(svgPath, 'utf8')
+      const json = JSON.parse(await readFile(jsonPath, 'utf8'))
+      const canvas = { width: json.info?.width ?? 0, height: json.info?.height ?? 0 }
+      const cells = (json.pack?.cells ?? []).filter((c: Row) => Array.isArray(c?.p))
+
+      let box: Box
+      let what: string
+
+      const explicit = one(a, 'box')
+      const stateName = one(a, 'state')
+      const labelName = one(a, 'label')
+
+      if (explicit) {
+        const [x0, y0, x1, y1] = explicit.split(',').map(Number)
+        box = { x0, y0, x1, y1 }
+        what = 'the box given'
+      } else if (stateName) {
+        const state = (json.pack?.states ?? []).find(
+          (s: Row) => String(s?.name ?? '').toLowerCase() === stateName.toLowerCase(),
+        )
+        if (!state) throw new Error(`No state named "${stateName}" in this map`)
+        const own = cells.filter((c: Row) => c.state === state.i)
+        if (!own.length) throw new Error(`"${stateName}" holds no cells`)
+        box = boxOf(own.map((c: Row) => ({ x: Number((c.p as number[])[0]), y: Number((c.p as number[])[1]) })))
+        what = `${state.name}, from its own ${own.length} cells`
+      } else if (labelName) {
+        const label = readAddedLabels(svg).find(
+          (l) => l.name.toLowerCase() === labelName.toLowerCase(),
+        )
+        if (!label) throw new Error(`No hand-added label named "${labelName}" in this SVG`)
+        // A label over water names a stretch of sea the generator has no object
+        // for, so the frame is found by walking out to the coasts around it.
+        box = growToShore(
+          boxOf(label.points.length ? label.points : [label]),
+          cells.map((c: Row) => ({
+            x: Number((c.p as number[])[0]),
+            y: Number((c.p as number[])[1]),
+            land: Number(c.h ?? 0) >= 20,
+          })),
+          canvas,
+        )
+        what = `${label.name}, grown from its label out to the surrounding shores`
+      } else {
+        throw new Error('Say what to crop to: --state, --label, or --box')
+      }
+
+      const fraction = one(a, 'pad') === undefined ? 0.08 : Number(one(a, 'pad'))
+      const framed = pad(box, fraction, canvas)
+      await writeFile(out, cropSvg(svg, framed), 'utf8')
+
+      const w = Math.round(framed.x1 - framed.x0)
+      const h = Math.round(framed.y1 - framed.y0)
+      console.log(`Cropped to ${what}.`)
+      console.log(
+        `  ${w} x ${h} of ${canvas.width} x ${canvas.height} ` +
+          `(${Math.round((100 * w * h) / (canvas.width * canvas.height))}% of the map), ` +
+          `${Math.round(fraction * 100)}% overflow`,
+      )
+      console.log(`  written to ${out}`)
       return 0
     }
 

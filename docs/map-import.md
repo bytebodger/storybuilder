@@ -127,6 +127,40 @@ with evocative names, which is the honest way to hold them.
 Most zones are history. A **Fault** is not: it is a feature of the ground that will still be there
 when the story is over, so it goes to `geography`.
 
+## Cropping a region out of the map
+
+The reason to keep a world as SVG rather than a raster: one export can be looked at whole, or at one
+country, without going back to the generator.
+
+```bash
+npm run sb --silent -- crop-map map.svg map.json --state Seedon --out seedon.svg
+npm run sb --silent -- crop-map map.svg map.json --label "Sontersea" --pad 0.12 --out sea.svg
+npm run sb --silent -- crop-map map.svg map.json --box 1050,550,1460,840 --out region.svg
+```
+
+Cropping is done by `viewBox`, not by editing geometry: everything outside the frame stops being
+drawn, everything inside keeps full vector detail, and the operation is reversible.
+
+**A country frames itself.** Its own cells give the box — Seedon's 1,080 cells make a 352×346 window,
+4% of the map, holding the country, its four neighbours and 85 settlements.
+
+**A sea does not.** Azgaar has no object for the Sontersea: the label sits on ocean feature 1, which
+spans half the canvas, because all connected water is one feature. A named sea is the space between
+coasts, not a thing the generator made. So the frame starts at the label's own curve and walks
+outward until each side meets a shore — and a side only counts as shored once a real share of the
+strip beyond it is land, or a single mid-sea island would stop the walk early. The result is 404×284,
+45% water, bounded by New Boria, Fartherfeld, Imperion and Granith.
+
+`--pad` adds overflow so a frame does not end exactly where the sea meets the land; it defaults to 8%
+of the longer side. `--box` overrides the derivation entirely when the guess is not what was wanted.
+
+### A crop is not smaller
+
+The file keeps its full geometry and only the window moves, so a 4% crop is still 12.7 MB. The bulk is
+7.9 MB of path data — coastlines, borders, rivers — which cannot be trimmed without clipping the
+geometry, and 4.8 MB of `<use>` elements that turn out to be clip-path references carrying no
+coordinates, so they cannot be filtered by position either. Losslessness is the trade.
+
 ## Reviewing an import
 
 A tier can offer thousands of candidates, and a flat list of thousands is not a review — it is a wall
