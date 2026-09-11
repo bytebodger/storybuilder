@@ -28,6 +28,7 @@ The die settles what a die can settle, against what the store actually holds:
 
 | Rolled | From |
 | --- | --- |
+| Given and family name | [forged in code](names.md) - a seed, mutated, checked against what is taken |
 | Trade | the universe's professions list |
 | Place of birth | the `locations` it holds |
 | Ethnicity | the `ethnicities` it holds |

@@ -11,6 +11,8 @@ export interface UniverseField {
   examples?: string[]
   /** The form section this field belongs to. Absent on short specs. */
   group?: string
+  /** Set when code makes this field, not a model. Filled instantly, never asked for. */
+  generator?: 'given-name' | 'family-name'
 }
 
 /** One of a universe's timelines, in tree order with its depth. */

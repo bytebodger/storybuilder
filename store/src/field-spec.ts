@@ -35,6 +35,16 @@ export interface FieldSpec {
    */
   group?: string
   /**
+   * Code produces this field, not a model.
+   *
+   * A name needs a source and a mutation, both of which are arithmetic. Asking
+   * a model for one costs twenty seconds and returns one of a handful of
+   * answers - regenerating a given name cycled Halvard, Elkirk, Halvard. A
+   * field that declares a generator is filled here instead, instantly, and is
+   * never put in a generation request.
+   */
+  generator?: 'given-name' | 'family-name'
+  /**
    * Where the value is stored on an item. Most fields are free-form and live in
    * `attributes`; a few map onto columns the store already understands, so a
    * brief can show a name and a summary without knowing any container's spec.

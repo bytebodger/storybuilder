@@ -19,6 +19,7 @@
  */
 import { ROOT_TIMELINE_ID, type Item, type Timeline, type Universe } from './types.ts'
 import { yearOf } from './timelines.ts'
+import { forgeName, type Random } from './names.ts'
 
 export interface Skeleton {
   /** Values the roll settled. Applied to the form before anything is generated. */
@@ -35,9 +36,6 @@ export interface Skeleton {
   /** What the roll decided that is not a field: station, era, what was going on. */
   notes: string[]
 }
-
-/** A source of randomness, injectable so a roll can be reproduced in a test. */
-export type Random = () => number
 
 export interface RollContext {
   universe: Universe
@@ -135,6 +133,21 @@ export function rollPerson(context: RollContext, random: Random = Math.random): 
         `ordinary and not connected to the world's headline conflict.`,
     )
   }
+
+  /*
+   * The name, made rather than asked for.
+   *
+   * A model takes twelve to twenty seconds over a given name and returns one of
+   * a handful of answers; a mutation of a seed takes no time and never repeats.
+   * The universe's own names are blended in, so a world that has established a
+   * register keeps it without being locked inside it.
+   */
+  const taken = items.map((i) => i.name)
+  const canon = items.filter((i) => i.container === 'people').map((i) => i.name)
+  const given = forgeName({ kind: 'given', canon, taken, random })
+  if (given) values.givenName = given
+  const family = forgeName({ kind: 'family', canon, taken: [...taken, given], random })
+  if (family) values.familyName = family
 
   // --- where they are from ------------------------------------------------
   const places = namesIn(items, 'locations')

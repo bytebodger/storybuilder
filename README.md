@@ -216,12 +216,13 @@ Scaffolding and foundation. What exists:
 - [x] Timelines: a tree of buckets for history, rooted at each universe's Universal History. See [docs/timelines.md](docs/timelines.md)
 - [x] Worked example universe (`universes/phonon`)
 - [x] Frontend and bridge scaffolds, wired to the store
-- [ ] The remaining skills: `name-forge`, `outline`, `scene-draft`, `continuity-pass`, `world-brief`, `timeline`
+- [ ] The remaining skills: `outline`, `scene-draft`, `continuity-pass`, `world-brief`
 - [ ] Temporal queries — dates are recorded and surfaced, not yet filtered on
 - [ ] Named ages and eras ("Year 432 of the First Age")
 - [x] The `history` container: events with a duration rather than an end date, filed into timelines. See [docs/fields-history.md](docs/fields-history.md)
 - [x] The chronological view: timelines as lanes on one axis of years, events in order beneath. See [docs/timelines.md](docs/timelines.md#the-chronological-view)
 - [x] The rolled skeleton: what a die can decide about an article is decided by a die, not asked of a model. See [docs/rolled-skeleton.md](docs/rolled-skeleton.md)
+- [x] Names forged in code — a seed, a mutation, no model. ~125ms instead of 20s, and unbounded. See [docs/names.md](docs/names.md)
 - [ ] Field specs for the remaining thirteen containers
 - [ ] Author-defined container types
 - [ ] The story-building workflow, grounded in established canon

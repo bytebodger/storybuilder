@@ -18,6 +18,7 @@ import {
   draftToPatch,
   fieldsFor,
   flatten,
+  forgeName,
   rollFor,
   treeOf,
   subtree,
@@ -745,6 +746,36 @@ const server = createServer(async (req, res) => {
         timelines: await store.timelines(),
       })
       return send(res, 200, { skeleton })
+    }
+
+    /**
+     * One name, made rather than asked for.
+     *
+     * Instant, and unbounded: a seed from a broad pool or from this universe's
+     * own names, one or two mutations, checked against everything already taken
+     * and everything the author has turned down. The model is not involved,
+     * which is why Regenerate on a name no longer costs twenty seconds and no
+     * longer cycles between two answers.
+     */
+    if (req.method === 'POST' && url.pathname === '/api/name') {
+      const body = await readJson<{ universe?: string; kind?: string; avoid?: string[] }>(req)
+      const kind = body.kind === 'family-name' ? 'family' : 'given'
+
+      let canon: string[] = []
+      let taken: string[] = []
+      if (body.universe) {
+        const items = await (await openUniverse(body.universe)).list()
+        taken = items.map((i) => i.name)
+        canon = items.filter((i) => i.container === 'people').map((i) => i.name)
+      }
+
+      const name = forgeName({ kind, canon, taken, avoid: body.avoid ?? [] })
+      if (!name) {
+        return send(res, 400, {
+          error: 'Could not find a name that has not already been offered and refused.',
+        })
+      }
+      return send(res, 200, { name })
     }
 
     if (req.method === 'POST' && url.pathname === '/api/universe/forge') {

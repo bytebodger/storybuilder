@@ -144,6 +144,15 @@ export const skeleton = (universe: string, container: string) =>
     `/skeleton?universe=${encodeURIComponent(universe)}&container=${encodeURIComponent(container)}`,
   ).then((r) => r.skeleton)
 
+/**
+ * One name, made in code. Instant, and never one that has been refused.
+ */
+export const forgeNameFor = (universe: string, kind: string, avoid: string[]) =>
+  json<{ name: string }>('/name', {
+    method: 'POST',
+    body: JSON.stringify({ universe, kind, avoid }),
+  }).then((r) => r.name)
+
 export const forge = (
   fill: string[],
   current: UniverseDraft,

@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { containerFields, defaultsFrom, forge, getItem, saveItem, skeleton, timelines } from '../api'
+import {
+  containerFields,
+  defaultsFrom,
+  forge,
+  forgeNameFor,
+  getItem,
+  saveItem,
+  skeleton,
+  timelines,
+} from '../api'
 import type { Skeleton, TimelineNode, UniverseDraft, UniverseField } from '../types'
 import { FieldRow } from './FieldRow'
 
@@ -177,6 +186,29 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
     await generate(unlockedEmpty)
   }
 
+  /**
+   * A field code can make, made. No request, no wait, no shortlist.
+   *
+   * Rejected values are carried in the same way a generated field's are, so
+   * twenty clicks cost twenty different names rather than a loop of two.
+   */
+  async function makeInCode(field: UniverseField): Promise<boolean> {
+    if (!field.generator) return false
+    const seen = [...(rejected[field.key] ?? []), values[field.key]].filter((v) => !isEmpty(v))
+    setBusy(field.key)
+    try {
+      const name = await forgeNameFor(universe, field.generator, seen.map(String))
+      setValues((v) => ({ ...v, [field.key]: name }))
+      setRejected((prev) => ({ ...prev, [field.key]: seen }))
+      setError(null)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(null)
+    }
+    return true
+  }
+
   async function generate(fill: string[], roll?: Skeleton | null) {
     if (fill.length === 0) {
       setNote('Nothing to generate — every field is locked or already filled.')
@@ -192,6 +224,8 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
      * way to get a person with no title is to not ask for one.
      */
     if (roll) fill = fill.filter((k) => !(k in roll.values) && !roll.omit.includes(k))
+    // Nor is a field code makes, whether or not a roll settled it this time.
+    fill = fill.filter((k) => !spec.find((f) => f.key === k)?.generator)
     if (fill.length === 0) {
       setNote('The roll settled everything there was to settle.')
       return
@@ -390,7 +424,9 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
                 })
               }
               onClear={() => setValues((prev) => ({ ...prev, [f.key]: f.kind === 'list' ? [] : null }))}
-              onRegenerate={() => generate([f.key])}
+              onRegenerate={async () => {
+                if (!(await makeInCode(f))) await generate([f.key])
+              }}
             />
           ))}
         </div>
