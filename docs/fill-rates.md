@@ -85,8 +85,10 @@ Coming-of-Age Rites, Beauty, Courtship and Relationship Ideals, and Associated I
 Etiquette, Art & Architecture, Taboos, Myths & Legends and Gender Ideals 60%; Traditional Styles
 70%) and `flora` (Symbiosis 30%, Domestication and History 40%, Uses 60%), `geography` (Tourism 30%,
 Religious Significance 40%, Localized Phenomena, Climate, History and Ethnic Significance 50%, Natural
-Resources 60%) and [`institutions`](fields-institutions.md#not-every-institution-is-a-small-state),
-whose twenty-two rates run from 20% to 60% and are listed on its own page.
+Resources 60%), [`institutions`](fields-institutions.md#not-every-institution-is-a-small-state), whose
+twenty-two rates run from 20% to 60% and are listed on its own page, and `languages` (Morphology,
+Syntax and Sentence Structure 40%, Phonology and Parent Languages 50%, Writing System, Vocabulary and
+Cultural Significance 60%).
 
 **Existed Until at 20%** is the one worth pausing on. It maps to the store's `endDate`, and a blank
 there is a claim that a place still stands — so a generator filling it every time was quietly drowning
