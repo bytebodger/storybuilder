@@ -456,16 +456,17 @@ pre {
 .article-body {
   display: grid;
   /*
-   * The left column is the reading measure itself, not `1fr`.
+   * The left column is the reading measure itself, not `1fr`, so the prose is
+   * never stretched past what an eye tracks back from.
    *
-   * With `1fr` the column took every pixel going while the text inside it
-   * stayed capped, so on a wide panel the aside was shoved three hundred pixels
-   * clear of the prose it belongs to. Sized to the measure, the two sit
-   * together and the slack falls off the right-hand end, which is where the
-   * rest of the console already puts it.
+   * The slack between them goes in the middle rather than off the right-hand
+   * end: prose against the left edge of the panel, apparatus against the right,
+   * the way a page with a margin note is set. Packing the two together instead
+   * leaves a band of empty panel to the right of the aside, which reads as the
+   * layout having run out rather than as a margin.
    */
   grid-template-columns: minmax(0, 78ch) minmax(16rem, 23rem);
-  justify-content: start;
+  justify-content: space-between;
   gap: 2.25rem;
   align-items: start;
 }
