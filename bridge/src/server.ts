@@ -389,6 +389,19 @@ const server = createServer(async (req, res) => {
           items: items.filter((i) => i.container === container).map((i) => ({ id: i.id, name: i.name, kind: i.kind, summary: i.summary })),
         })
       }
+
+      /*
+       * Alphabetical, not catalog order.
+       *
+       * The catalog is written in a reading order - people first, then the sky,
+       * then the ground - which is right for a document explaining what the
+       * containers are and wrong for a list somebody is hunting through. A
+       * reader who wants Fauna looks where F would be, and there is no order
+       * but alphabetical that puts it there. Uncatalogued containers sort in
+       * with the rest rather than trailing after them; they are things the
+       * universe holds, whatever the catalog says.
+       */
+      sections.sort((a, b) => a.label.localeCompare(b.label))
       return send(res, 200, { sections })
     }
 
