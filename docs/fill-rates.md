@@ -78,9 +78,12 @@ which is the whole point:
 45%, Uses and Cultural Associations 50%), `history` (Related Ethnicities 40%, Related Institutions
 50%, Long-Term Consequences 60%), `afflictions` (Hosts and Carriers 35%, Prevention and Cultural
 Impact 50%, Transmission 55%, History 60%), `cosmology` (Alternative Names, Associated Legends and
-History 50%, Localized Impact 60%, Known Cycles 70%) and `documents` (Legal Impact 35%, Related
+History 50%, Localized Impact 60%, Known Cycles 70%), `documents` (Legal Impact 35%, Related
 Documents and Term 40%, Key Passages, Cultural Impact, Public Reception and Legacy 50%, History 60%,
-Authors 75%).
+Authors 75%) and `ethnicities` (Unisex Names and Major Historical Figures 40%; Birth and
+Coming-of-Age Rites, Beauty, Courtship and Relationship Ideals, and Associated Institutions 50%;
+Etiquette, Art & Architecture, Taboos, Myths & Legends and Gender Ideals 60%; Traditional Styles
+70%).
 
 **Existed Until at 20%** is the one worth pausing on. It maps to the store's `endDate`, and a blank
 there is a claim that a place still stands — so a generator filling it every time was quietly drowning
