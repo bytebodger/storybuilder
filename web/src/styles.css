@@ -1,24 +1,38 @@
+/*
+ * Seven tokens, and everything is built from them.
+ *
+ * The neutrals are cool and close together - a near-black ground, a panel one
+ * step off it, a line one step off that - so the interface reads as depth
+ * rather than as boxes. The text is deliberately not white: #dce1ea at this
+ * size is easier to sit in front of for an hour than #ffffff, which glares.
+ *
+ * The accent is the only colour in the room, which is why it is a restrained
+ * one. It carries links, selection, the primary button and the marks on a
+ * timeline, and a loud hue doing all of that at once is exhausting. To swing
+ * the whole interface somewhere else, change these two lines and nothing else:
+ * teal #5fb8c4 / #26788a, violet #a78bfa / #6d4bc4, sage #8fbf9f / #3f7d52.
+ */
 :root {
   color-scheme: light dark;
-  --bg: #fbfaf8;
+  --bg: #f6f7f9;
   --panel: #ffffff;
-  --ink: #1c1a17;
-  --muted: #6b655d;
-  --line: #e2ddd4;
-  --accent: #7a5c3e;
-  --error: #a3342a;
+  --ink: #15181e;
+  --muted: #596174;
+  --line: #e2e6ed;
+  --accent: #3f60c4;
+  --error: #b3271d;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #171614;
-    --panel: #201e1b;
-    --ink: #eae5dc;
-    --muted: #9a9287;
-    --line: #322e29;
-    --accent: #c8a179;
-    --error: #e08b7f;
+    --bg: #0e1014;
+    --panel: #151922;
+    --ink: #dce1ea;
+    --muted: #8891a2;
+    --line: #242b37;
+    --accent: #8aa9f0;
+    --error: #f0918a;
   }
 }
 
@@ -537,11 +551,11 @@ pre {
   display: flex;
   align-items: center;
   gap: 1rem;
-  color: #f4f1ec;
+  color: #e8ecf2;
   font-size: 0.85rem;
   font-weight: 600;
 }
-.lightbox-bar .icon { color: #f4f1ec; border-color: rgba(255, 255, 255, 0.4); }
+.lightbox-bar .icon { color: #e8ecf2; border-color: rgba(255, 255, 255, 0.4); }
 .lightbox-bar .icon:hover { color: #fff; border-color: #fff; }
 
 /* --- the chronological view ------------------------------------------------
@@ -659,7 +673,9 @@ pre {
   height: 0.8rem;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  /* The ground, not white: the accent is light in the dark theme, and white on
+     it is unreadable. This way the count works against any accent. */
+  color: var(--bg);
   font-size: 0.58rem;
   line-height: 0.8rem;
   text-align: center;
@@ -682,7 +698,7 @@ pre {
 .timeline-add label,
 .timeline-actions label { display: flex; align-items: center; gap: 0.35rem; color: var(--muted); }
 .timeline-actions .muted { color: var(--muted); }
-.icon.danger { color: #a33; }
+.icon.danger { color: var(--error); }
 
 .chron-list { list-style: none; margin: 1rem 0 0; padding: 0; }
 
