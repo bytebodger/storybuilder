@@ -29,7 +29,7 @@ function Prose({
           <button
             key={i}
             type="button"
-            className={seg.target.stub ? 'xref stub' : 'xref'}
+            className={seg.target.stub ? 'xref xref-stub' : 'xref'}
             title={
               seg.target.stub
                 ? `${seg.target.name} — a stub in ${seg.target.container}, nothing established yet`
@@ -145,7 +145,7 @@ export function Article({ universe, item, onEdit, onNavigate }: Props) {
                   <button
                     key={rel.id}
                     type="button"
-                    className={rel.stub ? 'xref stub' : 'xref'}
+                    className={rel.stub ? 'xref xref-stub' : 'xref'}
                     onClick={() => onNavigate({ id: rel.id, name: rel.name })}
                   >
                     {rel.name}

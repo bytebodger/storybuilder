@@ -366,8 +366,25 @@ pre {
 }
 .prose { margin: 0; line-height: 1.62; font-size: 0.92rem; white-space: pre-wrap; }
 
-/* A cross-reference reads as text, not as a control, until it is wanted. */
+/*
+ * A cross-reference reads as text, not as a control, until it is wanted.
+ *
+ * The display is stated rather than left to the button default. It was once
+ * picked up from an unrelated `.stub` rule three hundred lines away - the
+ * stub-review row - and every link to a stub article became a flex box, which
+ * is block-level, and broke the line before and after itself:
+ *
+ *     Massive insects of the
+ *     muddwood
+ *     regions of Eastlandia
+ *
+ * `inline-block` rather than `inline` because that is what a browser computes
+ * for a button either way - form controls are blockified - and a rule that
+ * disagrees with devtools is a rule someone will waste an afternoon on. What
+ * matters is only that it is not block-level.
+ */
 .xref {
+  display: inline-block;
   font: inherit;
   color: var(--accent);
   background: none;
@@ -377,8 +394,9 @@ pre {
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .xref:hover { border-bottom-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
-/* Dashed: the name exists, the article behind it does not yet. */
-.xref.stub { border-bottom-style: dashed; opacity: 0.85; }
+/* Dashed: the name exists, the article behind it does not yet. Named for the
+   cross-reference rather than `stub` alone, which the review row already owns. */
+.xref-stub { border-bottom-style: dashed; opacity: 0.85; }
 
 .stub-badge { border-style: dashed; }
 
