@@ -289,9 +289,11 @@ const server = createServer(async (req, res) => {
 
       // Spec order where there is a spec, so an article always reads the same
       // way; insertion order otherwise, which is all a container without one has.
+      // The name and the kind are left out: the heading already shows them, as
+      // the title and the badge beside it.
       const ordered = spec
         ? spec
-            .filter((f) => f.storeAs !== 'name' && !isEmptyValue(values[f.key]))
+            .filter((f) => f.storeAs !== 'name' && f.storeAs !== 'kind' && !isEmptyValue(values[f.key]))
             .map((f) => ({ key: f.key, label: f.label, kind: f.kind, value: values[f.key] }))
         : Object.entries(values).map(([key, value]) => ({
             key,

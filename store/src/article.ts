@@ -55,7 +55,10 @@ export function draftToItem(container: string, values: ArticleValues): NewItem {
       // them. See `composedName`.
       if (composedName(spec)) attributes[field.key] = value
     } else if (field.storeAs === 'summary') item.summary = String(value)
-    else if (field.storeAs === 'kind') item.kind = String(value)
+    // Lowercased because closure counts by exact kind: a Moon typed into a form
+    // would otherwise be a set of its own, and slip past a planet whose moons
+    // are closed at two.
+    else if (field.storeAs === 'kind') item.kind = String(value).toLowerCase()
     else if (field.storeAs === 'beginDate') item.beginDate = String(value)
     else if (field.storeAs === 'endDate') item.endDate = String(value)
     else if (field.storeAs === 'aliases') item.aliases = asList(value)

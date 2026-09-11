@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  containersWithFields,
   fieldsFor,
   fillRateOf,
   rollOmissions,
@@ -45,7 +46,7 @@ describe('how often a field is filled at all', () => {
 
   it('never omits a required field', () => {
     // A required field is filled by definition, whatever a spec claims.
-    for (const container of ['people', 'history', 'locations', 'fauna', 'afflictions']) {
+    for (const container of containersWithFields()) {
       const required = (fieldsFor(container) ?? []).filter((f) => f.required).map((f) => f.key)
       for (let i = 0; i < 200; i++) {
         const omitted = rollOmissions(container)
@@ -60,7 +61,8 @@ describe('how often a field is filled at all', () => {
       items: [],
       timelines: [],
     }
-    for (const container of ['locations', 'fauna', 'history', 'afflictions']) {
+    // Every spec as it is added, rather than a list to remember to extend.
+    for (const container of containersWithFields().filter((c) => c !== 'people')) {
       const roll = rollFor(container, context)
       assert.ok(roll, `${container} has a roll`)
       assert.deepEqual(roll.values, {}, 'no skeleton, only omissions')

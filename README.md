@@ -207,7 +207,7 @@ Scaffolding and foundation. What exists:
 - [x] Skill catalog read from `.claude/skills/`, so the console offers only skills that exist
 - [x] Container catalog and per-universe navigation, including empty sections
 - [x] Kinds, so coarse containers can still carry fine completeness claims
-- [x] Generic field specs: one form, one generator, any container. `universe`, `fauna`, `locations`, `people`, `history` and `afflictions` have specs
+- [x] Generic field specs: one form, one generator, any container. `universe`, `fauna`, `locations`, `people`, `history`, `afflictions`, `cosmology` and `documents` have specs
 - [x] Stubs: a third state between absent and described, with reference scanning on save
 - [x] Two-round save flow: loose ends first, then a canon check that reads the result. See [docs/save-flow.md](docs/save-flow.md)
 - [x] Cross-references: article prose links to the articles it mentions, stubs included. See [docs/cross-references.md](docs/cross-references.md)
@@ -224,7 +224,7 @@ Scaffolding and foundation. What exists:
 - [x] The rolled skeleton: what a die can decide about an article is decided by a die, not asked of a model. See [docs/rolled-skeleton.md](docs/rolled-skeleton.md)
 - [x] Names forged in code — a seed, a mutation, no model. ~125ms instead of 20s, and unbounded. See [docs/names.md](docs/names.md)
 - [x] Per-field fill rates: an optional field is filled as often as it should be, not always. See [docs/fill-rates.md](docs/fill-rates.md)
-- [ ] Field specs for the remaining fourteen containers
+- [ ] Field specs for the remaining twelve containers
 - [ ] Author-defined container types
 - [ ] The story-building workflow, grounded in established canon
 - [ ] Canon indexing, so large universes don't re-read the corpus on every call

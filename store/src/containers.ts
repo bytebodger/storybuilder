@@ -38,7 +38,7 @@ export const CONTAINER_TYPES: ContainerType[] = [
     description:
       'Celestial bodies and the sky as the world sees it: stars, planets, moons, constellations, ' +
       'comets. A recurring event in the sky belongs in Phenomena; this is for the bodies themselves.',
-    kinds: ['star', 'planet', 'moon', 'constellation', 'comet', 'ring'],
+    kinds: ['star', 'planet', 'moon', 'constellation', 'comet', 'asteroid', 'ring'],
   },
   {
     key: 'locations',

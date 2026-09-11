@@ -13,6 +13,8 @@ import { LOCATION_FIELDS } from './locations-fields.ts'
 import { PEOPLE_FIELDS } from './people-fields.ts'
 import { HISTORY_FIELDS } from './history-fields.ts'
 import { AFFLICTION_FIELDS } from './afflictions-fields.ts'
+import { COSMOLOGY_FIELDS } from './cosmology-fields.ts'
+import { DOCUMENT_FIELDS } from './documents-fields.ts'
 
 /** Every container with a spec, each composed with the common fields. */
 export const FIELD_SPECS: Record<string, FieldSpec[]> = {
@@ -22,6 +24,8 @@ export const FIELD_SPECS: Record<string, FieldSpec[]> = {
   people: composeSpec(PEOPLE_FIELDS),
   history: composeSpec(HISTORY_FIELDS),
   afflictions: composeSpec(AFFLICTION_FIELDS),
+  cosmology: composeSpec(COSMOLOGY_FIELDS),
+  documents: composeSpec(DOCUMENT_FIELDS),
 }
 
 /** The spec for a container, or null when it has none yet. */
