@@ -95,8 +95,64 @@ Fewer fields asked for is fewer fields to write. A person went from **five gener
 three**: the roll settles seven fields, omits eight or so, and two more are
 [forged in code](names.md).
 
+## A universe overrides what it disagrees with
+
+The spec's number is a sensible default **across** worlds, not a fact about any of them. A court
+chronicle and a fishing village disagree about how many people have a title, and both are right. So a
+manifest carries the rates it differs on, and only those:
+
+```json
+"fillRates": {
+  "people": { "specialAbilities": 0, "nicknames": 0.3 }
+}
+```
+
+That is Phonon's, and its own laws argue for it: the manifest says **"No magic. The only unexplained
+thing in the world is the Sunder Ocean"** — a world that means that should not be handing out special
+abilities at the spec's 8%. Sailors, on the other hand, have nicknames.
+
+**Zero means never, and is not the same as saying nothing.** A field with no override falls through to
+the spec; a field set to `0` is switched off for this world. The lookup keeps absent and zero apart on
+purpose.
+
+**A required field stays required.** Setting `overview: 0` does nothing, because required means filled
+by definition.
+
+**A nonsense number is clamped, not obeyed.** A manifest is a file people edit by hand, so the roll
+copes and `sb validate` is where the author hears about it:
+
+```
+WARNING: Fill rate set for people.honorrific, which is not a field of people
+WARNING: Fill rate set for people.overview, which is required and is always filled
+WARNING: Fill rates are set for "legends", which has no field spec - they do nothing
+WARNING: Fill rate for locations.founders is 4 - expected a share between 0 and 1
+```
+
+A typo in a container or field name is otherwise perfectly silent: the override is never consulted,
+the field keeps its default, nothing looks wrong, and the world does not behave the way its author
+said it should.
+
+### From the CLI
+
+```bash
+sb fill-rates [container]                       # effective rates, and what this world changed
+sb set-fill-rate people honorific 0.7
+sb set-fill-rate people honorific default       # drop the override
+```
+
+```
+people
+  Honorific/Title                   70%  <- set for this universe (spec says 15%)
+  Given Name                       100%  (required, always)
+  Middle Name                       35%
+  Nicknames/Aliases                 30%  <- set for this universe (spec says 20%)
+  Special Abilities                  0%  <- set for this universe (spec says 8%)
+```
+
+Only fields that are not always filled are listed, plus the required ones, so the output is the
+exceptions rather than the whole spec.
+
 ## Not yet
 
-Rates are per spec, not per universe. A world where titles are ordinary and one where they are rare
-currently share a number, and letting a universe override it is the obvious next move — the manifest
-is already the place where a world says what it is like.
+No console UI. A per-field rate editor across fifty-eight fields is a real design problem, and the
+manifest plus the CLI is enough control to find out what the numbers should be first.

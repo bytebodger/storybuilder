@@ -157,10 +157,30 @@ export interface Universe {
    * world has no room for is exactly the kind of thing that gets invented.
    */
   professions?: string[]
+  /**
+   * How often an optional field is filled, where this world differs from the
+   * default the field spec declares.
+   *
+   * `{ people: { honorific: 0.6 } }` - a world of titles. The spec's own rate
+   * is a sensible default across worlds, not a fact about any of them: a court
+   * chronicle and a fishing village disagree about how many people have a
+   * title, and both are right.
+   *
+   * Only the fields that differ. Anything absent keeps the spec's number.
+   */
+  fillRates?: FillRates
   inspiration?: string[]
   createdAt: string
   updatedAt?: string
 }
+
+/**
+ * Per-container, per-field fill rates: `{ people: { honorific: 0.6 } }`.
+ *
+ * A share between 0 and 1. Zero is meaningful - it says this world never fills
+ * the field - and is why the lookup has to distinguish absent from zero.
+ */
+export type FillRates = Record<string, Record<string, number>>
 
 /** The editable half of a manifest: everything the form can set. */
 export type UniverseDraft = Partial<Omit<Universe, 'id' | 'createdAt' | 'updatedAt'>>

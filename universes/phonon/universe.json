@@ -18,7 +18,7 @@
   "id": "phonon",
   "createdAt": "2026-09-09T15:25:14.625Z",
   "pronunciation": "FOH-non",
-  "updatedAt": "2026-09-10T00:00:00.000Z",
+  "updatedAt": "2026-09-11T00:22:47.825Z",
   "professions": [
     "sailor",
     "ship's cook",
@@ -168,5 +168,11 @@
     "fortune teller",
     "matchmaker",
     "professional mourner"
-  ]
+  ],
+  "fillRates": {
+    "people": {
+      "specialAbilities": 0,
+      "nicknames": 0.3
+    }
+  }
 }

@@ -17,10 +17,17 @@
  * and falls back only where it has none. A world that has recorded five
  * ethnicities rolls one of those five.
  */
-import { ROOT_TIMELINE_ID, type Item, type Timeline, type Universe } from './types.ts'
+import {
+  ROOT_TIMELINE_ID,
+  type FillRates,
+  type Item,
+  type Timeline,
+  type Universe,
+} from './types.ts'
 import { yearOf } from './timelines.ts'
 import { forgeName, type Random } from './names.ts'
 import { fieldsFor } from './fields.ts'
+import type { FieldSpec } from './field-spec.ts'
 
 export interface Skeleton {
   /** Values the roll settled. Applied to the form before anything is generated. */
@@ -211,24 +218,44 @@ export function rollPerson(context: RollContext, random: Random = Math.random): 
 
   // What most people do not have. Declared on the fields themselves, so this
   // does not become a second place where a container's shape is described.
-  omit.push(...rollOmissions('people', random))
+  omit.push(...rollOmissions('people', universe.fillRates, random))
 
   notes.push(weighted(STANDING, random))
   return { values, omit, notes }
 }
 
 /**
- * Which of a container's fields this particular article simply does not have.
+ * How often this field is filled in this universe, 0 to 1.
  *
- * Read off `fillRate` on the spec. A field with none is always filled, which is
- * what every container did before fill rates existed, and a required field is
- * never omitted whatever its spec says.
+ * The universe wins where it has an opinion, the spec supplies the default, and
+ * a field with neither is always filled - which is what every container did
+ * before fill rates existed. A required field is always 1 whatever either says,
+ * because required means filled by definition.
+ *
+ * Absent and zero are different answers and the lookup keeps them apart: a
+ * world may legitimately say a field is never filled here.
  */
-export function rollOmissions(container: string, random: Random = Math.random): string[] {
-  const spec = fieldsFor(container) ?? []
-  return spec
-    .filter((f) => !f.required && f.fillRate !== undefined && !chance(f.fillRate, random))
-    .map((f) => f.key)
+export function fillRateOf(field: FieldSpec, container: string, rates?: FillRates): number {
+  if (field.required) return 1
+  const override = rates?.[container]?.[field.key]
+  const declared = typeof override === 'number' ? override : field.fillRate
+  if (declared === undefined) return 1
+  // Clamped rather than refused: a manifest is a file people edit by hand, and
+  // `sb validate` is where a nonsense number gets pointed out.
+  return Math.min(1, Math.max(0, declared))
+}
+
+/**
+ * Which of a container's fields this particular article simply does not have.
+ */
+export function rollOmissions(
+  container: string,
+  rates?: FillRates,
+  random: Random = Math.random,
+): string[] {
+  return (fieldsFor(container) ?? [])
+    .filter((field) => !chance(fillRateOf(field, container, rates), random))
+    .map((field) => field.key)
 }
 
 /**
@@ -246,5 +273,5 @@ export function rollFor(
 ): Skeleton | null {
   if (container === 'people') return rollPerson(context, random)
   if (!fieldsFor(container)) return null
-  return { values: {}, omit: rollOmissions(container, random), notes: [] }
+  return { values: {}, omit: rollOmissions(container, context.universe.fillRates, random), notes: [] }
 }

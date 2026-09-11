@@ -14,6 +14,8 @@ import { renderBrief, renderUniverseBrief } from './brief.ts'
 import { validate } from './validate.ts'
 import { CanonViolation, type ClosureState } from './types.ts'
 import { matchTerm } from './terms.ts'
+import { fieldsFor, containersWithFields } from './fields.ts'
+import { fillRateOf } from './skeleton.ts'
 import { eventsIn, flatten, isRoot, spanOf, subtree, treeOf } from './timelines.ts'
 import type { Store } from './store.ts'
 import { buildImportPlan } from './import/azgaar.ts'
@@ -69,6 +71,13 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
         religions, cities, characters and the like open: they accrete.
   sb remove <id>
   sb validate
+
+  sb fill-rates [container]                 How often each optional field is filled
+  sb set-fill-rate <container> <field> <0..1|default>
+        How often an optional field is filled when a whole article is generated.
+        The spec's number is a sensible default across worlds, not a fact about
+        any of them - a court chronicle and a fishing village disagree about how
+        many people have a title. "default" drops the override.
 
   sb timelines                              The universe's timelines, as a tree
   sb new-timeline <name> [--under <ref>]    Defaults to the Universal History
@@ -492,6 +501,76 @@ async function main(argv: string[]): Promise<number> {
       return 0
     }
 
+    case 'fill-rates': {
+      const st = await store(a)
+      const manifest = await st.manifest()
+      const only = rest[0]
+      const containers = only ? [only] : containersWithFields()
+
+      for (const container of containers) {
+        const spec = fieldsFor(container)
+        if (!spec) {
+          console.log(`${container}: no field spec`)
+          continue
+        }
+        console.log(`
+${container}`)
+        for (const field of spec) {
+          const rate = fillRateOf(field, container, manifest.fillRates)
+          if (rate === 1 && !field.required) continue
+          const override = manifest.fillRates?.[container]?.[field.key]
+          const mark =
+            field.required ? '  (required, always)'
+            : typeof override === 'number' ? `  <- set for this universe (spec says ${pctOf(field.fillRate)})`
+            : ''
+          console.log(`  ${field.label.padEnd(32)} ${pctOf(rate).padStart(4)}${mark}`)
+        }
+      }
+      return 0
+    }
+
+    case 'set-fill-rate': {
+      const st = await store(a)
+      const [container, key, value] = rest
+      if (!container || !key || value === undefined) {
+        throw new Error('Usage: sb set-fill-rate <container> <field> <0..1|default>')
+      }
+      const spec = fieldsFor(container)
+      if (!spec) throw new Error(`No field spec for container "${container}"`)
+      const field = spec.find((f) => f.key === key)
+      if (!field) {
+        throw new Error(
+          `No field "${key}" on ${container}. It has: ${spec.map((f) => f.key).join(', ')}`,
+        )
+      }
+      if (field.required) throw new Error(`${container}.${key} is required and is always filled`)
+
+      const manifest = await st.manifest()
+      const rates: Record<string, Record<string, number>> = JSON.parse(
+        JSON.stringify(manifest.fillRates ?? {}),
+      )
+
+      if (value === 'default') {
+        delete rates[container]?.[key]
+        if (rates[container] && !Object.keys(rates[container]).length) delete rates[container]
+        await st.updateManifest({ fillRates: rates })
+        console.log(`${container}.${key} back to the spec's ${pctOf(field.fillRate)}.`)
+        return 0
+      }
+
+      const rate = Number(value)
+      if (!Number.isFinite(rate) || rate < 0 || rate > 1) {
+        throw new Error(`Expected a share between 0 and 1, got "${value}"`)
+      }
+      rates[container] = { ...(rates[container] ?? {}), [key]: rate }
+      await st.updateManifest({ fillRates: rates })
+      console.log(
+        `${container}.${key} filled ${pctOf(rate)} of the time in this universe ` +
+          `(the spec says ${pctOf(field.fillRate)}).`,
+      )
+      return 0
+    }
+
     case 'timelines': {
       const s = await store(a)
       const list = await s.timelines()
@@ -587,6 +666,10 @@ async function main(argv: string[]): Promise<number> {
       return 1
   }
 }
+
+/** A rate as a percentage, or "always" for a field with no rate at all. */
+const pctOf = (rate: number | undefined) =>
+  rate === undefined ? 'always' : `${Math.round(rate * 100)}%`
 
 /**
  * A timeline by id or by name.

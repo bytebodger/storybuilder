@@ -1,6 +1,13 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { fieldsFor, rollOmissions, rollFor, type Universe } from '../src/index.ts'
+import {
+  fieldsFor,
+  fillRateOf,
+  rollOmissions,
+  rollFor,
+  type FillRates,
+  type Universe,
+} from '../src/index.ts'
 
 /** How often each field survived the roll, over many articles. */
 function survival(container: string, runs = 4000): Record<string, number> {
@@ -70,6 +77,59 @@ describe('how often a field is filled at all', () => {
       worst = Math.min(worst, spec.length - rollOmissions('people').length)
     }
     assert.ok(worst > spec.length * 0.6, `thinnest person kept ${worst} of ${spec.length} fields`)
+  })
+})
+
+describe('what a universe says about its own rates', () => {
+  const spec = fieldsFor('people') ?? []
+  const rateOf = (key: string) => spec.find((f) => f.key === key)!
+
+  const share = (key: string, rates: FillRates | undefined, runs = 3000) => {
+    let kept = 0
+    for (let i = 0; i < runs; i++) {
+      if (!rollOmissions('people', rates).includes(key)) kept++
+    }
+    return kept / runs
+  }
+
+  it('wins over the rate the spec declares', () => {
+    // A court chronicle and a fishing village disagree about how many people
+    // have a title, and both are right.
+    const courtly: FillRates = { people: { honorific: 0.8 } }
+    assert.ok(Math.abs(share('honorific', courtly) - 0.8) < 0.04)
+    assert.ok(Math.abs(share('honorific', undefined) - 0.15) < 0.04, 'and the default still stands')
+  })
+
+  it('can say never, which is not the same as saying nothing', () => {
+    // Phonon's laws say there is no magic. Zero has to mean zero rather than
+    // falling through to the spec's 8%.
+    const mundane: FillRates = { people: { specialAbilities: 0 } }
+    assert.equal(share('specialAbilities', mundane, 500), 0)
+    assert.ok(share('specialAbilities', undefined, 3000) > 0.04, 'against the spec default')
+  })
+
+  it('leaves every field it does not mention alone', () => {
+    const one: FillRates = { people: { honorific: 0.9 } }
+    assert.ok(Math.abs(share('suffix', one) - rateOf('suffix').fillRate!) < 0.04)
+  })
+
+  it('cannot fill a field less often than always if it is required', () => {
+    const silly: FillRates = { people: { givenName: 0, overview: 0 } }
+    for (let i = 0; i < 200; i++) {
+      const omitted = rollOmissions('people', silly)
+      assert.ok(!omitted.includes('givenName') && !omitted.includes('overview'))
+    }
+  })
+
+  it('clamps a nonsense number rather than behaving strangely', () => {
+    // `sb validate` is where the author hears about it; the roll just copes.
+    assert.equal(fillRateOf(rateOf('honorific'), 'people', { people: { honorific: 4 } }), 1)
+    assert.equal(fillRateOf(rateOf('honorific'), 'people', { people: { honorific: -2 } }), 0)
+  })
+
+  it('ignores an override aimed at another container', () => {
+    const elsewhere: FillRates = { locations: { honorific: 1 } }
+    assert.ok(Math.abs(share('honorific', elsewhere) - 0.15) < 0.04)
   })
 })
 

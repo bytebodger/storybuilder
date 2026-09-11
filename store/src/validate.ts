@@ -1,6 +1,7 @@
 import type { Store } from './store.ts'
 import { groupKey, type Item } from './types.ts'
 import { yearOf } from './timelines.ts'
+import { fieldsFor } from './fields.ts'
 
 export interface Issue {
   severity: 'error' | 'warning'
@@ -108,6 +109,48 @@ export async function validate(store: Store): Promise<Issue[]> {
           `(${item.beginDate ? `"${item.beginDate}"` : 'which is empty'}) - ` +
           `it will not count toward the span of any timeline`,
       })
+    }
+  }
+
+  /*
+   * Fill-rate overrides that point at nothing.
+   *
+   * A rate is a share on a field of a container, written by hand into a
+   * manifest, and a typo in either name is silent: the override is simply never
+   * consulted and the field keeps the spec's default. Nothing looks wrong, and
+   * the world does not behave the way its author told it to.
+   */
+  const manifest = await store.manifest()
+  for (const [container, rates] of Object.entries(manifest.fillRates ?? {})) {
+    const spec = fieldsFor(container)
+    if (!spec) {
+      issues.push({
+        severity: 'warning',
+        message: `Fill rates are set for "${container}", which has no field spec - they do nothing`,
+      })
+      continue
+    }
+    for (const [key, rate] of Object.entries(rates)) {
+      const field = spec.find((f) => f.key === key)
+      if (!field) {
+        issues.push({
+          severity: 'warning',
+          message: `Fill rate set for ${container}.${key}, which is not a field of ${container}`,
+        })
+        continue
+      }
+      if (typeof rate !== 'number' || !Number.isFinite(rate) || rate < 0 || rate > 1) {
+        issues.push({
+          severity: 'warning',
+          message: `Fill rate for ${container}.${key} is ${JSON.stringify(rate)} - expected a share between 0 and 1`,
+        })
+      }
+      if (field.required) {
+        issues.push({
+          severity: 'warning',
+          message: `Fill rate set for ${container}.${key}, which is required and is always filled`,
+        })
+      }
     }
   }
 
