@@ -414,7 +414,15 @@ pre {
 
 .stub-badge { border-style: dashed; }
 
-.article-related { margin-top: 1.5rem; border-top: 1px solid var(--line); padding-top: 0.9rem; }
+/* In the aside now, under the facts, so it needs its own edges rather than a
+   rule separating it from prose it no longer follows. */
+.article-related {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
 .article-related h3 {
   margin: 0 0 0.5rem;
   font-size: 0.74rem;
@@ -422,7 +430,7 @@ pre {
   letter-spacing: 0.07em;
   color: var(--muted);
 }
-.related-set { display: flex; gap: 0.75rem; align-items: baseline; margin-bottom: 0.4rem; flex-wrap: wrap; }
+.related-set { display: flex; gap: 0.75rem; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; }
 .related-type {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -433,13 +441,64 @@ pre {
 .related-items { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 .brief-toggle { margin-top: 1.25rem; }
 
-/* Reference facts: scanned, not read. Kept dense and out of the prose's way. */
+/*
+ * An article is what it says, beside what it is attached to.
+ *
+ * The prose is read in order; the facts, the map and the relations are looked
+ * up. Stacked, the looked-up things interrupt the read ones - a banner of
+ * measurements above the first sentence and a list of neighbours under the
+ * last. Side by side, each is where it is wanted.
+ *
+ * The left column carries its own reading measure (see `.article-field`), so
+ * `1fr` here never stretches a line; it only decides how much room is left for
+ * the column beside it.
+ */
+.article-body {
+  display: grid;
+  /*
+   * The left column is the reading measure itself, not `1fr`.
+   *
+   * With `1fr` the column took every pixel going while the text inside it
+   * stayed capped, so on a wide panel the aside was shoved three hundred pixels
+   * clear of the prose it belongs to. Sized to the measure, the two sit
+   * together and the slack falls off the right-hand end, which is where the
+   * rest of the console already puts it.
+   */
+  grid-template-columns: minmax(0, 78ch) minmax(16rem, 23rem);
+  justify-content: start;
+  gap: 2.25rem;
+  align-items: start;
+}
+
+/*
+ * One column where two would squeeze both.
+ *
+ * Keyed higher than it looks because the query measures the window and the
+ * layout happens in the panel, which is the window less a 20rem nav and the
+ * padding either side - about 400px. Below this the prose column falls under
+ * fifty characters, which is a column of a newspaper without the excuse.
+ */
+@media (max-width: 1150px) {
+  .article-body { grid-template-columns: 1fr; gap: 0.5rem; }
+}
+
+.article-main > .article-field:first-child { margin-top: 0; }
+.article-aside { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+
+/*
+ * Reference facts: scanned, not read. Kept dense and out of the prose's way.
+ *
+ * The track size does the work rather than a breakpoint. In the aside, 11rem
+ * leaves room for exactly one column and the facts run down it; stacked under
+ * the prose on a narrow window the same rule finds three. Nothing has to know
+ * which layout it is in.
+ */
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-  gap: 0.6rem 1.25rem;
-  margin: 1rem 0 1.4rem;
-  padding: 0.85rem 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.9rem 1rem;
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 8px;

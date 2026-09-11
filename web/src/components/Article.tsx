@@ -99,63 +99,81 @@ export function Article({ universe, item, onEdit, onNavigate }: Props) {
         </p>
       )}
 
-      {view.hasMap && <MapFigure universe={universe} itemId={view.item.id} name={view.item.name} />}
-
       {view.fields.length === 0 && !view.item.stub && (
         <p className="empty">No fields have been filled in yet.</p>
       )}
 
       {/*
-        Short fields are reference data - a weight, a pronunciation - and belong
-        together where they can be scanned. Prose is read in order, so it keeps
-        the spec's order below.
+        Two columns: what the article says, and what it is attached to.
+        
+        The prose is read in order and keeps the spec's, so it holds the left
+        column on its own. Everything else is reference - a weight, a
+        pronunciation, a map, the neighbours - which is looked *up* rather than
+        read, and belongs beside the reading rather than interrupting it. The
+        facts used to sit as a banner above the prose and the relations as a
+        footer below, which put two things nobody reads in sequence into the
+        sequence.
       */}
-      {facts.length > 0 && (
-        <dl className="facts">
-          {facts.map((field) => (
-            <div key={field.key} className="fact">
-              <dt>{field.label}</dt>
-              <dd>
-                <Prose segments={field.segments} onNavigate={onNavigate} inline />
-              </dd>
+      <div className="article-body">
+        <div className="article-main">
+          {prose.map((field) => (
+            <div key={field.key} className="article-field">
+              <h3>{field.label}</h3>
+              <Prose segments={field.segments} onNavigate={onNavigate} />
             </div>
           ))}
-        </dl>
-      )}
-
-      {prose.map((field) => (
-        <div key={field.key} className="article-field">
-          <h3>{field.label}</h3>
-          <Prose segments={field.segments} onNavigate={onNavigate} />
         </div>
-      ))}
 
-      {view.related.length > 0 && (
-        <div className="article-related">
-          <h3>Related</h3>
-          {view.related.map((set) => (
-            <div key={set.type} className="related-set">
-              <span className="related-type">
-                {set.type}
-                {set.closure === 'closed' && <span className="badge" title={set.closureNote}>complete</span>}
-                {set.closure === 'uncharted' && <span className="badge">uncharted</span>}
-              </span>
-              <div className="related-items">
-                {set.items.map((rel) => (
-                  <button
-                    key={rel.id}
-                    type="button"
-                    className={rel.stub ? 'xref xref-stub' : 'xref'}
-                    onClick={() => onNavigate({ id: rel.id, name: rel.name })}
-                  >
-                    {rel.name}
-                  </button>
+        {(view.hasMap || facts.length > 0 || view.related.length > 0) && (
+          <aside className="article-aside">
+            {view.hasMap && (
+              <MapFigure universe={universe} itemId={view.item.id} name={view.item.name} />
+            )}
+
+            {facts.length > 0 && (
+              <dl className="facts">
+                {facts.map((field) => (
+                  <div key={field.key} className="fact">
+                    <dt>{field.label}</dt>
+                    <dd>
+                      <Prose segments={field.segments} onNavigate={onNavigate} inline />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+
+            {view.related.length > 0 && (
+              <div className="article-related">
+                <h3>Related</h3>
+                {view.related.map((set) => (
+                  <div key={set.type} className="related-set">
+                    <span className="related-type">
+                      {set.type}
+                      {set.closure === 'closed' && (
+                        <span className="badge" title={set.closureNote}>complete</span>
+                      )}
+                      {set.closure === 'uncharted' && <span className="badge">uncharted</span>}
+                    </span>
+                    <div className="related-items">
+                      {set.items.map((rel) => (
+                        <button
+                          key={rel.id}
+                          type="button"
+                          className={rel.stub ? 'xref xref-stub' : 'xref'}
+                          onClick={() => onNavigate({ id: rel.id, name: rel.name })}
+                        >
+                          {rel.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+          </aside>
+        )}
+      </div>
 
       <button type="button" className="icon brief-toggle" onClick={() => setShowBrief((v) => !v)}>
         {showBrief ? 'Hide' : 'Show'} what the skills see
