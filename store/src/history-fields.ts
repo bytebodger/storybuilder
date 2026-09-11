@@ -86,6 +86,7 @@ export const HISTORY_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.6,
     help:
       'What the world was like afterwards that it was not before: what it ended, what it started, ' +
       'what is still argued about. An event with nothing here is decoration; an event with ' +
@@ -97,6 +98,7 @@ export const HISTORY_FIELDS: FieldSpec[] = [
     kind: 'list',
     required: false,
     default: [],
+    fillRate: 0.4,
     help:
       'The peoples it happened to, or was done by. Name each as its article is titled and the ' +
       'reference will link itself.',
@@ -125,6 +127,7 @@ export const HISTORY_FIELDS: FieldSpec[] = [
     kind: 'list',
     required: false,
     default: [],
+    fillRate: 0.5,
     help: 'The orders, guilds, houses and offices that acted in it or were changed by it.',
   },
 ]

@@ -20,6 +20,7 @@
 import { ROOT_TIMELINE_ID, type Item, type Timeline, type Universe } from './types.ts'
 import { yearOf } from './timelines.ts'
 import { forgeName, type Random } from './names.ts'
+import { fieldsFor } from './fields.ts'
 
 export interface Skeleton {
   /** Values the roll settled. Applied to the form before anything is generated. */
@@ -208,25 +209,42 @@ export function rollPerson(context: RollContext, random: Random = Math.random): 
   const named = timelines.filter((t) => t.id !== ROOT_TIMELINE_ID)
   if (named.length) notes.push(`Timelines this world keeps: ${named.map((t) => t.name).join(', ')}.`)
 
-  // --- what most people do not have ---------------------------------------
-  // Rolled, because asked, a model gives everyone a title and three nicknames.
-  if (!chance(0.15, random)) omit.push('honorific')
-  if (!chance(0.2, random)) omit.push('nicknames')
-  if (!chance(0.35, random)) omit.push('middleName')
-  if (!chance(0.1, random)) omit.push('suffix')
-  if (!chance(0.25, random)) omit.push('titles')
+  // What most people do not have. Declared on the fields themselves, so this
+  // does not become a second place where a container's shape is described.
+  omit.push(...rollOmissions('people', random))
 
   notes.push(weighted(STANDING, random))
   return { values, omit, notes }
 }
 
-/** Containers that have a roll. Others generate exactly as before. */
-export const ROLLED = new Set(['people'])
+/**
+ * Which of a container's fields this particular article simply does not have.
+ *
+ * Read off `fillRate` on the spec. A field with none is always filled, which is
+ * what every container did before fill rates existed, and a required field is
+ * never omitted whatever its spec says.
+ */
+export function rollOmissions(container: string, random: Random = Math.random): string[] {
+  const spec = fieldsFor(container) ?? []
+  return spec
+    .filter((f) => !f.required && f.fillRate !== undefined && !chance(f.fillRate, random))
+    .map((f) => f.key)
+}
 
+/**
+ * The roll for a container.
+ *
+ * Every container with a field spec gets one, because every container has
+ * fields most articles would leave blank. `people` gets the full skeleton on
+ * top of that; the rest get the omissions alone, which is already the
+ * difference between an article and a form with every box ticked.
+ */
 export function rollFor(
   container: string,
   context: RollContext,
   random: Random = Math.random,
 ): Skeleton | null {
-  return container === 'people' ? rollPerson(context, random) : null
+  if (container === 'people') return rollPerson(context, random)
+  if (!fieldsFor(container)) return null
+  return { values: {}, omit: rollOmissions(container, random), notes: [] }
 }

@@ -45,6 +45,28 @@ export interface FieldSpec {
    */
   generator?: 'given-name' | 'family-name'
   /**
+   * The share of articles in which this field is filled at all, 0 to 1.
+   *
+   * Absent means always, which is what every spec did before this existed.
+   *
+   * It covers two things that come to the same operation. Some fields most
+   * people do not *have* - an honorific, a suffix, a special ability. Others
+   * everyone has and few articles bother to *record* - what they keep as pets,
+   * what they will not talk about. Either way the question is how often the
+   * field should come back non-empty, and the answer is not "always".
+   *
+   * It has to be rolled rather than asked. A model handed an optional field
+   * fills it, every time: ask fifty people for an honorific and you get fifty
+   * Captains. The only way to get a person with no title is for the field never
+   * to enter the request.
+   *
+   * Applies to filling a whole form. An explicit Regenerate on one field is a
+   * direct request and is always honoured - if you click Regenerate on
+   * Honorific you want an honorific. Ignored on a required field, which by
+   * definition is always filled.
+   */
+  fillRate?: number
+  /**
    * Where the value is stored on an item. Most fields are free-form and live in
    * `attributes`; a few map onto columns the store already understands, so a
    * brief can show a name and a summary without knowing any container's spec.

@@ -255,9 +255,20 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
 
     const dropped: string[] = []
     const missed: string[] = []
-    // The running answer, because setValues is not synchronous and the next
-    // batch has to be told what the last one decided.
-    let settled = Object.fromEntries(Object.entries(values).filter(([k]) => !fill.includes(k)))
+    /*
+     * The running answer, because setValues is not synchronous and the next
+     * batch has to be told what the last one decided.
+     *
+     * The roll has to be folded in here explicitly for the same reason. It was
+     * applied to the form a moment ago and `values` is still the state from the
+     * last render, so without this the generator never learns the name the die
+     * chose - and writes its own. A person came back rolled as Sarim Griack
+     * with an overview about Selwyn Ockham.
+     */
+    let settled = {
+      ...Object.fromEntries(Object.entries(values).filter(([k]) => !fill.includes(k))),
+      ...(roll?.values ?? {}),
+    }
 
     /*
      * The first batch alone, then the rest together.
@@ -327,10 +338,24 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       await Promise.all(workers)
       if (failures.length) setError(failures[0])
 
+      /*
+       * A field left blank on purpose has to say so.
+       *
+       * Otherwise an author looking at an empty Honorific cannot tell whether
+       * the generator skipped it, failed at it, or decided this person has
+       * none - and the third is the answer, which is the whole point of the
+       * roll. Regenerating the field directly still fills it.
+       */
+      const skipped = (roll?.omit ?? []).filter((k) => spec.some((f) => f.key === k))
       setNote(
         [
           dropped.length ? `Ignored unrequested field(s): ${dropped.join(', ')}.` : '',
           missed.length ? `No value came back for: ${missed.join(', ')}.` : '',
+          skipped.length ?
+            `Left blank on purpose — not everyone has one: ` +
+              `${skipped.map((k) => spec.find((f) => f.key === k)?.label ?? k).join(', ')}. ` +
+              `Regenerate any of them to fill it anyway.`
+          : '',
         ]
           .filter(Boolean)
           .join(' ') || null,

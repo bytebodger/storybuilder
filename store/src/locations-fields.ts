@@ -59,6 +59,7 @@ export const LOCATION_FIELDS: FieldSpec[] = [
     kind: 'text',
     required: false,
     default: null,
+    fillRate: 0.2,
     storeAs: 'endDate',
     help:
       'When it ceased to be - fell, drowned, was abandoned. Blank means no end is recorded, which ' +
@@ -84,6 +85,7 @@ export const LOCATION_FIELDS: FieldSpec[] = [
     kind: 'list',
     required: false,
     default: [],
+    fillRate: 0.45,
     help:
       'Who established it - people, families, orders. Each name links to its own article where one ' +
       'exists, so name them as those articles are titled.',
@@ -112,6 +114,7 @@ export const LOCATION_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.6,
     help:
       'What the land yields, who works it, and what the place must import because it has none. What ' +
       'is missing shapes a place as much as what is there.',
@@ -122,6 +125,7 @@ export const LOCATION_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.5,
     help:
       'The creatures and plants found here, and their standing: hunted, farmed, feared, protected. ' +
       'Name the ones with articles.',

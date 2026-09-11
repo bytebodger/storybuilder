@@ -55,22 +55,15 @@ in it.** Without this dial every generated person is a protagonist, and a world 
 protagonists is a world where nobody bakes bread. It is also what stops every biography ending in a
 doomed crossing.
 
-### Fields most people simply do not have
+### Fields most articles simply do not have
 
 A model handed an optional field fills it. Asked for an honorific it returns one, and every person in
 the world comes back a Captain with three swashbuckling nicknames. **The only way to get a person with
-no title is not to ask.** So the roll decides, and the field never enters the request:
+no title is not to ask.**
 
-| Field | Kept | Measured over 2,000 rolls |
-| --- | --- | --- |
-| Honorific/Title | 15% | 16% |
-| Nicknames/Aliases | 20% | 21% |
-| Middle Name | 35% | 34% |
-| Suffix | 10% | 9% |
-| Titles | 25% | 26% |
-
-This is deliberately narrow — it lives in the roll, not in the field spec. A general per-field fill
-rate on `FieldSpec` is a reasonable next step and a different piece of work.
+This began as five hardcoded probabilities here and is now
+[`fillRate` on the field spec](fill-rates.md), which every container gets. The roll reads them off the
+spec, so a container's shape is described in one place rather than two.
 
 ## It also makes the form feel faster
 

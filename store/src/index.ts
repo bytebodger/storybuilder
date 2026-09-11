@@ -29,7 +29,7 @@ export {
 export {
   rollPerson,
   rollFor,
-  ROLLED,
+  rollOmissions,
   type Skeleton,
   type RollContext,
 } from './skeleton.ts'

@@ -189,6 +189,7 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.3,
     help:
       'Whether it has been tamed, farmed or bred, how successfully, and why not, if not. Economic ' +
       'reasons are as good as biological ones.',
@@ -199,6 +200,7 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.5,
     help:
       'What people take from it: food, materials, dyes, medicines, poisons. Include who controls the ' +
       'trade, and how attitudes to its use differ between peoples - that disagreement is usually the ' +
@@ -235,6 +237,7 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.3,
     help: 'What lives on it, in it, or alongside it, and what that relationship costs each party.',
   },
   {
@@ -243,6 +246,7 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.5,
     help:
       'What the creature signifies to the peoples who know it, and to whom. Associations are rarely ' +
       'universal - say which groups hold them.',
@@ -253,6 +257,7 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.15,
     help: 'What counts as a fine specimen, and to whom - breeders, hunters, collectors.',
   },
   {
@@ -261,6 +266,7 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.15,
     help: 'Differences between sexes, and any meaning cultures attach to them.',
   },
   {
@@ -269,6 +275,7 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.35,
     help: 'Events the creature shaped: famines, plagues, trade routes, wars, migrations.',
   },
   {
@@ -277,6 +284,7 @@ export const FAUNA_FIELDS: FieldSpec[] = [
     kind: 'longtext',
     required: false,
     default: null,
+    fillRate: 0.45,
     help:
       'Stories told about it. Note where a myth is known to be false, and where nobody can say - the ' +
       'difference is itself canon.',

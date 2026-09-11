@@ -1,0 +1,92 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import { fieldsFor, rollOmissions, rollFor, type Universe } from '../src/index.ts'
+
+/** How often each field survived the roll, over many articles. */
+function survival(container: string, runs = 4000): Record<string, number> {
+  const spec = fieldsFor(container) ?? []
+  const kept: Record<string, number> = Object.fromEntries(spec.map((f) => [f.key, 0]))
+  for (let i = 0; i < runs; i++) {
+    const omitted = new Set(rollOmissions(container))
+    for (const field of spec) if (!omitted.has(field.key)) kept[field.key]++
+  }
+  return Object.fromEntries(Object.entries(kept).map(([k, n]) => [k, n / runs]))
+}
+
+describe('how often a field is filled at all', () => {
+  it('honours the rate each field declares', () => {
+    // The whole mechanism: a model handed an optional field fills it, every
+    // time. Ask fifty people for an honorific and you get fifty Captains.
+    const rate = survival('people')
+    for (const field of fieldsFor('people') ?? []) {
+      if (field.fillRate === undefined || field.required) continue
+      const seen = rate[field.key]
+      assert.ok(
+        Math.abs(seen - field.fillRate) < 0.04,
+        `${field.key} kept ${(seen * 100).toFixed(0)}%, declared ${field.fillRate * 100}%`,
+      )
+    }
+  })
+
+  it('always fills a field that declares no rate', () => {
+    const rate = survival('people', 500)
+    for (const field of fieldsFor('people') ?? []) {
+      if (field.fillRate !== undefined) continue
+      assert.equal(rate[field.key], 1, `${field.key} is not optional and should never be skipped`)
+    }
+  })
+
+  it('never omits a required field', () => {
+    // A required field is filled by definition, whatever a spec claims.
+    for (const container of ['people', 'history', 'locations', 'fauna']) {
+      const required = (fieldsFor(container) ?? []).filter((f) => f.required).map((f) => f.key)
+      for (let i = 0; i < 200; i++) {
+        const omitted = rollOmissions(container)
+        for (const key of required) assert.ok(!omitted.includes(key), `${container}.${key}`)
+      }
+    }
+  })
+
+  it('applies to every container with a spec, not only the one with a skeleton', () => {
+    const context = {
+      universe: { id: 'u', name: 'U', createdAt: '' } as Universe,
+      items: [],
+      timelines: [],
+    }
+    for (const container of ['locations', 'fauna', 'history']) {
+      const roll = rollFor(container, context)
+      assert.ok(roll, `${container} has a roll`)
+      assert.deepEqual(roll.values, {}, 'no skeleton, only omissions')
+    }
+    assert.equal(rollFor('legends', context), null, 'a container with no spec has no roll')
+  })
+
+  it('leaves a person with something to say', () => {
+    // A form where everything optional rolled away is as useless as one where
+    // nothing did. Most of the spec should survive most of the time.
+    const spec = fieldsFor('people') ?? []
+    let worst = spec.length
+    for (let i = 0; i < 500; i++) {
+      worst = Math.min(worst, spec.length - rollOmissions('people').length)
+    }
+    assert.ok(worst > spec.length * 0.6, `thinnest person kept ${worst} of ${spec.length} fields`)
+  })
+})
+
+describe('the rates people declare', () => {
+  it('keeps the things most people do not have rare', () => {
+    const byKey = new Map((fieldsFor('people') ?? []).map((f) => [f.key, f]))
+    for (const key of ['honorific', 'suffix', 'nicknames', 'specialAbilities']) {
+      const rate = byKey.get(key)?.fillRate
+      assert.ok(rate !== undefined && rate <= 0.25, `${key} should be the exception, not the rule`)
+    }
+  })
+
+  it('leaves the spine of an article alone', () => {
+    // Whatever else is rolled away, an article still has to be an article.
+    const byKey = new Map((fieldsFor('people') ?? []).map((f) => [f.key, f]))
+    for (const key of ['overview', 'personalHistory', 'physicalDescription', 'motivations']) {
+      assert.equal(byKey.get(key)?.fillRate, undefined, `${key} is not optional decoration`)
+    }
+  })
+})

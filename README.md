@@ -223,6 +223,7 @@ Scaffolding and foundation. What exists:
 - [x] The chronological view: timelines as lanes on one axis of years, events in order beneath. See [docs/timelines.md](docs/timelines.md#the-chronological-view)
 - [x] The rolled skeleton: what a die can decide about an article is decided by a die, not asked of a model. See [docs/rolled-skeleton.md](docs/rolled-skeleton.md)
 - [x] Names forged in code — a seed, a mutation, no model. ~125ms instead of 20s, and unbounded. See [docs/names.md](docs/names.md)
+- [x] Per-field fill rates: an optional field is filled as often as it should be, not always. See [docs/fill-rates.md](docs/fill-rates.md)
 - [ ] Field specs for the remaining thirteen containers
 - [ ] Author-defined container types
 - [ ] The story-building workflow, grounded in established canon

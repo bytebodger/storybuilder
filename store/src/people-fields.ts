@@ -28,6 +28,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Name',
     required: false,
     default: null,
+    fillRate: 0.15,
     help:
       'How the person is addressed, not what they are called. Kept out of the article title on ' +
       'purpose, so a mention of the bare name still finds them.',
@@ -54,6 +55,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Name',
     required: false,
     default: null,
+    fillRate: 0.35,
     storeAs: 'name',
     help:
       'Whatever sits between the given and family names in this culture — a second given name, a ' +
@@ -80,6 +82,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Name',
     required: false,
     default: null,
+    fillRate: 0.1,
     storeAs: 'name',
     help: 'What follows the name and is read as part of it: a regnal number, an order, an epithet.',
     examples: ['III', 'the Younger', 'Kellsblood'],
@@ -91,6 +94,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Name',
     required: false,
     default: [],
+    fillRate: 0.2,
     storeAs: 'aliases',
     help:
       'Every other name they answer to: what friends call them, what enemies call them, what they ' +
@@ -139,6 +143,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'In brief',
     required: false,
     default: [],
+    fillRate: 0.25,
     help:
       'Offices, ranks and holdings, held or lost. Distinct from the honorific, which is one form of ' +
       'address; this is the full account, and dates belong in it where they are known.',
@@ -402,6 +407,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Appearance',
     required: false,
     default: null,
+    fillRate: 0.45,
     help:
       'What would be on a description of them: scars, marks, brands, a missing finger, a voice. The ' +
       'things by which a stranger could pick them out or a hunter could name them.',
@@ -413,6 +419,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Appearance',
     required: false,
     default: null,
+    fillRate: 0.08,
     help:
       'What they can do that others cannot, and — more usefully — what it costs and where it fails. ' +
       'An ability with no limit stated is one that will be reached for to solve anything.',
@@ -457,6 +464,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Life and experience',
     required: false,
     default: null,
+    fillRate: 0.6,
     help:
       'How they were taught and by whom: school, apprenticeship, temple, the road. What they were ' +
       'never taught is usually the more interesting half.',
@@ -479,6 +487,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Life and experience',
     required: false,
     default: null,
+    fillRate: 0.55,
     help: 'What they have done that is known, and what they are given credit for whether or not they did it.',
   },
   {
@@ -488,6 +497,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Life and experience',
     required: false,
     default: null,
+    fillRate: 0.5,
     help:
       'What went wrong, what they are blamed for, and what they would pay to have forgotten. A ' +
       'person with no entry here is not a person yet.',
@@ -499,6 +509,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Life and experience',
     required: false,
     default: null,
+    fillRate: 0.4,
     help:
       'What was done to them or what they survived, and how it still shows — in what they avoid, ' +
       'what they cannot let go, what they are wrong about.',
@@ -532,6 +543,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Character',
     required: false,
     default: null,
+    fillRate: 0.3,
     help:
       'What they will not do, will not touch, will not speak of. Their own, where these differ from ' +
       'their culture’s — and note where they do differ.',
@@ -596,6 +608,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Ties and legacy',
     required: false,
     default: null,
+    fillRate: 0.25,
     help:
       'What outlasts them: what is named after them, what is still argued about, what they are ' +
       'remembered for as against what they actually did.',
@@ -629,6 +642,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Ties and legacy',
     required: false,
     default: null,
+    fillRate: 0.45,
     help: 'What they keep and what they do when no one needs anything from them.',
   },
   {
@@ -638,6 +652,7 @@ export const PEOPLE_FIELDS: FieldSpec[] = [
     group: 'Ties and legacy',
     required: false,
     default: null,
+    fillRate: 0.35,
     help:
       'What they have, what they had, who they owe and who owes them. Where the money came from is ' +
       'usually the story.',
