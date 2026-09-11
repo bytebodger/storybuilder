@@ -16,7 +16,7 @@ import { CanonViolation, type ClosureState } from './types.ts'
 import { matchTerm } from './terms.ts'
 import { fieldsFor, containersWithFields } from './fields.ts'
 import { fillRateOf } from './skeleton.ts'
-import { eventsIn, flatten, isRoot, spanOf, subtree, treeOf } from './timelines.ts'
+import { byFirstYear, eventsIn, flatten, isRoot, spanOf, subtree, treeOf } from './timelines.ts'
 import type { Store } from './store.ts'
 import { buildImportPlan } from './import/azgaar.ts'
 import { assess, countBy, importedAttributes } from './import/delta.ts'
@@ -576,9 +576,13 @@ ${container}`)
       const list = await s.timelines()
       const items = await s.list()
       const events = eventsIn(items)
+      // Chronological, like the console's: the tree cannot sort on dates it
+      // does not hold, so the spans are worked out first and passed in.
+      const spans = new Map(list.map((t) => [t.id, spanOf(list, events, t.id)]))
+      const inOrder = treeOf(list, byFirstYear((id) => spans.get(id)?.first ?? null))
 
-      for (const node of flatten(treeOf(list))) {
-        const span = spanOf(list, events, node.id)
+      for (const node of flatten(inOrder)) {
+        const span = spans.get(node.id) ?? null
         // A timeline reports the span of everything under it, so a parent's
         // count is its own events plus its descendants'. Nothing is filed in
         // two places; the same event is simply within both.

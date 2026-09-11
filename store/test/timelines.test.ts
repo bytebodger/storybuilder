@@ -8,6 +8,7 @@ import {
   ROOT_TIMELINE_ID,
   ROOT_TIMELINE_NAME,
   treeOf,
+  byFirstYear,
   flatten,
   subtree,
   ancestors,
@@ -34,6 +35,44 @@ describe('the shape of a set of timelines', () => {
       '    Reign of King Tarinian',
       '      War of the Stewards',
     ])
+  })
+
+  it('orders siblings chronologically when told how', () => {
+    // A chronology reads in chronological order. The tree holds no dates of its
+    // own - they belong to the events - so the caller works the spans out and
+    // hands the ordering in.
+    const begins: Record<string, number> = { w: 430, r: 12 }
+    const mixed: Timeline[] = [
+      { id: ROOT_TIMELINE_ID, name: ROOT_TIMELINE_NAME, createdAt: '' },
+      { id: 'w', name: 'A late one', parent: ROOT_TIMELINE_ID, createdAt: '' },
+      { id: 'r', name: 'Z early one', parent: ROOT_TIMELINE_ID, createdAt: '' },
+    ]
+    const order = byFirstYear((id) => begins[id] ?? null)
+
+    assert.deepEqual(
+      flatten(treeOf(mixed, order)).map((n) => n.name),
+      ['Universal History', 'Z early one', 'A late one'],
+      'earliest first, whatever the names say',
+    )
+    assert.deepEqual(
+      flatten(treeOf(mixed)).map((n) => n.name),
+      ['Universal History', 'A late one', 'Z early one'],
+      'and by name when no ordering is given',
+    )
+  })
+
+  it('puts a timeline holding nothing at the end, not at year zero', () => {
+    // "Not filed yet" is not "before everything".
+    const begins: Record<string, number> = { r: 900 }
+    const mixed: Timeline[] = [
+      { id: ROOT_TIMELINE_ID, name: ROOT_TIMELINE_NAME, createdAt: '' },
+      { id: 'empty', name: 'Nothing filed here', parent: ROOT_TIMELINE_ID, createdAt: '' },
+      { id: 'r', name: 'Has events', parent: ROOT_TIMELINE_ID, createdAt: '' },
+    ]
+    assert.deepEqual(
+      flatten(treeOf(mixed, byFirstYear((id) => begins[id] ?? null))).map((n) => n.name),
+      ['Universal History', 'Has events', 'Nothing filed here'],
+    )
   })
 
   it('re-hangs an orphan on the root rather than losing it', () => {

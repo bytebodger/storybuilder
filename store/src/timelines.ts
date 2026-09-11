@@ -36,7 +36,17 @@ export const isRoot = (id: string) => id === ROOT_TIMELINE_ID
  * can, and losing a stretch of history to a typo is worse than showing it in
  * the wrong place.
  */
-export function treeOf(timelines: Timeline[]): TimelineNode[] {
+export function treeOf(
+  timelines: Timeline[],
+  /**
+   * How siblings are ordered. By name unless the caller knows better.
+   *
+   * A tree of timelines has no dates in it - the dates belong to the events
+   * filed under them - so this cannot sort chronologically on its own. Callers
+   * that have worked the spans out pass `byFirstYear`.
+   */
+  order: (a: Timeline, b: Timeline) => number = (a, b) => a.name.localeCompare(b.name),
+): TimelineNode[] {
   const nodes = new Map<string, TimelineNode>(
     timelines.map((t) => [t.id, { ...t, depth: 0, children: [] }]),
   )
@@ -48,15 +58,39 @@ export function treeOf(timelines: Timeline[]): TimelineNode[] {
     else roots.push(node)
   }
 
-  const order = (list: TimelineNode[], depth: number) => {
-    list.sort((a, b) => a.name.localeCompare(b.name))
+  const walk = (list: TimelineNode[], depth: number) => {
+    list.sort(order)
     for (const node of list) {
       node.depth = depth
-      order(node.children, depth + 1)
+      walk(node.children, depth + 1)
     }
   }
-  order(roots, 0)
+  walk(roots, 0)
   return roots
+}
+
+/**
+ * Order siblings by when they begin, earliest first.
+ *
+ * Chronological order is the one a reader expects of a chronology, and it is
+ * not something the tree can work out for itself. A timeline holding no events
+ * has no year to sort on and goes to the end rather than to year zero, since
+ * "not filed yet" is not "before everything".
+ *
+ * A parent's first year covers its whole subtree, so a branch sorts by the
+ * earliest thing anywhere inside it.
+ */
+export function byFirstYear(
+  firstOf: (id: string) => number | null,
+): (a: Timeline, b: Timeline) => number {
+  return (a, b) => {
+    const x = firstOf(a.id)
+    const y = firstOf(b.id)
+    if (x === null && y === null) return a.name.localeCompare(b.name)
+    if (x === null) return 1
+    if (y === null) return -1
+    return x - y || a.name.localeCompare(b.name)
+  }
 }
 
 /** Every timeline in the tree, parents before children, ready to print. */

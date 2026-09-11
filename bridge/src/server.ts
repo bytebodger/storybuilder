@@ -18,6 +18,7 @@ import {
   draftToPatch,
   fieldsFor,
   flatten,
+  byFirstYear,
   forgeName,
   rollAccepts,
   rollFor,
@@ -433,9 +434,14 @@ const server = createServer(async (req, res) => {
       const items = await store.list()
       const dated = eventsIn(items)
 
-      const timelines = flatten(treeOf(lines)).map((node) => {
+      // Spans first, because the order depends on them: a chronology reads in
+      // chronological order, and the tree has no dates of its own to sort by.
+      const spans = new Map(lines.map((t) => [t.id, spanOf(lines, dated, t.id)]))
+      const inOrder = treeOf(lines, byFirstYear((id) => spans.get(id)?.first ?? null))
+
+      const timelines = flatten(inOrder).map((node) => {
         const within = subtree(lines, node.id)
-        const span = spanOf(lines, dated, node.id)
+        const span = spans.get(node.id) ?? null
         return {
           id: node.id,
           name: node.name,

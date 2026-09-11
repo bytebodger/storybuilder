@@ -38,6 +38,7 @@ export {
 } from './skeleton.ts'
 export {
   treeOf,
+  byFirstYear,
   flatten,
   childrenOf,
   subtree,
