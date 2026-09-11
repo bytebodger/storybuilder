@@ -716,7 +716,13 @@ pre {
   white-space: nowrap;
 }
 
-.lane-count { color: var(--muted); font-size: 0.72rem; }
+/* Tabular figures so a column of year ranges lines up rather than shimmying. */
+.lane-span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 .lane-track {
   position: relative;

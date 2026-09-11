@@ -13,6 +13,22 @@ const ROOT = 'universal'
 const TIMELINE_COLOURS = 10
 
 /**
+ * The years a lane covers, for the column beside its name.
+ *
+ * A count of events was the obvious thing to put there and the less useful one:
+ * it says how much has been filed, which the marks on the track already show,
+ * and not *when* - which is the question a timeline exists to answer and which
+ * the track only answers by eye.
+ *
+ * Nothing for the Universal History. It spans the axis by construction, so its
+ * years are the axis labels, printed along the top already.
+ */
+function spanLabel(lane: TimelineLane): string {
+  if (lane.id === ROOT || lane.first === null || lane.last === null) return ''
+  return lane.first === lane.last ? String(lane.first) : `${lane.first}–${lane.last}`
+}
+
+/**
  * A universe's history, drawn.
  *
  * Two halves that answer different questions. The **lanes** put every timeline
@@ -241,7 +257,7 @@ export function Chronology({ universe, onOpen }: Props) {
               >
                 <span className="lane-name" style={{ paddingLeft: `${lane.depth * 0.85}rem` }}>
                   {lane.name}
-                  <span className="lane-count">{lane.count || ''}</span>
+                  <span className="lane-span">{spanLabel(lane)}</span>
                 </span>
                 <div className="lane-track">
                   {lane.first !== null && lane.last !== null && (
