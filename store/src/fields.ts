@@ -17,6 +17,7 @@ import { COSMOLOGY_FIELDS } from './cosmology-fields.ts'
 import { DOCUMENT_FIELDS } from './documents-fields.ts'
 import { ETHNICITY_FIELDS } from './ethnicities-fields.ts'
 import { FLORA_FIELDS } from './flora-fields.ts'
+import { GEOGRAPHY_FIELDS } from './geography-fields.ts'
 
 /** Every container with a spec, each composed with the common fields. */
 export const FIELD_SPECS: Record<string, FieldSpec[]> = {
@@ -30,6 +31,7 @@ export const FIELD_SPECS: Record<string, FieldSpec[]> = {
   documents: composeSpec(DOCUMENT_FIELDS),
   ethnicities: composeSpec(ETHNICITY_FIELDS),
   flora: composeSpec(FLORA_FIELDS),
+  geography: composeSpec(GEOGRAPHY_FIELDS),
 }
 
 /** The spec for a container, or null when it has none yet. */
