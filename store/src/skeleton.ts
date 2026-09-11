@@ -25,7 +25,7 @@ import {
   type Universe,
 } from './types.ts'
 import { yearOf } from './timelines.ts'
-import { forgeName, type Random } from './names.ts'
+import { forgeName, nameSources, type Random } from './names.ts'
 import { fieldsFor } from './fields.ts'
 import type { FieldSpec } from './field-spec.ts'
 
@@ -160,22 +160,8 @@ export function rollPerson(
     )
   }
 
-  /*
-   * The name, made rather than asked for.
-   *
-   * A model takes twelve to twenty seconds over a given name and returns one of
-   * a handful of answers; a mutation of a seed takes no time and never repeats.
-   * The universe's own names are blended in, so a world that has established a
-   * register keeps it without being locked inside it.
-   */
-  const taken = items.map((i) => i.name)
-  const canon = items.filter((i) => i.container === 'people').map((i) => i.name)
-  const given = forgeName({ kind: 'given', canon, taken, random })
-  if (given) values.givenName = given
-  const family = forgeName({ kind: 'family', canon, taken: [...taken, given], random })
-  if (family) values.familyName = family
-
   // --- where they are from ------------------------------------------------
+  // Rolled before the name, because the name leans on it.
   const places = namesIn(items, 'locations')
   if (places.length) values.placeOfBirth = pick(places, random)
 
@@ -186,12 +172,34 @@ export function rollPerson(
 
   // --- who they are -------------------------------------------------------
   // Sampled from the words this universe has already used, so a world with its
-  // own categories is not handed ours.
+  // own categories is not handed ours. Also before the name: a people's
+  // masculine and feminine names are different lists.
   const sexes = established(items, 'people', 'sex')
   values.sex = sexes.length ? pick(sexes, random) : pick(['female', 'male'], random)
 
   const genders = established(items, 'people', 'gender')
   if (genders.length) values.gender = pick(genders, random)
+
+  /*
+   * The name, made rather than asked for.
+   *
+   * A model takes twelve to twenty seconds over a given name and returns one of
+   * a handful of answers; a mutation of a seed takes no time and never repeats.
+   * The universe's own names are blended in, so a world that has established a
+   * register keeps it without being locked inside it. And the names this
+   * person's own people are recorded as using are favoured - usually, never
+   * always. A list of common names is not a list of the only names.
+   */
+  const taken = items.map((i) => i.name)
+  const given = forgeName({ kind: 'given', ...nameSources(items, 'given', values), taken, random })
+  if (given) values.givenName = given
+  const family = forgeName({
+    kind: 'family',
+    ...nameSources(items, 'family', values),
+    taken: [...taken, given],
+    random,
+  })
+  if (family) values.familyName = family
 
   // --- when they lived ----------------------------------------------------
   /*

@@ -19,9 +19,14 @@ export { FIELD_SPECS, fieldsFor, fieldIn, containersWithFields } from './fields.
 export { draftToItem, itemToDraft, draftToPatch, defaultValues, type ArticleValues } from './article.ts'
 export { normalizeTerm, singularize, matchTerm, termExists, type TermMatch } from './terms.ts'
 export {
+  COMMON_PER_NAME,
+  COMMON_SHARE,
+  commonShareFor,
   forgeName,
   forgeFullName,
+  nameSources,
   sayable,
+  type NameBearer,
   type NameKind,
   type NameOptions,
   type Random,

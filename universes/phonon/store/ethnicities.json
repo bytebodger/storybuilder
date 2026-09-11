@@ -7,6 +7,12 @@
       "name": "Kellish",
       "aliases": [],
       "summary": "The majority people of Kell.",
+      "attributes": {
+        "masculineNames": ["Hesker", "Corr", "Halvard", "Tobin", "Osric", "Brannoch", "Dunstan", "Edric", "Garrow", "Wendel", "Aldous", "Merrick"],
+        "feminineNames": ["Maren", "Aldrica", "Wenna", "Hesta", "Tamsin", "Elowen", "Brida", "Ysolde", "Morwen", "Kerra", "Linnet", "Gwenna"],
+        "unisexNames": ["Wren", "Hale", "Tarry", "Sable"],
+        "familyNames": ["Brack", "Vane", "Corle", "Draye", "Holloway", "Kettleby", "Marsh", "Pell", "Sallow", "Tarrant", "Netherby", "Coldwater"]
+      },
       "tags": [
         {
           "type": "locations",

@@ -206,7 +206,10 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
     const seen = [...(rejected[field.key] ?? []), values[field.key]].filter((v) => !isEmpty(v))
     setBusy(field.key)
     try {
-      const name = await forgeNameFor(universe, field.generator, seen.map(String))
+      // Who the form says this person is right now, so a name regenerated after
+      // the ethnicity was changed leans on the new people's names.
+      const person = { ethnicity: values.ethnicity, sex: values.sex, gender: values.gender }
+      const name = await forgeNameFor(universe, field.generator, seen.map(String), person)
       setValues((v) => ({ ...v, [field.key]: name }))
       setRejected((prev) => ({ ...prev, [field.key]: seen }))
       setError(null)

@@ -40,15 +40,61 @@ Phoepe · Xiuran · Clemece · Maose · Mildread · Idrys · Serefina · Ottolie
 
 **2,639 distinct names in 5,000 draws.**
 
-## Not culture-gated, on purpose
+## Leaning, not gated
 
 There are people in England named Tanaka and people in India named Paulo. A generator that enforces a
 tidy mapping from culture to name produces a world where every region is a monoculture — which is
 less true to life, not more.
 
 So the seeds span as many traditions as could be gathered, and the universe's own names are blended
-into the pool at triple weight. A world that has established a register keeps it without being locked
-inside it.
+into the pool at triple weight: the given and family names of the people already recorded, and every
+people's [common names](fields-ethnicities.md). A world that has established a register keeps it
+without being locked inside it.
+
+### A person's own people
+
+But common names are common for a reason. An English boy is likelier to be Robert or Matthew than
+Fabricio — and he may still be Fabricio. So when a person's people has recorded its common names, the
+name leans on them — masculine or feminine to match the person, plus unisex.
+
+A list of common names is **not a list of the only names**, and two limits keep it from becoming one.
+
+**Never more than two draws in three.** The rest start from anywhere: the seeds, the people already
+recorded, and every other people's names. Because those lists are in the pool too, the exception
+usually reads as a neighbour's name rather than a foreign one. *Anywhere* still means the right sex: a
+woman is not seeded from any people's men's names, nor from a man already in the canon.
+
+**Never more than 4% of draws per name recorded.** A list is only as deep as the effort that went into
+it. An author who writes down *Robert, Edward* and nothing else has flavoured a people, not declared
+that a third of its men are Robert — and trusted at the full share, those two names would start two
+draws in three. So each name carries 4%, and a list reaches the full share at about sixteen. A name
+recorded twice counts once.
+
+Measured over 40,000 names each:
+
+| Names recorded | Names that start from the list | Each name, exactly as recorded |
+| --- | --- | --- |
+| 2 | 9% | 3.3% |
+| 8 | 35% | 3.3% |
+| 16 | 67% | 3.2% |
+| 40 | 68% | 1.3% |
+
+A little over the nominal 8%, 32% and 64%, because a draw whose mutation is refused is drawn again,
+and draws from the wider pool are refused more often. From *Robert, Edward* alone, a thousand people
+included 34 Roberts and 29 Edwards. Across 5,000 people rolled in Phonon — whose Kellish lists hold
+twelve men's names, twelve women's and four unisex — no given name reached 4% of its sex.
+
+A common name is used exactly as recorded 70% of the time, against 18% for any other seed, because a
+people that records Robert means Robert, not Robbert. The rest get one edit, which stretches a list of
+ten into a register without leaving it.
+
+Which given-name lists apply goes by **gender before sex**, since a name follows how someone is raised
+and known. A word the code does not recognise — unknown, or a category this world has and ours does
+not — gets every list, which is a wider register rather than a wrong one.
+
+This is why the [rolled skeleton](rolled-skeleton.md) rolls ethnicity and sex *before* the name. And
+Regenerate on a name sends the form's current ethnicity, sex and gender, so a name regenerated after
+any of them was changed leans the new way.
 
 ## Saying no
 

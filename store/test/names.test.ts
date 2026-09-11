@@ -1,6 +1,15 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { forgeName, forgeFullName, sayable } from '../src/index.ts'
+import {
+  COMMON_PER_NAME,
+  COMMON_SHARE,
+  commonShareFor,
+  forgeName,
+  forgeFullName,
+  nameSources,
+  sayable,
+  type Item,
+} from '../src/index.ts'
 
 describe('what counts as a name', () => {
   it('accepts the ordinary shapes', () => {
@@ -90,5 +99,147 @@ describe('forging a name', () => {
       avoid.push(name)
     }
     assert.ok(avoid.length === 400, 'it kept finding new ones, which is also fine')
+  })
+})
+
+describe("leaning on a people's common names", () => {
+  // No given-name seed begins with Q, and no mutation touches a first letter,
+  // so a name beginning with Q is a name that started from the list. Twenty,
+  // which is long enough to be leaned on in full.
+  const ENDINGS = ['illon', 'enna', 'orvin', 'essa', 'illa', 'entar', 'innel', 'arra', 'oril', 'endra',
+    'isset', 'olan', 'emmon', 'ithe', 'anna', 'ellis', 'orra', 'ibben', 'ester', 'allen']
+  const deep = ENDINGS.map((e) => `Qu${e}`)
+
+  const draw = (common: string[], runs: number) => {
+    const counts = new Map<string, number>()
+    for (let i = 0; i < runs; i++) {
+      const name = forgeName({ kind: 'given', common })
+      counts.set(name, (counts.get(name) ?? 0) + 1)
+    }
+    const listed = [...counts].filter(([n]) => n.startsWith('Q')).reduce((sum, [, c]) => sum + c, 0)
+    return { counts, listed: listed / runs }
+  }
+
+  it('favours a long list without being limited to it', () => {
+    // A list of common names is not a list of the only names. An English boy is
+    // likelier to be Robert, and may still be Fabricio.
+    const { listed } = draw(deep, 3000)
+    assert.ok(listed > COMMON_SHARE - 0.1 && listed < COMMON_SHARE + 0.15, `from the list: ${listed}`)
+    assert.ok(1 - listed > 0.15, `from anywhere else: ${(1 - listed).toFixed(2)}`)
+  })
+
+  it('does not name a third of a people Robert because only two names were recorded', () => {
+    // Neither is a seed, so every Robert and Edward came from the list.
+    const runs = 5000
+    const { counts } = draw(['Robert', 'Edward'], runs)
+    for (const name of ['Robert', 'Edward']) {
+      const share = (counts.get(name) ?? 0) / runs
+      assert.ok(share < COMMON_PER_NAME, `${name}: ${(share * 100).toFixed(1)}% of people`)
+      assert.ok(share > 0.01, `${name} is still common: ${(share * 100).toFixed(1)}% of people`)
+    }
+  })
+
+  it('leans on a list in proportion to its length', () => {
+    assert.equal(commonShareFor(0), 0)
+    assert.equal(commonShareFor(2), 2 * COMMON_PER_NAME)
+    assert.ok(commonShareFor(8) < COMMON_SHARE)
+    assert.equal(commonShareFor(100), COMMON_SHARE)
+  })
+
+  it('counts a name recorded twice only once', () => {
+    const runs = 4000
+    const { counts } = draw(['Robert', 'robert', 'Robert', 'Robert', 'Robert'], runs)
+    assert.ok((counts.get('Robert') ?? 0) / runs < COMMON_PER_NAME)
+  })
+
+  it('mostly uses a common name as it was recorded', () => {
+    // A people that records Robert means Robert, not Robbert.
+    const { counts } = draw(deep, 2000)
+    const fromList = [...counts].filter(([n]) => n.startsWith('Q'))
+    const all = fromList.reduce((sum, [, c]) => sum + c, 0)
+    const exact = fromList.filter(([n]) => deep.includes(n)).reduce((sum, [, c]) => sum + c, 0)
+    assert.ok(exact / all > 0.55, `used as recorded: ${exact} of ${all}`)
+  })
+
+  it('names someone whose people has no list exactly as before', () => {
+    const die = () => 0.42
+    assert.equal(
+      forgeName({ kind: 'given', common: [], random: die }),
+      forgeName({ kind: 'given', random: die }),
+    )
+  })
+})
+
+describe("where a person's names come from", () => {
+  const entry = (container: string, name: string, extra: Partial<Item> = {}) =>
+    ({ id: name, container, name, tags: [], createdAt: '', updatedAt: '', ...extra }) as Item
+
+  const world = [
+    entry('ethnicities', 'Kellish', {
+      aliases: ['the Kell-folk'],
+      attributes: {
+        masculineNames: ['Corr', 'Tobin'],
+        // Typed into the file by hand rather than through the form.
+        feminineNames: 'Maren, Wenna',
+        unisexNames: ['Ashe'],
+        familyNames: ['Brack', 'Vane'],
+      },
+    }),
+    entry('ethnicities', 'Dunfolk', { attributes: { masculineNames: ['Oswy'], familyNames: ['Holm'] } }),
+    entry('people', 'Hesker Brack', { attributes: { givenName: 'Hesker', familyName: 'Brack', sex: 'male' } }),
+    entry('people', 'Aldrica Vane'),
+  ]
+  const commonFor = (kind: 'given' | 'family', person: Record<string, unknown>) =>
+    nameSources(world, kind, person).common
+
+  it('takes the lists that fit the person', () => {
+    assert.deepEqual(commonFor('given', { ethnicity: 'Kellish', sex: 'male' }), ['Corr', 'Tobin', 'Ashe'])
+    assert.deepEqual(commonFor('given', { ethnicity: 'Kellish', sex: 'female' }), ['Maren', 'Wenna', 'Ashe'])
+    assert.deepEqual(commonFor('family', { ethnicity: 'Kellish', sex: 'female' }), ['Brack', 'Vane'])
+  })
+
+  it('goes by gender before sex', () => {
+    assert.deepEqual(
+      commonFor('given', { ethnicity: 'Kellish', sex: 'male', gender: 'woman' }),
+      ['Maren', 'Wenna', 'Ashe'],
+    )
+  })
+
+  it('offers every list when it cannot tell which applies', () => {
+    // A category this world has and ours does not is a wider register, not a
+    // wrong one.
+    for (const sex of [undefined, '', 'thirdborn']) {
+      assert.deepEqual(
+        commonFor('given', { ethnicity: 'Kellish', sex }).sort(),
+        ['Ashe', 'Corr', 'Maren', 'Tobin', 'Wenna'],
+      )
+    }
+  })
+
+  it('finds the people by any name it goes by, and nothing for one it does not hold', () => {
+    assert.deepEqual(commonFor('family', { ethnicity: 'the kell-folk' }), ['Brack', 'Vane'])
+    assert.deepEqual(commonFor('family', { ethnicity: 'Nobody Recorded' }), [])
+    assert.deepEqual(commonFor('given', {}), [])
+  })
+
+  it('blends in every name the universe has recorded, in parts', () => {
+    // A person's joined name used to go into the pool whole - "Aldrica Vane" as
+    // a given-name seed, space and all.
+    const { canon } = nameSources(world, 'given')
+    for (const name of ['Hesker', 'Aldrica', 'Corr', 'Maren', 'Oswy']) assert.ok(canon.includes(name), name)
+    assert.ok(canon.every((n) => !/\s/.test(n)), `no joined names: ${canon.join(', ')}`)
+    assert.deepEqual(nameSources(world, 'family').canon.sort(), ['Brack', 'Brack', 'Holm', 'Vane', 'Vane'])
+  })
+
+  it("does not seed a woman from men's names, whoever's people they are", () => {
+    // Found in the console: with only her own people's list narrowed, the men's
+    // names came back in through the wider pool, and a Kellish woman was named
+    // Hesker.
+    const { canon, common } = nameSources(world, 'given', { ethnicity: 'Kellish', sex: 'female' })
+    for (const name of ['Corr', 'Tobin', 'Oswy', 'Hesker']) {
+      assert.ok(!canon.includes(name) && !common.includes(name), `${name} is a man's name`)
+    }
+    // Aldrica was recorded with no sex at all, so her name is anyone's.
+    for (const name of ['Maren', 'Ashe', 'Aldrica']) assert.ok(canon.includes(name), name)
   })
 })

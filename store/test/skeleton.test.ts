@@ -129,4 +129,39 @@ describe('rolling the part of a person a die can decide', () => {
       assert.ok(late.notes.some((n) => /still alive/.test(n)))
     }
   })
+
+  it("names a person mostly from their own people's names, and not only from them", () => {
+    // No seed begins with Q or U, and a mutation never changes a first letter,
+    // so the initial says which list a name started from. Twenty of each, long
+    // enough to be leaned on in full.
+    const endings = ['illon', 'enna', 'orvin', 'essa', 'illa', 'entar', 'innel', 'arra', 'oril', 'endra',
+      'isset', 'olan', 'emmon', 'ithe', 'anna', 'ellis', 'orra', 'ibben', 'ester', 'allen']
+    const kellish = item('ethnicities', 'Kellish', {
+      attributes: {
+        masculineNames: endings.map((e) => `Qu${e}`),
+        feminineNames: endings.map((e) => `Ur${e}`),
+      },
+    })
+    const world = { ...context, items: [...items.filter((i) => i.name !== 'Kellish'), kellish] }
+
+    const runs = 800
+    let own = 0
+    let crossed = 0
+    for (let i = 0; i < runs; i++) {
+      const { values } = rollPerson(world)
+      assert.equal(values.ethnicity, 'Kellish')
+      const initial = String(values.givenName)[0]
+      const [mine, other] = values.sex === 'male' ? ['Q', 'U'] : ['U', 'Q']
+      if (initial === mine) own++
+      if (initial === other) crossed++
+    }
+    assert.ok(own > runs * 0.5, `named from their own people's list: ${own} of ${runs}`)
+    assert.ok(own < runs * 0.9, `and sometimes from anywhere else: ${runs - own} of ${runs}`)
+    assert.ok(crossed < runs * 0.05, `named from the other sex's list: ${crossed} of ${runs}`)
+  })
+
+  it('still names someone whose people has recorded no names', () => {
+    const { values } = rollPerson(context)
+    assert.ok(values.givenName && values.familyName)
+  })
 })

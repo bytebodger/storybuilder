@@ -153,11 +153,19 @@ export const skeleton = (universe: string, container: string, year?: number) =>
 
 /**
  * One name, made in code. Instant, and never one that has been refused.
+ *
+ * `person` is who the form currently says this is, so the name leans on their
+ * own people's common names.
  */
-export const forgeNameFor = (universe: string, kind: string, avoid: string[]) =>
+export const forgeNameFor = (
+  universe: string,
+  kind: string,
+  avoid: string[],
+  person?: { ethnicity?: unknown; sex?: unknown; gender?: unknown },
+) =>
   json<{ name: string }>('/name', {
     method: 'POST',
-    body: JSON.stringify({ universe, kind, avoid }),
+    body: JSON.stringify({ universe, kind, avoid, person }),
   }).then((r) => r.name)
 
 export const forge = (

@@ -20,6 +20,8 @@ import {
   flatten,
   byFirstYear,
   forgeName,
+  nameSources,
+  type NameBearer,
   rollAccepts,
   rollFor,
   treeOf,
@@ -799,18 +801,25 @@ const server = createServer(async (req, res) => {
      * longer cycles between two answers.
      */
     if (req.method === 'POST' && url.pathname === '/api/name') {
-      const body = await readJson<{ universe?: string; kind?: string; avoid?: string[] }>(req)
+      const body = await readJson<{
+        universe?: string
+        kind?: string
+        avoid?: string[]
+        person?: NameBearer
+      }>(req)
       const kind = body.kind === 'family-name' ? 'family' : 'given'
 
-      let canon: string[] = []
+      let sources: { canon: string[]; common: string[] } = { canon: [], common: [] }
       let taken: string[] = []
       if (body.universe) {
         const items = await (await openUniverse(body.universe)).list()
         taken = items.map((i) => i.name)
-        canon = items.filter((i) => i.container === 'people').map((i) => i.name)
+        // Who the form says this person is when Regenerate is pressed, so a
+        // Kellish woman's new name leans on the Kellish women's names too.
+        sources = nameSources(items, kind, body.person)
       }
 
-      const name = forgeName({ kind, canon, taken, avoid: body.avoid ?? [] })
+      const name = forgeName({ kind, ...sources, taken, avoid: body.avoid ?? [] })
       if (!name) {
         return send(res, 400, {
           error: 'Could not find a name that has not already been offered and refused.',
