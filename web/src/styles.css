@@ -10,7 +10,7 @@
  * one. It carries links, selection, the primary button and the marks on a
  * timeline, and a loud hue doing all of that at once is exhausting. To swing
  * the whole interface somewhere else, change these two lines and nothing else:
- * teal #5fb8c4 / #26788a, violet #a78bfa / #6d4bc4, sage #8fbf9f / #3f7d52.
+ * teal #5fb8c4 / #26788a, periwinkle #8aa9f0 / #3f60c4, sage #8fbf9f / #3f7d52.
  */
 :root {
   color-scheme: light dark;
@@ -19,7 +19,7 @@
   --ink: #15181e;
   --muted: #596174;
   --line: #e2e6ed;
-  --accent: #3f60c4;
+  --accent: #6d4bc4;
   --error: #b3271d;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -31,7 +31,7 @@
     --ink: #dce1ea;
     --muted: #8891a2;
     --line: #242b37;
-    --accent: #8aa9f0;
+    --accent: #a78bfa;
     --error: #f0918a;
   }
 }
