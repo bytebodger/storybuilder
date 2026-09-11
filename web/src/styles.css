@@ -682,3 +682,18 @@ pre {
 .chron-undated h4 { margin: 0 0 0.25rem; font-size: 0.8rem; }
 .chron-undated ul { list-style: none; margin: 0.5rem 0 0; padding: 0; }
 .chron-undated li { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.25rem 0; }
+
+/* The optional target year beside the fill button. Quiet, because blank is the
+   ordinary answer and the control should not read as something to fill in. */
+.aim {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.aim input {
+  width: 5.5rem;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.8rem;
+}

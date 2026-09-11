@@ -65,6 +65,36 @@ This began as five hardcoded probabilities here and is now
 [`fillRate` on the field spec](fill-rates.md), which every container gets. The roll reads them off the
 spec, so a container's shape is described in one place rather than two.
 
+## Aiming it at a year
+
+Left blank, birth is uniform across the whole canon — a person from anywhere in its history, which is
+what most worldbuilding wants. About nineteen in twenty come back already dead, and that is correct
+for a population of everyone who ever lived.
+
+Give the form a year and it produces **someone alive in that year** instead.
+
+This replaced a living-or-historical switch, which was the wrong question. A year says *which* past,
+and someone who wants a living character can move the years themselves afterward. It also earns its
+keep against the timeline: the events recorded near the target are handed to the generator **nearest
+first**, so a year aimed at a crowded decade is written against that decade rather than whichever
+eight events happened to be listed.
+
+```
+Write someone alive in year 435. They were born in 388 and were about 47 that year.
+Recorded events within their lifetime, nearest 435 first: The Cooper's Strike (430),
+The Souring (431), The Drowning of the Merrow (432), The Reckoning of Weights (433),
+The Long Damp (434), The Purser's Flight (436), The Second Ash Fire (437),
+The Quiet Winter (438), and 3 more.
+```
+
+**Birth may precede year 0.** Year 0 is where the records begin, not where the world did. Clamped
+there, everyone alive in year 5 came out a toddler — the only people who could have been born inside
+the canon by then. A negative birth year is allowed and explains itself: *they are older than the
+chronicle, and their early life is outside what anyone wrote down.*
+
+Only containers whose roll uses a year are offered one. `GET /api/fields` reports it as `accepts`, so
+the form knows before anything is pressed.
+
 ## It also makes the form feel faster
 
 The roll costs milliseconds against a minute for a generation, so five fields land **one second** after

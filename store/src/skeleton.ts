@@ -51,6 +51,18 @@ export interface RollContext {
   timelines: Timeline[]
 }
 
+export interface RollOptions {
+  /**
+   * Generate someone who was alive in this year.
+   *
+   * Left out, birth is uniform across the whole canon - a person from anywhere
+   * in its history, which is what most worldbuilding wants. Given, it narrows
+   * to a moment, and the events recorded near that moment are what the article
+   * gets written against.
+   */
+  year?: number
+}
+
 const pick = <T,>(list: T[], random: Random): T => list[Math.floor(random() * list.length)]
 
 /** Pick from weighted options. Weights are shares and need not sum to one. */
@@ -66,6 +78,8 @@ function weighted<T>(options: { p: number; value: T }[], random: Random): T {
 
 /** True with the given probability. */
 const chance = (p: number, random: Random) => random() < p
+
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)))
 
 /** The distinct non-empty values an attribute takes across a set of items. */
 function established(items: Item[], container: string, attribute: string): string[] {
@@ -120,7 +134,11 @@ const STANDING = [
  * honest; inventing an ethnicity for a world that has recorded none is the
  * behaviour this exists to prevent.
  */
-export function rollPerson(context: RollContext, random: Random = Math.random): Skeleton {
+export function rollPerson(
+  context: RollContext,
+  random: Random = Math.random,
+  options: RollOptions = {},
+): Skeleton {
   const { universe, items, timelines } = context
   const values: Record<string, unknown> = {}
   const omit: string[] = []
@@ -176,13 +194,58 @@ export function rollPerson(context: RollContext, random: Random = Math.random): 
   if (genders.length) values.gender = pick(genders, random)
 
   // --- when they lived ----------------------------------------------------
+  /*
+   * A year may be targeted, and if one is, this person was alive in it.
+   *
+   * The alternative was a living-or-historical switch, which is the wrong
+   * question: most worldbuilding is about the past, and someone who wants a
+   * living character can move the years themselves. A year is the better
+   * handle - it says *which* past - and it earns its keep against the timeline.
+   * Point it at a decade with a hundred events recorded in it and everything
+   * written about this person has those events inside their lifetime.
+   *
+   * Untargeted, birth is uniform across the whole canon, which means about
+   * nineteen in twenty come out already dead. That is correct for a population
+   * of everyone who ever lived.
+   */
   const span = universe.totalYears ?? 1000
-  const born = Math.floor(random() * span)
+  const lifespan = 45 + Math.floor(random() * 45)
+
+  const target = options.year === undefined ? undefined : clamp(options.year, 0, span - 1)
+  let born: number
+  if (target === undefined) {
+    born = Math.floor(random() * span)
+  } else {
+    /*
+     * Alive in the target year means born in the lifespan before it. Uniform
+     * across that window, which is also the age distribution of a living
+     * population when births are steady.
+     *
+     * The window is allowed to open before year 0. Year 0 is where the records
+     * begin, not where the world did, and clamping there made everyone alive in
+     * year 5 a toddler - the only people who could have been born inside the
+     * canon by then. Someone older than the chronicle they live in is an
+     * ordinary thing to be.
+     */
+    const earliest = target - lifespan
+    born = earliest + Math.floor(random() * (target - earliest + 1))
+  }
   values.birthYear = String(born)
 
-  // Most people die of nothing worth recording, at an unremarkable age.
-  const lifespan = 45 + Math.floor(random() * 45)
   const died = born + lifespan
+  if (target !== undefined) {
+    notes.push(
+      `Write someone alive in year ${target}. They were born in ${born} and were about ` +
+        `${target - born} that year, which is the age to write them at unless the article says ` +
+        `otherwise.` +
+        (born < 0
+          ? ` A negative year means before the canon's records begin: they are older than the ` +
+            `chronicle, and their early life is outside what anyone wrote down.`
+          : ''),
+    )
+  }
+
+  // Most people die of nothing worth recording, at an unremarkable age.
   if (died < span) {
     values.deathYear = String(died)
     notes.push(
@@ -203,14 +266,26 @@ export function rollPerson(context: RollContext, random: Random = Math.random): 
   // vibes: something they could actually have lived through.
   const lived = items
     .filter((i) => i.timeline)
-    .map((i) => ({ name: i.name, year: yearOf(i.beginDate), timeline: i.timeline! }))
-    .filter((e) => e.year !== null && e.year >= born && e.year <= (died < span ? died : span))
+    .map((i) => ({ name: i.name, year: yearOf(i.beginDate) }))
+    .filter((e): e is { name: string; year: number } => e.year !== null)
+    .filter((e) => e.year >= born && e.year <= Math.min(died, span))
+
   if (lived.length) {
-    const shown = lived.slice(0, 8).map((e) => `${e.name} (${e.year})`)
+    // Nearest the targeted year first, because that is what the year was for:
+    // a person aimed at a crowded decade should be written against the events
+    // of that decade rather than whichever eight happened to be listed first.
+    const anchor = target ?? born
+    const shown = [...lived]
+      .sort((a, b) => Math.abs(a.year - anchor) - Math.abs(b.year - anchor))
+      .slice(0, 8)
+      .sort((a, b) => a.year - b.year)
+      .map((e) => `${e.name} (${e.year})`)
+
     notes.push(
-      `Recorded events within their lifetime: ${shown.join(', ')}. They need not have taken part ` +
-        `in any of them - most people do not - but these are what the world was doing while they ` +
-        `were in it.`,
+      `Recorded events within their lifetime${target === undefined ? '' : `, nearest ${target} first`}: ` +
+        `${shown.join(', ')}${lived.length > shown.length ? `, and ${lived.length - shown.length} more` : ''}. ` +
+        `They need not have taken part in any of them - most people do not - but these are what ` +
+        `the world was doing while they were in it.`,
     )
   }
   const named = timelines.filter((t) => t.id !== ROOT_TIMELINE_ID)
@@ -270,8 +345,19 @@ export function rollFor(
   container: string,
   context: RollContext,
   random: Random = Math.random,
+  options: RollOptions = {},
 ): Skeleton | null {
-  if (container === 'people') return rollPerson(context, random)
+  if (container === 'people') return rollPerson(context, random, options)
   if (!fieldsFor(container)) return null
   return { values: {}, omit: rollOmissions(container, context.universe.fillRates, random), notes: [] }
+}
+
+/**
+ * What generating this container can be aimed at.
+ *
+ * Read by the console so it knows whether to offer a year. A container whose
+ * roll ignores the option should not be asked for one.
+ */
+export function rollAccepts(container: string): ('year')[] {
+  return container === 'people' ? ['year'] : []
 }

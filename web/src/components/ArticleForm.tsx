@@ -63,10 +63,14 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   /** Per field, every value the author has regenerated away from this session. */
   const [rejected, setRejected] = useState<Record<string, unknown[]>>({})
+  /** Whether this container's roll can be aimed at a year, and what it is aimed at. */
+  const [takesYear, setTakesYear] = useState(false)
+  const [year, setYear] = useState('')
 
   useEffect(() => {
-    containerFields(container).then((spec) => {
+    containerFields(container).then(({ fields: spec, accepts }) => {
       setFields(spec)
+      setTakesYear((accepts ?? []).includes('year'))
       // Defaults belong to a new article only. On an edit the stored values
       // arrive next and a default would overwrite a field cleared on purpose.
       if (spec && !itemId) setValues(defaultsFrom(spec))
@@ -165,7 +169,12 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   async function fillWholeForm() {
     let roll: Skeleton | null = null
     try {
-      roll = await skeleton(universe, container)
+      const aimed = year.trim() === '' ? undefined : Number(year)
+      roll = await skeleton(
+        universe,
+        container,
+        aimed !== undefined && Number.isFinite(aimed) ? aimed : undefined,
+      )
     } catch {
       // A world with nothing to roll from is not a failure. Generate as before.
     }
@@ -397,6 +406,25 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       <div className="form-head">
         <h2>{itemId ? `Edit ${String(values.name ?? '')}` : `New ${label}`}</h2>
         <div className="field-actions">
+          {takesYear && !itemId && (
+            /*
+             * Optional, and blank is the useful default: most worldbuilding
+             * wants somebody from anywhere in the world's history. A year
+             * narrows it to somebody alive then - which matters most where the
+             * timeline is crowded, since the events near that year are what the
+             * article gets written against.
+             */
+            <label className="aim">
+              Alive in year
+              <input
+                type="number"
+                value={year}
+                placeholder="any"
+                disabled={!!busy}
+                onChange={(e) => setYear(e.target.value)}
+              />
+            </label>
+          )}
           <button
             type="button"
             className="icon"

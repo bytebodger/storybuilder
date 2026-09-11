@@ -30,7 +30,9 @@ export {
   rollPerson,
   rollFor,
   rollOmissions,
+  rollAccepts,
   fillRateOf,
+  type RollOptions,
   type Skeleton,
   type RollContext,
 } from './skeleton.ts'

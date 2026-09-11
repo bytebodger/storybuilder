@@ -19,6 +19,7 @@ import {
   fieldsFor,
   flatten,
   forgeName,
+  rollAccepts,
   rollFor,
   treeOf,
   subtree,
@@ -248,7 +249,14 @@ const server = createServer(async (req, res) => {
     // not an error - it just has no article form yet.
     if (req.method === 'GET' && url.pathname === '/api/fields') {
       const container = url.searchParams.get('container') ?? ''
-      return send(res, 200, { container, fields: fieldsFor(container) })
+      // What generating this container can be aimed at rides along, because the
+      // form asks for the spec on mount and needs to know whether to offer a
+      // year before anyone presses anything.
+      return send(res, 200, {
+        container,
+        fields: fieldsFor(container),
+        accepts: rollAccepts(container),
+      })
     }
 
     /**
@@ -740,11 +748,23 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/skeleton') {
       const container = url.searchParams.get('container') ?? ''
       const store = await openUniverse(url.searchParams.get('universe') ?? '')
-      const skeleton = rollFor(container, {
-        universe: await store.manifest(),
-        items: await store.list(),
-        timelines: await store.timelines(),
-      })
+      // A year narrows the roll to someone alive in it. Absent, the whole canon
+      // is in play, which is what most worldbuilding wants.
+      const asked = url.searchParams.get('year')
+      const year = asked !== null && asked.trim() !== '' && Number.isFinite(Number(asked))
+        ? Number(asked)
+        : undefined
+
+      const skeleton = rollFor(
+        container,
+        {
+          universe: await store.manifest(),
+          items: await store.list(),
+          timelines: await store.timelines(),
+        },
+        undefined,
+        { year },
+      )
       return send(res, 200, { skeleton })
     }
 

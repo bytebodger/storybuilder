@@ -53,11 +53,17 @@ export const listUniverses = () =>
 export const universeFields = () =>
   json<{ fields: UniverseField[] }>('/universe/fields').then((r) => r.fields)
 
-/** A container's field spec, or null when it has no article form yet. */
+/**
+ * A container's field spec, and what generating it can be aimed at.
+ *
+ * `fields` is null when the container has no article form yet. `accepts` says
+ * whether the roll takes a target year, so the form knows to offer one before
+ * anybody presses anything.
+ */
 export const containerFields = (container: string) =>
-  json<{ fields: UniverseField[] | null }>(
+  json<{ fields: UniverseField[] | null; accepts?: string[] }>(
     `/fields?container=${encodeURIComponent(container)}`,
-  ).then((r) => r.fields)
+  )
 
 /**
  * What a blank form starts with. Only for a new article - applying defaults to
@@ -139,9 +145,10 @@ export const saveUniverse = (draft: UniverseDraft, id?: string) =>
  * Milliseconds, against a minute for a generation - so it lands on the form
  * before the writing starts rather than after it.
  */
-export const skeleton = (universe: string, container: string) =>
+export const skeleton = (universe: string, container: string, year?: number) =>
   json<{ skeleton: Skeleton | null }>(
-    `/skeleton?universe=${encodeURIComponent(universe)}&container=${encodeURIComponent(container)}`,
+    `/skeleton?universe=${encodeURIComponent(universe)}&container=${encodeURIComponent(container)}` +
+      (year === undefined ? '' : `&year=${year}`),
   ).then((r) => r.skeleton)
 
 /**
