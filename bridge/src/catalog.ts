@@ -48,6 +48,20 @@ function toSkill(front: Record<string, unknown>, dirName: string): Skill | null 
   const name = typeof front.name === 'string' ? front.name : dirName
   const description = typeof front.description === 'string' ? front.description : ''
   if (!description) return null
+  /*
+   * `hidden` keeps a skill out of the console's skill list, for two reasons
+   * that come to the same thing.
+   *
+   * The forge skills are machinery: a form drives them and supplies their
+   * inputs, so there is nothing for a person to fill in. `canon-add` is the
+   * other case - the console has a better route to the same end. An article
+   * form carries the field spec, the roll and the save-time rounds; a free-text
+   * box beside it is a second way into canon with none of them.
+   *
+   * It hides the skill from `/api/run` as well, which validates against this
+   * same list. That is deliberate: not offered and not reachable are the same
+   * claim. Neither affects Claude Code, which reads the directory itself.
+   */
   if (front.hidden === true) return null
 
   const args = Array.isArray(front.args) ? (front.args as SkillArg[]).filter((a) => a?.name && a?.label) : []

@@ -142,7 +142,7 @@ Planned skills, grouped by what they touch. Each is a directory under `.claude/s
 - `universe-forge` — Suggest values for blank fields on the universe form, coherent with what the author has already written. **Built.** See [docs/universe-form.md](docs/universe-form.md).
 - `article-forge` — The same for an article inside a universe, grounded in canon that already exists rather than in the form alone. **Built.**
 - `stub-forge` — After an article is saved, propose placeholders for the terms it leans on but never explains. **Built.** See [docs/stubs.md](docs/stubs.md).
-- `canon-add` — Record a new entity, place it in the right container, and wire its relations. Refuses to widen a closed set. **Built.**
+- `canon-add` — Record a new entity, place it in the right container, and wire its relations. Refuses to widen a closed set. **Built**, and deliberately not listed in the console: writing canon there goes through an article form, which carries the field spec, the rolled skeleton and the save-time stub and canon-check rounds. This is the conversational route.
 - `name-forge` — Generate names that fit the world's conventions and don't collide with one already in use.
 
 **Interrogating the world**

@@ -2,6 +2,11 @@
 name: canon-add
 description: Record a new entity in a universe's canon - a country, city, character, religion, faction, legend - placing it in the right container and wiring its relations. Use when the user wants to add something to the world, establish a new place or person, or write down a fact they just invented.
 writes: true
+# Not listed in the skill console. Everything that writes canon there goes
+# through an article form, which carries the field spec, the rolled skeleton,
+# the fill rates, and the stub and canon-check rounds on save. A free-text box
+# beside those is a second way in that has none of them.
+hidden: true
 args: [{"name":"entity","label":"What to record","placeholder":"A fishing town on Kell's north coast called Vess","multiline":true,"required":true},{"name":"facts","label":"Established facts (optional)","multiline":true}]
 ---
 
