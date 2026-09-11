@@ -45,7 +45,7 @@ describe('how often a field is filled at all', () => {
 
   it('never omits a required field', () => {
     // A required field is filled by definition, whatever a spec claims.
-    for (const container of ['people', 'history', 'locations', 'fauna']) {
+    for (const container of ['people', 'history', 'locations', 'fauna', 'afflictions']) {
       const required = (fieldsFor(container) ?? []).filter((f) => f.required).map((f) => f.key)
       for (let i = 0; i < 200; i++) {
         const omitted = rollOmissions(container)
@@ -60,7 +60,7 @@ describe('how often a field is filled at all', () => {
       items: [],
       timelines: [],
     }
-    for (const container of ['locations', 'fauna', 'history']) {
+    for (const container of ['locations', 'fauna', 'history', 'afflictions']) {
       const roll = rollFor(container, context)
       assert.ok(roll, `${container} has a roll`)
       assert.deepEqual(roll.values, {}, 'no skeleton, only omissions')

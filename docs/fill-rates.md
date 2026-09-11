@@ -75,8 +75,9 @@ which is the whole point:
 
 `locations` (Founders 45%, Existed Until 20%, Native Wildlife 50%, Natural Resources 60%), `fauna`
 (Beauty Ideals and Gender Ideals 15%, Domestication and Symbiosis 30%, Historical Impact 35%, Myths
-45%, Uses and Cultural Associations 50%) and `history` (Related Ethnicities 40%, Related Institutions
-50%, Long-Term Consequences 60%).
+45%, Uses and Cultural Associations 50%), `history` (Related Ethnicities 40%, Related Institutions
+50%, Long-Term Consequences 60%) and `afflictions` (Hosts and Carriers 35%, Prevention and Cultural
+Impact 50%, Transmission 55%, History 60%).
 
 **Existed Until at 20%** is the one worth pausing on. It maps to the store's `endDate`, and a blank
 there is a claim that a place still stands — so a generator filling it every time was quietly drowning
