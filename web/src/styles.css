@@ -25,7 +25,14 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); }
 
-.app { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+/*
+ * The shell stretches; the nav does not.
+ *
+ * 1100px was a column down the middle of a modern monitor with a third of the
+ * screen empty on either side. The nav is a fixed 20rem either way (see `main`),
+ * so every pixel of the extra width lands where the work is.
+ */
+.app { max-width: 1800px; margin: 0 auto; padding: 1.5rem 2rem; }
 
 header {
   display: flex;
@@ -151,6 +158,9 @@ pre {
 .meta { color: var(--muted); font-size: 0.82rem; margin: 0 0 0.5rem; line-height: 1.45; }
 
 .fields { display: flex; flex-direction: column; gap: 1.1rem; margin: 1.25rem 0; }
+/* Same measure on the form. A textarea the width of a monitor is no easier to
+   write in than a paragraph that wide is to read. */
+.field { max-width: 86ch; }
 
 /* A section heading in a long form. Set in the muted voice of a signpost
    rather than a title: it divides fifty fields into runs a writer can skip
@@ -337,7 +347,15 @@ pre {
   font-size: 0.86rem;
 }
 
-.article-field { margin: 1.1rem 0; }
+/*
+ * Prose gets a reading measure; everything else gets the width.
+ *
+ * A wide shell is only an improvement where the content can use the room. The
+ * facts grid, the lanes and the lists all can, and do. A paragraph cannot: at
+ * the full width of the panel a line of an article ran to about 170 characters,
+ * which is roughly twice what an eye tracks back from without losing the line.
+ */
+.article-field { margin: 1.1rem 0; max-width: 78ch; }
 .article-field h3 {
   margin: 0 0 0.3rem;
   font-size: 0.74rem;
@@ -676,7 +694,13 @@ pre {
 .chron-where, .chron-when { color: var(--muted); font-size: 0.78rem; }
 .chron-where { grid-column: 3; }
 .chron-when { grid-column: 2 / 4; }
-.chron-summary { grid-column: 2 / 4; margin: 0.2rem 0 0; font-size: 0.85rem; line-height: 1.45; }
+.chron-summary {
+  grid-column: 2 / 4;
+  margin: 0.2rem 0 0;
+  max-width: 78ch;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
 
 .chron-undated { margin-top: 1.5rem; }
 .chron-undated h4 { margin: 0 0 0.25rem; font-size: 0.8rem; }
