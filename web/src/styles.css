@@ -362,14 +362,11 @@ pre {
 }
 
 /*
- * Prose gets a reading measure; everything else gets the width.
- *
- * A wide shell is only an improvement where the content can use the room. The
- * facts grid, the lanes and the lists all can, and do. A paragraph cannot: at
- * the full width of the panel a line of an article ran to about 170 characters,
- * which is roughly twice what an eye tracks back from without losing the line.
+ * No cap here: the article column is bounded by the aside beside it and by the
+ * shell's own width, and it fills what is left. The measure still applies where
+ * nothing else bounds the text - see `.chron-summary` and `.field`.
  */
-.article-field { margin: 1.1rem 0; max-width: 78ch; }
+.article-field { margin: 1.1rem 0; }
 .article-field h3 {
   margin: 0 0 0.3rem;
   font-size: 0.74rem;
@@ -456,17 +453,15 @@ pre {
 .article-body {
   display: grid;
   /*
-   * The left column is the reading measure itself, not `1fr`, so the prose is
-   * never stretched past what an eye tracks back from.
+   * Prose takes everything the aside does not.
    *
-   * The slack between them goes in the middle rather than off the right-hand
-   * end: prose against the left edge of the panel, apparatus against the right,
-   * the way a page with a margin note is set. Packing the two together instead
-   * leaves a band of empty panel to the right of the aside, which reads as the
-   * layout having run out rather than as a margin.
+   * There is no reading measure on this column any more, and that is a
+   * deliberate trade rather than an oversight: against the widest panel the
+   * shell allows, a line runs to about 135 characters. Longer than a
+   * typographer would set, and the aside on the right is what keeps it from
+   * being the 170 it was before there were two columns at all.
    */
-  grid-template-columns: minmax(0, 78ch) minmax(16rem, 23rem);
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 23rem);
   gap: 2.25rem;
   align-items: start;
 }
