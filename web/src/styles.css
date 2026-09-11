@@ -24,6 +24,41 @@
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+/*
+ * A colour per timeline, cycled.
+ *
+ * Ten hues held at a similar weight, so no one of them reads as more important
+ * than the others - they are labels, not emphasis. They repeat past the tenth
+ * timeline, which is fine: nobody is distinguishing fifty by colour, they are
+ * distinguishing the three or four they are looking at.
+ *
+ * The two sets are not the same hues at different lightness. Each is tuned to
+ * its own ground: five of the light values had to come down to clear 4.5 on
+ * white, since these carry link text and not just a bar. Everything now sits at
+ * 5.0 or better on light and 7.0 or better on dark.
+ *
+ * Ordered to jump the wheel rather than walk it. Listed by hue, the first run
+ * put cyan, teal and green on three consecutive lanes, which is the one thing
+ * this is not allowed to do - neighbouring rows are exactly the ones an eye
+ * compares. Each step is now at least eighty degrees from the last, the whole
+ * way round and back to the start.
+ *
+ * Separate from the accent on purpose. The accent means "this is interactive",
+ * and a timeline colour means "this is that one".
+ */
+:root {
+  --tl-0: #6d4bc4; /* violet  */
+  --tl-1: #17785d; /* teal    */
+  --tl-2: #a0561f; /* orange  */
+  --tl-3: #8a3fc0; /* magenta */
+  --tl-4: #1c7489; /* cyan    */
+  --tl-5: #84660d; /* amber   */
+  --tl-6: #b03f83; /* pink    */
+  --tl-7: #3f60c4; /* blue    */
+  --tl-8: #3e7726; /* green   */
+  --tl-9: #b33a34; /* red     */
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0e1014;
@@ -33,6 +68,17 @@
     --line: #242b37;
     --accent: #a78bfa;
     --error: #f0918a;
+
+    --tl-0: #a78bfa; /* violet  */
+    --tl-1: #4fc4a8; /* teal    */
+    --tl-2: #ef9b62; /* orange  */
+    --tl-3: #c78bf0; /* magenta */
+    --tl-4: #5ec2d9; /* cyan    */
+    --tl-5: #ddc161; /* amber   */
+    --tl-6: #ee8ec6; /* pink    */
+    --tl-7: #7aa2f7; /* blue    */
+    --tl-8: #8ccf6f; /* green   */
+    --tl-9: #f08a85; /* red     */
   }
 }
 
@@ -646,15 +692,15 @@ pre {
    whole row swallows the bar drawn on top of it - which is the one thing the
    row exists to show. */
 .lane { cursor: pointer; border-radius: 4px; }
-.lane:hover .lane-name { color: var(--accent); }
-.lane.selected .lane-name { font-weight: 700; color: var(--accent); }
+.lane .lane-name { color: var(--tl, var(--ink)); }
+.lane.selected .lane-name { font-weight: 700; }
 .lane.selected .lane-name::before {
   content: '';
   position: absolute;
   left: -0.5rem;
   width: 2px;
   height: 0.9rem;
-  background: var(--accent);
+  background: var(--tl, var(--accent));
 }
 
 .lane-name {
@@ -689,18 +735,19 @@ pre {
   white-space: nowrap;
 }
 
-/* The span of everything filed on this timeline or under it. */
+/* The span of everything filed on this timeline or under it, in that
+   timeline's own colour. `--tl` is set per lane; the accent is the fallback. */
 .lane-bar {
   position: absolute;
   top: 0.44rem;
   height: 0.26rem;
   border-radius: 2px;
-  background: var(--accent);
-  opacity: 0.3;
+  background: var(--tl, var(--accent));
+  opacity: 0.45;
 }
 
-.lane.selected .lane-bar { opacity: 0.7; }
-.lane:hover .lane-bar { opacity: 0.5; }
+.lane.selected .lane-bar { opacity: 1; }
+.lane:hover .lane-bar { opacity: 0.75; }
 
 .lane-legend {
   display: flex;
@@ -714,7 +761,7 @@ pre {
 .lane-legend span { display: flex; align-items: center; gap: 0.35rem; }
 .lane-legend i {
   display: inline-block;
-  background: var(--accent);
+  background: var(--muted);
   font-style: normal;
 }
 .lane-legend .key-bar { width: 1.1rem; height: 0.26rem; border-radius: 2px; opacity: 0.5; }
@@ -727,9 +774,9 @@ pre {
   width: 0.8rem;
   height: 0.8rem;
   border-radius: 50%;
-  background: var(--accent);
-  /* The ground, not white: the accent is light in the dark theme, and white on
-     it is unreadable. This way the count works against any accent. */
+  background: var(--tl, var(--accent));
+  /* The ground, not white: these colours are light in the dark theme, and white
+     on them is unreadable. This way the count works against any of them. */
   color: var(--bg);
   font-size: 0.58rem;
   line-height: 0.8rem;
@@ -774,7 +821,9 @@ pre {
   padding: 0;
   font: inherit;
   font-weight: 600;
-  color: var(--accent);
+  /* Matched to the timeline the event is filed under, so the list and the
+     lanes above it are the same picture read two ways. */
+  color: var(--tl, var(--accent));
   cursor: pointer;
   text-align: left;
 }

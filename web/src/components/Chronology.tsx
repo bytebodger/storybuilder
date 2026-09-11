@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { addTimeline, chronology, dropTimeline, editTimeline } from '../api'
 import type { ChronologyEvent, NavItem, TimelineLane } from '../types'
 
@@ -8,6 +8,9 @@ interface Props {
 }
 
 const ROOT = 'universal'
+
+/** How many distinct colours before they start again. Matches `--tl-0..9`. */
+const TIMELINE_COLOURS = 10
 
 /**
  * A universe's history, drawn.
@@ -73,6 +76,26 @@ export function Chronology({ universe, onOpen }: Props) {
     () => new Map(lanes.map((l) => [l.id, l.name] as const)),
     [lanes],
   )
+
+  /*
+   * A colour per timeline, cycled, assigned in the order they are drawn.
+   *
+   * Every lane the same colour makes a wall rather than a set of timelines, and
+   * the list of events below it a wall of one colour too. Assigned by position
+   * rather than by a hash of the id, so the colours walk down the tree in order
+   * instead of arriving scattered - and so two adjacent timelines can never
+   * collide onto the same hue by bad luck, which reads as a bug. They repeat
+   * past the tenth, which is the trade for that.
+   */
+  const colourOf = useMemo(() => {
+    const out = new Map<string, string>()
+    lanes.forEach((lane, i) => out.set(lane.id, `var(--tl-${i % TIMELINE_COLOURS})`))
+    return out
+  }, [lanes])
+
+  /** The colour as an inline custom property, which the stylesheet reads. */
+  const tint = (timeline: string | undefined): CSSProperties =>
+    ({ '--tl': colourOf.get(timeline ?? '') }) as CSSProperties
 
   /*
    * The axis. Every lane is drawn against the same range, or the nesting would
@@ -213,6 +236,7 @@ export function Chronology({ universe, onOpen }: Props) {
                 type="button"
                 key={lane.id}
                 className={lane.id === selected ? 'lane selected' : 'lane'}
+                style={tint(lane.id)}
                 onClick={() => setSelected(lane.id)}
               >
                 <span className="lane-name" style={{ paddingLeft: `${lane.depth * 0.85}rem` }}>
@@ -357,7 +381,12 @@ export function Chronology({ universe, onOpen }: Props) {
           {dated.map((event) => (
             <li key={event.id}>
               <span className="chron-year">{event.year}</span>
-              <button type="button" className="chron-name" onClick={() => onOpen({ id: event.id, name: event.name })}>
+              <button
+                type="button"
+                className="chron-name"
+                style={tint(event.timeline)}
+                onClick={() => onOpen({ id: event.id, name: event.name })}
+              >
                 {event.name}
                 {event.stub && <span className="badge">stub</span>}
               </button>
@@ -384,7 +413,12 @@ export function Chronology({ universe, onOpen }: Props) {
           <ul>
             {undated.map((event) => (
               <li key={event.id}>
-                <button type="button" className="chron-name" onClick={() => onOpen({ id: event.id, name: event.name })}>
+                <button
+                  type="button"
+                  className="chron-name"
+                  style={tint(event.timeline)}
+                  onClick={() => onOpen({ id: event.id, name: event.name })}
+                >
                   {event.name}
                 </button>
                 <span className="chron-when">
