@@ -224,7 +224,10 @@ export interface GroupedPlan {
 }
 
 export interface Skill {
+  /** The identifier the run is made against, not necessarily what is shown. */
   name: string
+  /** What a person should see instead of the name, where a skill sets one. */
+  title?: string
   description: string
   args: SkillArg[]
   /** Whether invoking it can modify canon. */

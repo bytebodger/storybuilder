@@ -1,8 +1,9 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
-import { dirname, resolve } from 'node:path'
-import { readFile } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { parseFrontmatter, readCatalog } from '../src/catalog.ts'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -69,6 +70,41 @@ describe('catalog', () => {
     assert.equal(query.writes, false)
     assert.equal(query.args[0].name, 'subject')
     assert.equal(query.args[0].required, true)
+  })
+
+  it('shows a title where a skill sets one, and keeps the name as the identifier', async () => {
+    // "canon-check" is a slug on a card a reader is being asked to choose from.
+    // The name still has to be the name: it is what invokes the skill and what
+    // /api/run validates against, so a title cannot replace it.
+    const skills = await readCatalog(REPO)
+    assert.deepEqual(
+      Object.fromEntries(skills.map((s) => [s.name, s.title])),
+      {
+        'canon-check': 'Is it canonical?',
+        'canon-query': 'What do we know about...?',
+      },
+    )
+  })
+
+  it('falls back to the name for a skill that sets no title', async () => {
+    // Both skills in this repo are titled now, so the fallback is tested
+    // against a directory built for the purpose rather than against whichever
+    // real skill happens not to have been given one yet.
+    const dir = await mkdtemp(join(tmpdir(), 'sb-skills-'))
+    try {
+      await mkdir(join(dir, '.claude', 'skills', 'plain-skill'), { recursive: true })
+      await writeFile(
+        join(dir, '.claude', 'skills', 'plain-skill', 'SKILL.md'),
+        ['---', 'name: plain-skill', 'description: Does a thing.', '---'].join('\n'),
+        'utf8',
+      )
+
+      const [skill] = await readCatalog(dir)
+      assert.equal(skill.name, 'plain-skill')
+      assert.equal(skill.title, undefined)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 
   it('is empty for a directory with no skills, rather than throwing', async () => {

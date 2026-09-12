@@ -7,7 +7,10 @@ export interface SkillArg {
 }
 
 export interface Skill {
+  /** The identifier: how it is invoked, and what `/api/run` validates against. */
   name: string
+  /** What a person should see instead of the name. Optional. */
+  title?: string
   description: string
   args: SkillArg[]
   /** Whether invoking it can modify canon. */

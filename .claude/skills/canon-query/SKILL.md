@@ -1,5 +1,6 @@
 ---
 name: canon-query
+title: What do we know about...?
 description: Answer what is established about a person, place, faction, or anything else in a universe's canon, with sources, and say plainly what is not established. Use when the user asks what is known about something, what the canon says, or wants a briefing on an entity before writing.
 writes: false
 args: [{"name":"subject","label":"Subject","placeholder":"Kell","required":true}]

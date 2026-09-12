@@ -1,5 +1,6 @@
 ---
 name: canon-check
+title: Is it canonical?
 description: Check a draft, scene, outline, or passage against a universe's canon and report contradictions, references to things that do not exist, violations of closed sets, and dates outside the canon's span. Use when the user asks to fact-check, verify, or continuity-check content against the world.
 writes: false
 args: [{"name":"content","label":"Content or file path","multiline":true,"required":true}]

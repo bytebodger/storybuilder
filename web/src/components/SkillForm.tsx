@@ -20,7 +20,8 @@ export function SkillForm({ skill, busy, onSubmit }: Props) {
         onSubmit(values)
       }}
     >
-      <h2>{skill.name}</h2>
+      {/* Whatever the card said, so the panel it opens agrees with it. */}
+      <h2>{skill.title ?? skill.name}</h2>
       <p className="skill-desc">{skill.description}</p>
 
       {skill.args.map((arg) => (

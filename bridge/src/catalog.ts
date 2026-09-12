@@ -49,6 +49,16 @@ function toSkill(front: Record<string, unknown>, dirName: string): Skill | null 
   const description = typeof front.description === 'string' ? front.description : ''
   if (!description) return null
   /*
+   * `title` is what a person should see, where `name` is what the skill is.
+   *
+   * The name is an identifier - it is how Claude Code invokes the skill and
+   * what `/api/run` validates against - so it cannot be prose. But "canon-check"
+   * is a slug on a card that a reader is being asked to choose from, and "Is it
+   * canonical?" is the same thing said to a person. Optional: a skill that sets
+   * no title shows its name, which is what every one of them did before.
+   */
+  const title = typeof front.title === 'string' && front.title ? front.title : undefined
+  /*
    * `hidden` keeps a skill out of the console's skill list, for two reasons
    * that come to the same thing.
    *
@@ -65,7 +75,7 @@ function toSkill(front: Record<string, unknown>, dirName: string): Skill | null 
   if (front.hidden === true) return null
 
   const args = Array.isArray(front.args) ? (front.args as SkillArg[]).filter((a) => a?.name && a?.label) : []
-  return { name, description, args, writes: front.writes === true }
+  return { name, title, description, args, writes: front.writes === true }
 }
 
 /** Every visible skill in `.claude/skills`, sorted by name. */

@@ -212,7 +212,9 @@ export function App() {
                     }}
                   >
                     <span className="skill-name">
-                      {s.name}
+                      {/* The title where a skill sets one: a card somebody is
+                          choosing from should read as a question, not a slug. */}
+                      {s.title ?? s.name}
                       {s.writes && (
                         <span className="badge" title="Can modify canon">
                           writes
