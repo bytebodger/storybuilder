@@ -57,6 +57,26 @@ So:
    `find "<name>"` and `brief <id>` are still there. One lookup that decides the answer is worth its
    cost. Three that confirm what the inventory already told you are not.
 
+## When the author has described it
+
+A request may carry a **starter**: the author's own account of what this article is, in their own
+words. It is the article you are writing, not a hint to take inspiration from.
+
+1. **Take its facts exactly.** Names, ages, dates, places, relationships. A starter that says he is
+   twenty-seven and born in 661 has settled both; returning a different name or a rounder year is the
+   one failure this feature has.
+
+2. **Fill the rest as that person.** The fields it says nothing about are still yours to write — but
+   write them for *this* character, not for the most canonical person the world could produce. A
+   shunned apprentice whose family left him has a financial history and a reputation that follow from
+   that.
+
+3. **The canon still outranks it.** A starter asking for something the world's laws forbid is a
+   contradiction, and writing it in would make the tool worse than nothing. Write what fits the world,
+   and say what you changed in your reply.
+
+4. **It is not itself a field.** Do not return it, echo it, or put it in a description verbatim.
+
 ## When asked again
 
 A regenerate arrives with the answers the author has already rejected. Return something genuinely

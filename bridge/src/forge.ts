@@ -45,6 +45,21 @@ export interface ForgeRequest {
   canon?: string
   /** Notes from the roll: what a die already settled about this article. */
   rolled?: string[]
+  /**
+   * The author's own description of what this article should be.
+   *
+   * The other way to generate. Left empty, the roll decides who this is and the
+   * model writes the most canonical person it can around that - which is what
+   * you want when you want somebody from nothing. Given, the author already has
+   * somebody in mind, and every field is an attempt to write *them* down.
+   *
+   * It outranks everything else in the prompt except the canon itself: a
+   * starter that says he is twenty-seven and born in 661 settles his age and
+   * his birth year, whatever a die would have said. It does not outrank the
+   * world - a starter asking for something the natural laws forbid is a
+   * contradiction the article should not carry.
+   */
+  starter?: string
 }
 
 export interface ForgeResult {
@@ -90,6 +105,20 @@ export function buildForgePrompt(req: ForgeRequest): string {
       ? `The canon of this universe, already read for you. Work from it rather than looking it up ` +
         `again; reach for a tool only if you need detail on one particular thing named here and ` +
         `not described.` + NL + NL + req.canon
+      : '',
+    req.starter
+      ? `The author has described what this article is, in their own words. This is the article ` +
+        `you are writing - not a hint, and not a starting point to improve on. Every field you ` +
+        `generate is an attempt to write down the thing described here, and where anything else ` +
+        `in this prompt disagrees with it, this wins. Take the facts it states - names, ages, ` +
+        `dates, places, relationships - exactly as given rather than inventing alternatives, and ` +
+        `fill the fields it does not speak to with what would be true of this particular ` +
+        `character in this world.` +
+        NL + NL + req.starter.trim() +
+        NL + NL +
+        `The one thing it does not override is the canon above: if it asks for something this ` +
+        `world's laws forbid, write what fits the world and say so in your reply rather than ` +
+        `contradicting the world.`
       : '',
     Object.keys(current).length
       ? `These fields are already set by the author and must not be changed. Everything you ` +

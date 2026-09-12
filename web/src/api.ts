@@ -114,7 +114,7 @@ export const dropTimeline = (universe: string, id: string) =>
   )
 
 export const getItem = (universe: string, id: string) =>
-  json<{ item: { id: string; name: string; kind?: string }; values: UniverseDraft }>(
+  json<{ item: { id: string; name: string; kind?: string; stub?: boolean }; values: UniverseDraft }>(
     `/item?universe=${encodeURIComponent(universe)}&id=${encodeURIComponent(id)}`,
   )
 
@@ -198,10 +198,12 @@ export const forge = (
   avoid?: Record<string, unknown[]>,
   /** Notes from the roll, so the prose is written around what was settled. */
   rolled?: string[],
+  /** The author's own description of the article, when they gave one. */
+  starter?: string,
 ) =>
   json<ForgeResult>('/universe/forge', {
     method: 'POST',
-    body: JSON.stringify({ container, universe, fill, current, avoid, rolled }),
+    body: JSON.stringify({ container, universe, fill, current, avoid, rolled, starter }),
   })
 
 export const nav = (universe: string) =>

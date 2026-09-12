@@ -66,6 +66,15 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   /** Whether this container's roll can be aimed at a year, and what it is aimed at. */
   const [takesYear, setTakesYear] = useState(false)
   const [year, setYear] = useState('')
+  /**
+   * The author's own account of what this article is.
+   *
+   * Input to generation, not a field: never saved, never returned, and gone
+   * when the form closes. Offered on a new article and on a stub - the two
+   * cases where nothing has been written yet.
+   */
+  const [starter, setStarter] = useState('')
+  const [isStub, setIsStub] = useState(false)
 
   useEffect(() => {
     containerFields(container).then(({ fields: spec, accepts }) => {
@@ -86,7 +95,11 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   useEffect(() => {
     if (!itemId) return
     getItem(universe, itemId).then(
-      (r) => setValues(r.values),
+      (r) => {
+        setValues(r.values)
+        // A stub is a name and nothing else, so it gets the starter too.
+        setIsStub(!!r.item.stub)
+      },
       (e: unknown) => setError(String(e)),
     )
   }, [universe, itemId])
@@ -182,6 +195,25 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
    * minutes later.
    */
   async function fillWholeForm() {
+    /*
+     * A starter turns the roll off.
+     *
+     * The roll exists because a model asked to invent a person reaches for the
+     * most salient one the world allows - in a maritime world, a sea captain
+     * who drowned crossing the ocean. An author who has written a starter has
+     * already made those choices, and the two fight if both run: write that he
+     * is twenty-seven and born in 661, and a die that chose 432 and a cooper's
+     * trade puts them on the form before your words reach the model.
+     *
+     * The omissions go with it. They answer "what does an article like this
+     * usually not have?", which is the wrong question about a person somebody
+     * has already described.
+     */
+    if (starter.trim()) {
+      await generate(unlockedEmpty)
+      return
+    }
+
     let roll: Skeleton | null = null
     try {
       const aimed = year.trim() === '' ? undefined : Number(year)
@@ -280,6 +312,10 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
     setError(null)
     setValues((v) => ({ ...v, ...Object.fromEntries(fill.map((k) => [k, null])) }))
 
+    // Sent with every batch, so the last section is written about the same
+    // person as the first.
+    const told = starter.trim() || undefined
+
     const dropped: string[] = []
     const missed: string[] = []
     /*
@@ -324,7 +360,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       const [head, ...rest] = runs
       if (runs.length > 1) setProgress({ done: 0, total: runs.length })
 
-      const first = await forge(head, settled, container, universe, avoid, roll?.notes)
+      const first = await forge(head, settled, container, universe, avoid, roll?.notes, told)
       if (first.error) {
         setError(first.error)
         return
@@ -340,7 +376,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       const workers = Array.from({ length: Math.min(3, queue.length) }, async () => {
         for (let run = queue.shift(); run; run = queue.shift()) {
           try {
-            let result = await forge(run, settled, container, universe, avoid, roll?.notes)
+            let result = await forge(run, settled, container, universe, avoid, roll?.notes, told)
             /*
              * One retry when a batch comes back with nothing.
              *
@@ -350,7 +386,7 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
              * and usually gets one; asking twice would be a policy of grinding.
              */
             if (result.error || !Object.keys(result.values).length) {
-              result = await forge(run, settled, container, universe, avoid, roll?.notes)
+              result = await forge(run, settled, container, universe, avoid, roll?.notes, told)
             }
             // One batch failing is not the others failing. Whatever came back
             // stays on the form and the rest is reported.
@@ -474,6 +510,40 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
       )}
       {note && <p className="note">{note}</p>}
       {error && <p className="error">{error}</p>}
+
+      {/*
+        The other way to fill a form: say who this is.
+
+        Offered on a new article and on a stub, which are the two cases where
+        nothing has been written yet. An article being edited already says what
+        it is, and a box asking again would be asking the author to repeat
+        themselves.
+      */}
+      {(!itemId || isStub) && (
+        <div className="field">
+          <div className="field-head">
+            <label htmlFor="starter">Starter</label>
+          </div>
+          <textarea
+            id="starter"
+            rows={4}
+            value={starter}
+            disabled={!!busy}
+            placeholder="Who is this? Write as much or as little as you like."
+            onChange={(e) => setStarter(e.target.value)}
+          />
+          <p className="help">
+            Describe what you already have in mind and generation will write <em>that</em> down
+            instead of inventing somebody: the facts you state are taken as given, and the rest is
+            filled in around them. Leave it empty and the {label} is rolled and written from nothing,
+            which is what you want when you want anybody at all.
+          </p>
+          <p className="examples">
+            Not a field — it is never saved, and it is gone when this form closes.
+            {starter.trim() && ' While it is filled in, nothing is rolled: what you wrote decides.'}
+          </p>
+        </div>
+      )}
 
       {sections.map(({ title, fields: rows }) => (
         <div className="fields" key={title || '-'}>

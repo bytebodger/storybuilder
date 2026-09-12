@@ -110,6 +110,33 @@ describe('one form, many containers', () => {
   })
 })
 
+describe('a starter', () => {
+  const raster =
+    'Raster Forinth is a seventh-level alchemy apprentice in Minarok. He is 27 and was born in 661.'
+
+  it('is put in the prompt as the article to write, not as a hint', () => {
+    const prompt = buildForgePrompt({ ...req(['tone']), starter: raster })
+    assert.match(prompt, /Raster Forinth/)
+    assert.match(prompt, /not a hint/)
+    // Where anything else disagrees with it, it wins - except the canon.
+    assert.match(prompt, /this wins/)
+    assert.match(prompt, /forbid/)
+  })
+
+  it('takes the facts as given rather than as a starting point', () => {
+    // The one failure this feature has is returning a different name or a
+    // rounder year than the author wrote.
+    const prompt = buildForgePrompt({ ...req(['tone']), starter: raster })
+    assert.match(prompt, /exactly as given/)
+  })
+
+  it('changes nothing when there is not one', () => {
+    const plain = buildForgePrompt(req(['tone']))
+    assert.equal(plain.includes('in their own words'), false)
+    assert.equal(plain, buildForgePrompt({ ...req(['tone']), starter: '' }))
+  })
+})
+
 describe('the prompt', () => {
   it('names the fields to fill and the values to cohere with', () => {
     const prompt = buildForgePrompt(req(['tone', 'themes'], { name: 'Exoria', genres: ['space opera'] }))
