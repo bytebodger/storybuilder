@@ -9,6 +9,7 @@ import {
   type FillRates,
   type Universe,
 } from '../src/index.ts'
+import { CONTAINER_TYPES } from '../src/containers.ts'
 
 /** How often each field survived the roll, over many articles. */
 function survival(container: string, runs = 4000): Record<string, number> {
@@ -67,7 +68,14 @@ describe('how often a field is filled at all', () => {
       assert.ok(roll, `${container} has a roll`)
       assert.deepEqual(roll.values, {}, 'no skeleton, only omissions')
     }
-    assert.equal(rollFor('legends', context), null, 'a container with no spec has no roll')
+    // Whichever container has none yet. Naming one meant rewriting this line
+    // every time that container got a spec.
+    const specless = CONTAINER_TYPES.map((c) => c.key).find((k) => !containersWithFields().includes(k))
+    assert.equal(
+      rollFor(specless ?? 'no-such-container', context),
+      null,
+      'a container with no spec has no roll',
+    )
   })
 
   it('leaves a person with something to say', () => {
