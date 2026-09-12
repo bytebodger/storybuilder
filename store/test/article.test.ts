@@ -87,7 +87,13 @@ describe('form values to item', () => {
   })
 
   it('refuses a container with no spec, rather than inventing one', () => {
-    assert.throws(() => draftToItem('roads', { name: 'The Pass' }), /No field spec/)
+    // Whichever container has none yet. Naming one meant rewriting this line
+    // every time that container got a spec.
+    const specless = CONTAINER_TYPES.map((c) => c.key).find((k) => !containersWithFields().includes(k))
+    assert.throws(
+      () => draftToItem(specless ?? 'no-such-container', { name: 'The Pass' }),
+      /No field spec/,
+    )
   })
 
   it('round-trips through a stored item', () => {
