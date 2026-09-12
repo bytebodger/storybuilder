@@ -21,6 +21,7 @@ import { GEOGRAPHY_FIELDS } from './geography-fields.ts'
 import { INSTITUTION_FIELDS } from './institutions-fields.ts'
 import { LANGUAGE_FIELDS } from './languages-fields.ts'
 import { LEGEND_FIELDS } from './legends-fields.ts'
+import { PHENOMENA_FIELDS } from './phenomena-fields.ts'
 
 /** Every container with a spec, each composed with the common fields. */
 export const FIELD_SPECS: Record<string, FieldSpec[]> = {
@@ -38,6 +39,7 @@ export const FIELD_SPECS: Record<string, FieldSpec[]> = {
   institutions: composeSpec(INSTITUTION_FIELDS),
   languages: composeSpec(LANGUAGE_FIELDS),
   legends: composeSpec(LEGEND_FIELDS),
+  phenomena: composeSpec(PHENOMENA_FIELDS),
 }
 
 /** The spec for a container, or null when it has none yet. */
