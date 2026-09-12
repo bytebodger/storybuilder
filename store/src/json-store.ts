@@ -163,6 +163,7 @@ export class JsonFileStore implements Store {
       kind: input.kind,
       stub: input.stub || undefined,
       aliases: input.aliases,
+      demonyms: input.demonyms,
       summary: input.summary,
       beginDate: input.beginDate,
       endDate: input.endDate,

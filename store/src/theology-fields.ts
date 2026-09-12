@@ -16,6 +16,7 @@
  * well as faiths, and neither of those has one.
  */
 import type { FieldSpec } from './field-spec.ts'
+import { demonymsField } from './common-fields.ts'
 
 export const THEOLOGY_FIELDS: FieldSpec[] = [
   {
@@ -29,6 +30,7 @@ export const THEOLOGY_FIELDS: FieldSpec[] = [
     help: 'What the faith, order or deity is called, as those outside it would say it.',
     examples: ['The Quiet Hand', 'the Salt Rite', 'Verrin of the Two Moons'],
   },
+  demonymsField({ group: 'Overview', fillRate: 0.5 }),
   {
     key: 'description',
     label: 'Description',

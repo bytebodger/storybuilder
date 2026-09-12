@@ -59,8 +59,11 @@ export function normalizeTerm(term: string): string {
 
 export interface TermMatch {
   item: Item
-  /** 'name' when it matched the item's title, 'alias' when one of its aliases. */
-  via: 'name' | 'alias'
+  /**
+   * 'name' when it matched the item's title, 'alias' when one of its aliases,
+   * 'demonym' when it is what this thing's people are called.
+   */
+  via: 'name' | 'alias' | 'demonym'
   /** True when the spellings were identical before normalising. */
   exact: boolean
 }
@@ -73,16 +76,30 @@ export function matchTerm(term: string, items: Item[]): TermMatch[] {
   const needle = normalizeTerm(term)
   if (!needle) return []
 
-  const matches: TermMatch[] = []
+  // Titles first, whatever order the items arrive in: "Kellish" is the people
+  // of Kell and usually an article of its own, and the thing actually called
+  // that is the more useful answer to report.
+  const titled: TermMatch[] = []
+  const peoples: TermMatch[] = []
+
   for (const item of items) {
     if (normalizeTerm(item.name) === needle) {
-      matches.push({ item, via: 'name', exact: item.name.toLowerCase() === term.toLowerCase() })
+      titled.push({ item, via: 'name', exact: item.name.toLowerCase() === term.toLowerCase() })
       continue
     }
     const alias = (item.aliases ?? []).find((a) => normalizeTerm(a) === needle)
-    if (alias) matches.push({ item, via: 'alias', exact: alias.toLowerCase() === term.toLowerCase() })
+    if (alias) {
+      titled.push({ item, via: 'alias', exact: alias.toLowerCase() === term.toLowerCase() })
+      continue
+    }
+    // A demonym is still a match - which is what stops a stub being proposed
+    // for "Dutch" when the Netherlands is already recorded.
+    const demonym = (item.demonyms ?? []).find((d) => normalizeTerm(d) === needle)
+    if (demonym) {
+      peoples.push({ item, via: 'demonym', exact: demonym.toLowerCase() === term.toLowerCase() })
+    }
   }
-  return matches
+  return [...titled, ...peoples]
 }
 
 export const termExists = (term: string, items: Item[]): boolean => matchTerm(term, items).length > 0

@@ -17,6 +17,7 @@
  * are contiguous, so grouping does not reorder the spec.
  */
 import type { FieldSpec } from './field-spec.ts'
+import { demonymsField } from './common-fields.ts'
 
 export const ETHNICITY_FIELDS: FieldSpec[] = [
   {
@@ -32,6 +33,7 @@ export const ETHNICITY_FIELDS: FieldSpec[] = [
       'give that in the description.',
     examples: ['Kellish', 'the Dunfolk', 'Ashani'],
   },
+  demonymsField({ group: 'Overview', fillRate: 0.8 }),
   {
     key: 'relatedLocations',
     label: 'Related Locations',

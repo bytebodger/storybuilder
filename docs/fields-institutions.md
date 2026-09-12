@@ -9,7 +9,7 @@ exactly, and a test holds them to it.
 
 | Section | Fields |
 | --- | --- |
-| **Overview** | Name, Pronunciation, Description, **Founding Year**, **Dissolution Year**, **Aliases**, Estimated Population/Members |
+| **Overview** | Name, Pronunciation, **Demonyms**, Description, **Founding Year**, **Dissolution Year**, **Aliases**, Estimated Population/Members |
 | **Lineage** | Predecessor Institutions, Successor Institutions, Parent Institution, Founders |
 | **Inside** | Structure, Culture, Public Agenda, Assets |
 | **History** | History, Disbandment |

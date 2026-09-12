@@ -78,6 +78,22 @@ Composition happens once, where specs are registered, and the raw per-container 
 exported: `fieldsFor()` is the only way to read a spec, and it always returns the composed one. A
 consumer cannot accidentally read a spec the form and the generator never use.
 
+### Demonyms
+
+A second shared field, and the first that is **opt-in rather than automatic**. What a thing's people
+are called — *Dutch* for the Netherlands, *Kellish* for Kell — is asked by the six containers where a
+thing has people: locations, geography, cosmology, ethnicities, institutions and theology. A legend has
+no demonym, and a field left blank by nature across two thirds of the catalog is a field nobody reads.
+
+It is declared once, in [common-fields.ts](../store/src/common-fields.ts), and each of the six calls
+for it with its own fill rate and form section. The wording cannot drift, and a test asserts the help
+text is identical everywhere it appears.
+
+Demonyms are stored on a column of the item rather than in `attributes`, because they are **matched
+rather than read**: nothing in the string "The Netherlands" tells a reader that "Dutch" refers to it,
+so they are indexed with names and aliases for [cross-referencing](cross-references.md#demonyms-for-the-references-a-name-cannot-reach)
+and stub detection. Where a demonym collides with an article's actual title, the title wins.
+
 Any container can hold a **stub** — a name recorded without an article, so a reference in one article
 does not have to be written out before that article can be finished. See [stubs.md](stubs.md).
 

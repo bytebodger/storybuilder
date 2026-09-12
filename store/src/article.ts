@@ -70,6 +70,7 @@ export function draftToItem(container: string, values: ArticleValues): NewItem {
     else if (field.storeAs === 'beginDate') item.beginDate = String(value)
     else if (field.storeAs === 'endDate') item.endDate = String(value)
     else if (field.storeAs === 'aliases') item.aliases = asList(value)
+    else if (field.storeAs === 'demonyms') item.demonyms = asList(value)
     else if (field.storeAs === 'timeline') item.timeline = String(value)
     else attributes[field.key] = value
   }
@@ -102,6 +103,7 @@ export function itemToDraft(container: string, item: Item): ArticleValues {
     if (field.storeAs === 'name') {
       values[field.key] = composedName(spec) ? (item.attributes?.[field.key] ?? null) : item.name
     } else if (field.storeAs === 'aliases') values[field.key] = item.aliases ?? []
+    else if (field.storeAs === 'demonyms') values[field.key] = item.demonyms ?? []
     else if (field.storeAs === 'timeline') values[field.key] = item.timeline ?? null
     else if (field.storeAs === 'summary') values[field.key] = item.summary ?? null
     else if (field.storeAs === 'kind') values[field.key] = item.kind ?? null
@@ -137,6 +139,7 @@ export function draftToPatch(container: string, values: ArticleValues, existing?
     beginDate: draft.beginDate,
     endDate: draft.endDate,
     aliases: draft.aliases,
+    demonyms: draft.demonyms,
     timeline: draft.timeline,
     attributes: Object.keys(attributes).length ? attributes : undefined,
   }

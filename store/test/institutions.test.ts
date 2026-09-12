@@ -19,6 +19,7 @@ describe('the institutions spec', () => {
       [
         'Name',
         'Pronunciation',
+        'Demonyms',
         'Description',
         'Founding Year',
         'Dissolution Year',

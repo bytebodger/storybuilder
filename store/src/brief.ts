@@ -22,6 +22,7 @@ export function renderBrief(n: Neighborhood): string {
     )
   }
   if (item.aliases?.length) out.push(`Also known as: ${item.aliases.join(', ')}`)
+  if (item.demonyms?.length) out.push(`Its people are called: ${item.demonyms.join(', ')}`)
   if (item.summary) out.push('', item.summary)
 
   const attrs = Object.entries(item.attributes ?? {})

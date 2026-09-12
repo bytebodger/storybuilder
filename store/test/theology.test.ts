@@ -18,6 +18,7 @@ describe('the theology spec', () => {
       [
         'Name',
         'Pronunciation',
+        'Demonyms',
         'Description',
         'Founding Year',
         'Dissolution Year',

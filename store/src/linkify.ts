@@ -72,24 +72,35 @@ interface Index {
 }
 
 /**
- * Every name and alias in the universe, keyed by normalised form.
+ * Every name, alias and demonym in the universe, keyed by normalised form.
  *
  * A written article wins a collision over a stub: if two items answer to the
  * same name, the one with something behind it is the more useful destination.
+ *
+ * Demonyms are indexed in a second pass, so a title always beats one. "Kellish"
+ * is both the people of Kell and, very often, an article of its own - and a
+ * reader who follows it wants the people, not the port.
  */
 export function buildIndex(items: Item[]): Index {
   const byTerm = new Map<string, Item>()
   let maxWords = 1
 
-  for (const item of items) {
-    for (const surface of [item.name, ...(item.aliases ?? [])]) {
-      const key = normalizeTerm(surface)
-      if (!key || key.length < 3 || NEVER_LINK.has(key)) continue
+  const add = (item: Item, surface: string, demonym: boolean) => {
+    const key = normalizeTerm(surface)
+    if (!key || key.length < 3 || NEVER_LINK.has(key)) return
 
-      const held = byTerm.get(key)
-      if (!held || (held.stub && !item.stub)) byTerm.set(key, item)
-      maxWords = Math.max(maxWords, key.split(' ').length)
-    }
+    const held = byTerm.get(key)
+    // A demonym never displaces what is already there; anything else displaces
+    // a stub.
+    if (!held || (!demonym && held.stub && !item.stub)) byTerm.set(key, item)
+    maxWords = Math.max(maxWords, key.split(' ').length)
+  }
+
+  for (const item of items) {
+    for (const surface of [item.name, ...(item.aliases ?? [])]) add(item, surface, false)
+  }
+  for (const item of items) {
+    for (const surface of item.demonyms ?? []) add(item, surface, true)
   }
   return { byTerm, maxWords }
 }

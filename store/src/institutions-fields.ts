@@ -18,6 +18,7 @@
  * filling it every time quietly buries four orders in five.
  */
 import type { FieldSpec } from './field-spec.ts'
+import { demonymsField } from './common-fields.ts'
 
 export const INSTITUTION_FIELDS: FieldSpec[] = [
   {
@@ -31,6 +32,7 @@ export const INSTITUTION_FIELDS: FieldSpec[] = [
     help: 'What the institution is called, as the people who deal with it would say it.',
     examples: ['The Guild of Weighers', 'The Ash Seat', 'The Order of the Quiet Hand'],
   },
+  demonymsField({ group: 'Overview', fillRate: 0.4 }),
   {
     key: 'description',
     label: 'Description',

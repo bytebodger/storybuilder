@@ -97,7 +97,7 @@ export interface FieldSpec {
    * to be one string to be the title of an article and to be found by anything
    * looking for it.
    */
-  storeAs?: 'name' | 'summary' | 'kind' | 'beginDate' | 'endDate' | 'aliases' | 'timeline'
+  storeAs?: 'name' | 'summary' | 'kind' | 'beginDate' | 'endDate' | 'aliases' | 'demonyms' | 'timeline'
 }
 
 /** True when a field holds nothing a generator should preserve. */

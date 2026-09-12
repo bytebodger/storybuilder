@@ -16,6 +16,7 @@
  * hills becomes a world of portents.
  */
 import type { FieldSpec } from './field-spec.ts'
+import { demonymsField } from './common-fields.ts'
 
 export const GEOGRAPHY_FIELDS: FieldSpec[] = [
   {
@@ -28,6 +29,7 @@ export const GEOGRAPHY_FIELDS: FieldSpec[] = [
     help: 'What the feature is called by the people who live near it or cross it.',
     examples: ['The Sunder', 'The Greyfell Range', 'The Weeping Stair'],
   },
+  demonymsField({ fillRate: 0.35 }),
   {
     key: 'description',
     label: 'Description',

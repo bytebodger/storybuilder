@@ -8,7 +8,7 @@ spec's order exactly, and a test holds them to it.
 
 | Section | Fields |
 | --- | --- |
-| **Overview** | Name, Pronunciation, Description, **Founding Year**, **Dissolution Year**, **Aliases**, Estimated Population/Members, Founders |
+| **Overview** | Name, Pronunciation, **Demonyms**, Description, **Founding Year**, **Dissolution Year**, **Aliases**, Estimated Population/Members, Founders |
 | **Inside** | Structure, Culture, Public Agenda, Assets |
 | **History** | History, Disbandment |
 | **Reach** | Owned/Controlled Locations, Associated Locations, Associated Ethnicities, Associated Institutions |

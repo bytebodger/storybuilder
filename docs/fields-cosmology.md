@@ -11,6 +11,7 @@ is a property of the body, whatever people later made of it.
 | --- | --- | --- |
 | Name | item name | Required. Its most widely used name. |
 | Pronunciation | attribute | [Common to every container](containers.md#fields-every-container-gets). |
+| **Demonyms** | **`demonyms`** | For a body with people on it — matched like the name. [More](containers.md#demonyms). |
 | Description | item summary | What it is and how it looks from the ground. Shown wherever it is mentioned. |
 | **Alternative Name(s)** | **`aliases`** | Older names, other peoples' names, sailors' names. |
 | **Type** | **`kind`** | star, planet, moon, comet, asteroid, constellation. |

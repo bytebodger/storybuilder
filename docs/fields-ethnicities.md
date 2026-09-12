@@ -10,6 +10,7 @@ dead, what they will not do.
 | **Overview** | | |
 | Name | item name | Required. What the people call themselves. |
 | Pronunciation | attribute | [Common to every container](containers.md#fields-every-container-gets). |
+| **Demonyms** | **`demonyms`** | What this people is called — matched like the name, at the highest rate of the six. [More](containers.md#demonyms). |
 | Related Locations | attribute (list) | Where they live, came from, and are scattered to. |
 | Description | item summary | Who they are and what sets them apart. Shown wherever they are mentioned. |
 | **Names** | | |

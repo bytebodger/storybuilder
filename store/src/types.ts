@@ -71,6 +71,20 @@ export interface Item {
   kind?: string
   aliases?: string[]
   /**
+   * What the people of this thing are called: Dutch for the Netherlands,
+   * Kellish for Kell.
+   *
+   * A column rather than an attribute because it is matched, not just read. No
+   * reader of prose knows that "Dutch" refers to an article titled "The
+   * Netherlands", and nothing in a name can tell them - so the demonyms are
+   * indexed alongside names and aliases, and a mention of one links to this
+   * article instead of raising a stub for a people that already has one.
+   *
+   * Ranked below both: where a demonym collides with something's actual title,
+   * the title wins.
+   */
+  demonyms?: string[]
+  /**
    * A placeholder: the thing is named and exists, but nothing about it is
    * established yet.
    *
@@ -232,6 +246,7 @@ export interface NewItem {
   kind?: string
   stub?: boolean
   aliases?: string[]
+  demonyms?: string[]
   summary?: string
   beginDate?: string
   endDate?: string

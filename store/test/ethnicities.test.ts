@@ -20,6 +20,7 @@ describe('the ethnicities spec', () => {
       [
         'Name',
         'Pronunciation',
+        'Demonyms',
         'Related Locations',
         'Description',
         'Common Masculine Names',

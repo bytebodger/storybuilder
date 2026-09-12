@@ -44,6 +44,36 @@ export const COMMON_FIELDS: CommonField[] = [
 ]
 
 /**
+ * Demonyms, for the containers where a thing has people.
+ *
+ * Opt-in rather than common, because most containers have no answer: a legend
+ * has no demonym, and a field that is blank by nature on two thirds of the
+ * catalog is a field nobody reads. A spec that wants it calls this, so the
+ * wording is written once and cannot drift across the six that do.
+ *
+ * It earns its place by being matched rather than read. Nothing in the string
+ * "The Netherlands" tells a reader that "Dutch" refers to it, so the demonyms
+ * are indexed with names and aliases - see `Item.demonyms`.
+ */
+export function demonymsField(options: { group?: string; fillRate?: number } = {}): FieldSpec {
+  return {
+    key: 'demonyms',
+    label: 'Demonyms',
+    kind: 'list',
+    required: false,
+    default: [],
+    storeAs: 'demonyms',
+    ...(options.group === undefined ? {} : { group: options.group }),
+    ...(options.fillRate === undefined ? {} : { fillRate: options.fillRate }),
+    help:
+      'What its people are called - Dutch for the Netherlands, Kellish for Kell. Give the noun and ' +
+      'the adjective where they differ, and any form outsiders use. These are matched like the ' +
+      'name itself, so a mention of one anywhere links to this article instead of raising a stub.',
+    examples: ['Kellish', 'Dolman, Dolmen', 'of the Reach'],
+  }
+}
+
+/**
  * A container's spec with the common fields folded in.
  *
  * Applied once, where specs are registered, so every consumer - the form, the

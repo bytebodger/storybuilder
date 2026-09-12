@@ -10,6 +10,7 @@ on a location describes the terrain a place sits in; this describes the terrain.
 | --- | --- | --- |
 | Name | item name | Required. What the people near it call it. |
 | Pronunciation | attribute | [Common to every container](containers.md#fields-every-container-gets). |
+| **Demonyms** | **`demonyms`** | What the people of it are called — matched like the name. [More](containers.md#demonyms). |
 | Description | item summary | What it is and why it matters. Shown wherever it is mentioned. |
 | Parent Geography | attribute | The larger feature it sits inside. |
 | Parent Location | attribute | The place it lies within. |

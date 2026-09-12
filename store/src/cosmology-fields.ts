@@ -17,6 +17,7 @@
  * and only one of them is the moon's.
  */
 import type { FieldSpec } from './field-spec.ts'
+import { demonymsField } from './common-fields.ts'
 
 export const COSMOLOGY_FIELDS: FieldSpec[] = [
   {
@@ -31,6 +32,7 @@ export const COSMOLOGY_FIELDS: FieldSpec[] = [
       'belong in Alternative Names.',
     examples: ['The Pale Sister', 'Hask', 'The Wanderer'],
   },
+  demonymsField({ fillRate: 0.3 }),
   {
     key: 'description',
     label: 'Description',

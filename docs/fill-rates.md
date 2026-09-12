@@ -99,6 +99,11 @@ Locations and Associated Ethnicities 60%, Participants & Key Roles 70%) and `ite
 Associated Theology 30%, Associated Institutions and Ethnicities 40%, Created On, Mechanics and
 Manufacturing Process 50%, Associated Locations, Associated People and Weight 60%).
 
+**Demonyms** is the one rate set in six places at once, and each container disagrees about it for a
+reason: `cosmology` 30% and `geography` 35% (most moons and most rivers have no people), `institutions`
+40%, `locations` 50%, `theology` 50%, and `ethnicities` 80% — a people almost always has a word for
+itself. See [containers.md](containers.md#demonyms).
+
 **Existed Until at 20%** is the one worth pausing on. It maps to the store's `endDate`, and a blank
 there is a claim that a place still stands — so a generator filling it every time was quietly drowning
 four cities in five.

@@ -18,7 +18,8 @@ const dol = {
 describe('the locations spec', () => {
   it('requires only a name', () => {
     assert.deepEqual(LOCATION_FIELDS.filter((f) => f.required).map((f) => f.key), ['name'])
-    assert.equal(LOCATION_FIELDS.length, 13)
+    // Thirteen declared, plus the demonyms every peopled container asks for.
+    assert.equal(LOCATION_FIELDS.length, 14)
   })
 
   it('starts a new location at Year 0, as the spec says', () => {
@@ -87,7 +88,8 @@ describe('when a place existed', () => {
   it('carries the dates through an update, so clearing one takes effect', () => {
     const patch = draftToPatch('locations', dol)
     assert.deepEqual(Object.keys(patch).sort(), [
-      'aliases', 'attributes', 'beginDate', 'endDate', 'kind', 'name', 'summary', 'timeline',
+      'aliases', 'attributes', 'beginDate', 'demonyms', 'endDate', 'kind', 'name', 'summary',
+      'timeline',
     ])
     assert.equal(patch.endDate, undefined)
   })

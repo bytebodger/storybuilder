@@ -8,6 +8,7 @@
  * terrain a place sits in, and names the features it sits among.
  */
 import type { FieldSpec } from './field-spec.ts'
+import { demonymsField } from './common-fields.ts'
 
 export const LOCATION_FIELDS: FieldSpec[] = [
   {
@@ -20,6 +21,7 @@ export const LOCATION_FIELDS: FieldSpec[] = [
     help: 'What the place is called by the people who live there or nearby.',
     examples: ['Kell', 'Dol', 'The Kellish Reach'],
   },
+  demonymsField({ fillRate: 0.5 }),
   {
     key: 'parentLocation',
     label: 'Parent Location',

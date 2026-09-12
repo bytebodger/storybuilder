@@ -18,6 +18,7 @@ describe('the geography spec', () => {
       [
         'Name',
         'Pronunciation',
+        'Demonyms',
         'Description',
         'Parent Geography',
         'Parent Location',

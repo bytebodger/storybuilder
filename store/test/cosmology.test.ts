@@ -18,6 +18,7 @@ describe('the cosmology spec', () => {
       [
         'Name',
         'Pronunciation',
+        'Demonyms',
         'Description',
         'Alternative Name(s)',
         'Type',
