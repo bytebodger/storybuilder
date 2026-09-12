@@ -65,7 +65,7 @@ export function buildForgePrompt(req: ForgeRequest): string {
   const described = asked
     .map((f) => {
       const shape =
-        f.kind === 'list' ? 'array of short strings' : f.kind === 'number' ? 'number' : f.kind === 'longtext' ? 'prose, 2-4 sentences' : 'short string'
+        f.kind === 'list' ? 'array of short strings' : f.kind === 'number' ? 'number' : f.kind === 'boolean' ? 'true or false' : f.kind === 'longtext' ? 'prose, 2-4 sentences' : 'short string'
       const examples = f.examples?.length ? `\n    Examples (calibration, not a menu): ${f.examples.join(' | ')}` : ''
       return `  ${f.key} (${shape}) - ${f.label}\n    ${f.help}${examples}`
     })
@@ -152,6 +152,13 @@ function coerce(field: FieldSpec, value: unknown): unknown {
     case 'number': {
       const n = typeof value === 'number' ? value : Number(String(value).replace(/[^0-9.-]/g, ''))
       return Number.isFinite(n) ? n : null
+    }
+    case 'boolean': {
+      if (typeof value === 'boolean') return value
+      const word = String(value).trim().toLowerCase()
+      if (/^(y|yes|true|on|1)$/.test(word)) return true
+      if (/^(n|no|false|off|0)$/.test(word)) return false
+      return null
     }
     default:
       return Array.isArray(value) ? value.join(', ') : String(value).trim() || null

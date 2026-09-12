@@ -23,6 +23,14 @@ function coerce(field: FieldSpec, value: unknown): unknown {
       const n = typeof value === 'number' ? value : Number(String(value).replace(/[^0-9.-]/g, ''))
       return Number.isFinite(n) ? n : null
     }
+    case 'boolean': {
+      // A form sends a boolean; a hand-edited file and a generator send words.
+      if (typeof value === 'boolean') return value
+      const word = String(value).trim().toLowerCase()
+      if (/^(y|yes|true|on|1)$/.test(word)) return true
+      if (/^(n|no|false|off|0)$/.test(word)) return false
+      return null
+    }
     default:
       return Array.isArray(value) ? value.join(', ') : String(value).trim() || null
   }

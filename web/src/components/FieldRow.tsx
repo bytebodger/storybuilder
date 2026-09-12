@@ -59,11 +59,13 @@ export function FieldRow({
           >
             {locked ? 'Locked' : 'Lock'}
           </button>
+          {/* A checkbox is already one click from either answer, so clearing
+              and regenerating it are noise. */}
           <button
             type="button"
             className="icon"
             title="Clear this field"
-            disabled={locked || busy || text === ''}
+            disabled={locked || busy || text === '' || field.kind === 'boolean'}
             onClick={onClear}
           >
             Clear
@@ -72,7 +74,7 @@ export function FieldRow({
             type="button"
             className="icon"
             title="Replace this field with a newly generated value"
-            disabled={locked || busy}
+            disabled={locked || busy || field.kind === 'boolean'}
             onClick={onRegenerate}
           >
             Regenerate
@@ -103,6 +105,15 @@ export function FieldRow({
             </option>
           ))}
         </select>
+      ) : field.kind === 'boolean' ? (
+        <input
+          id={field.key}
+          type="checkbox"
+          className="switch"
+          checked={value === true}
+          disabled={locked}
+          onChange={(e) => onChange(e.target.checked)}
+        />
       ) : field.kind === 'longtext' ? (
         <textarea id={field.key} rows={4} value={text} disabled={locked} onChange={(e) => set(e.target.value)} />
       ) : (

@@ -92,11 +92,26 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
   }, [universe, itemId])
 
   const spec = fields ?? []
-  const unlockedEmpty = useMemo(
-    () => spec.filter((f) => !locked.has(f.key) && isEmpty(values[f.key])).map((f) => f.key),
-    [spec, locked, values],
+
+  /*
+   * The fields on screen right now.
+   *
+   * A conditional field asks something that only arises because of an earlier
+   * answer - where a tale sits in a longer work, once it is not standalone.
+   * Hidden means hidden from everything: not rendered, not generated, and not
+   * counted as missing when it is required. It keeps whatever value it had,
+   * because a checkbox toggled twice should not cost the author their typing.
+   */
+  const visible = useMemo(
+    () => spec.filter((f) => !f.showWhen || values[f.showWhen.field] === f.showWhen.equals),
+    [spec, values],
   )
-  const required = spec.filter((f) => f.required)
+
+  const unlockedEmpty = useMemo(
+    () => visible.filter((f) => !locked.has(f.key) && isEmpty(values[f.key])).map((f) => f.key),
+    [visible, locked, values],
+  )
+  const required = visible.filter((f) => f.required)
   const missing = required.filter((f) => isEmpty(values[f.key]))
 
   /*
@@ -109,14 +124,14 @@ export function ArticleForm({ universe, container, label, itemId, onSaved, onCan
    */
   const sections = useMemo(() => {
     const out: { title: string; fields: UniverseField[] }[] = []
-    for (const field of spec) {
+    for (const field of visible) {
       const title = field.group ?? ''
       const last = out[out.length - 1]
       if (last && last.title === title) last.fields.push(field)
       else out.push({ title, fields: [field] })
     }
     return out
-  }, [spec])
+  }, [visible])
 
   /*
    * A whole form is generated a section at a time, not in one request.

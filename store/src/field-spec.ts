@@ -12,15 +12,29 @@
  * `timeline` is the one that is not a shape of text: its value is the id of one
  * of this universe's timelines, chosen from them, because a timeline that does
  * not exist is not a typo to be caught later but an event filed nowhere.
+ *
+ * `boolean` is the other: a yes or no, entered as a checkbox. It exists because
+ * a question with two answers should not be a text box that accepts "sort of".
+ * `false` is a value like any other - it is never read as an empty field.
  */
-export type FieldKind = 'text' | 'longtext' | 'list' | 'number' | 'timeline'
+export type FieldKind = 'text' | 'longtext' | 'list' | 'number' | 'timeline' | 'boolean'
 
 export interface FieldSpec {
   key: string
   label: string
   kind: FieldKind
   required: boolean
-  default: string | number | string[] | null
+  default: string | number | string[] | boolean | null
+  /**
+   * Show this field only while another field holds a particular value.
+   *
+   * For a question that only arises because of an earlier answer: where a tale
+   * sits in a longer work is meaningless until somebody says it is part of one.
+   * A hidden field is not generated, is not counted as missing when it is
+   * required, and keeps whatever value it already had - hiding is not clearing,
+   * because a checkbox toggled twice should not cost the author their typing.
+   */
+  showWhen?: { field: string; equals: string | number | boolean }
   /** What the field is for. Shown under the input, and given to the generator verbatim. */
   help: string
   /** Short examples. Calibration for the generator; never presented as the only options. */

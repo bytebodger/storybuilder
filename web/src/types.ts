@@ -1,4 +1,4 @@
-export type FieldKind = 'text' | 'longtext' | 'list' | 'number' | 'timeline'
+export type FieldKind = 'text' | 'longtext' | 'list' | 'number' | 'timeline' | 'boolean'
 
 /** Mirrors the field spec the bridge serves from the store. */
 export interface UniverseField {
@@ -6,7 +6,9 @@ export interface UniverseField {
   label: string
   kind: FieldKind
   required: boolean
-  default: string | number | string[] | null
+  default: string | number | string[] | boolean | null
+  /** Shown only while another field holds this value. */
+  showWhen?: { field: string; equals: string | number | boolean }
   help: string
   examples?: string[]
   /** The form section this field belongs to. Absent on short specs. */

@@ -314,7 +314,10 @@ const server = createServer(async (req, res) => {
         label: f.label,
         kind: f.kind,
         segments: linkify(
-          Array.isArray(f.value) ? f.value.join(', ') : String(f.value),
+          Array.isArray(f.value) ? f.value.join(', ')
+          // A reader wants Yes and No, not true and false.
+          : f.kind === 'boolean' ? (f.value ? 'Yes' : 'No')
+          : String(f.value),
           all,
           { excludeId: item.id },
         ),
