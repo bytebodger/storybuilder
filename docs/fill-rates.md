@@ -91,8 +91,9 @@ and Sentence Structure 40%, Phonology and Parent Languages 50%, Writing System, 
 Cultural Significance 60%), [`legends`](fields-legends.md#fill-rates), whose fourteen rates run from
 25% to 60%, `phenomena` (First Observed, Associated Legends and History 50%, Societal Impact 60%) and
 `roads` (Established On 40%, Cultural Impact, Political Impact and History 50%, Commercial Impact 60%)
-and `terminology` (Associated People and Theology 30%, Institutions 35%, Locations, Ethnicities and
-Languages 50%).
+`terminology` (Associated People and Theology 30%, Institutions 35%, Locations, Ethnicities and
+Languages 50%) and [`theology`](fields-theology.md#fill-rates), whose seventeen rates run from 20% to
+70% and are listed on its own page.
 
 **Existed Until at 20%** is the one worth pausing on. It maps to the store's `endDate`, and a blank
 there is a claim that a place still stands — so a generator filling it every time was quietly drowning

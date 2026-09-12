@@ -25,6 +25,7 @@ import { PHENOMENA_FIELDS } from './phenomena-fields.ts'
 import { ROAD_FIELDS } from './roads-fields.ts'
 import { TALE_FIELDS } from './tales-fields.ts'
 import { TERMINOLOGY_FIELDS } from './terminology-fields.ts'
+import { THEOLOGY_FIELDS } from './theology-fields.ts'
 
 /** Every container with a spec, each composed with the common fields. */
 export const FIELD_SPECS: Record<string, FieldSpec[]> = {
@@ -46,6 +47,7 @@ export const FIELD_SPECS: Record<string, FieldSpec[]> = {
   roads: composeSpec(ROAD_FIELDS),
   tales: composeSpec(TALE_FIELDS),
   terminology: composeSpec(TERMINOLOGY_FIELDS),
+  theology: composeSpec(THEOLOGY_FIELDS),
 }
 
 /** The spec for a container, or null when it has none yet. */
