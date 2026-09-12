@@ -132,6 +132,16 @@ export const CONTAINER_TYPES: ContainerType[] = [
       'document: when it was made, who wrote it, what it changed. Quoting from it is optional.',
   },
   {
+    key: 'items',
+    label: 'Items',
+    singular: 'item',
+    description:
+      'Singular objects: one crown, one wreck, one stone that cannot be replicated. A kind of thing ' +
+      'everybody owns is a word rather than an object, and belongs in Terminology - this is for the ' +
+      'one there is only one of, or the few there will only ever be.',
+    kinds: ['relic', 'weapon', 'vessel', 'jewel', 'tool', 'instrument', 'garment'],
+  },
+  {
     key: 'fauna',
     label: 'Fauna',
     singular: 'creature',

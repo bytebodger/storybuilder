@@ -22,6 +22,7 @@ written; a nav built from the catalog shows them what their world has not yet sa
 | **History** | Distinct events. The Battle of Silverfield; the fall of an empire; a coronation. |
 | **Legends** | In-universe myths, resting on real history or entirely invented within the fiction. |
 | **Documents** | In-universe documents, described from the outside: when made, by whom, what they changed. |
+| **Items** | Singular objects: one crown, one wreck, one stone nobody can make another of. A kind of thing everybody owns is a word, and belongs in Terminology. |
 | **Fauna** | Creatures distinctive enough for their own article. An ice dragon, not a squirrel. |
 | **Flora** | Likewise for plants. Witch's Bane Nettle, not corn. |
 | **Afflictions** | A disease, a disorder particular to this world, or a curse laid on a whole people. |
@@ -40,15 +41,19 @@ types are a later feature; for now, adding one means adding it to the catalog.
 ## Fields
 
 A container may declare a field spec: the form the author fills in, and the list the generator is
-briefed from. Nineteen exist so far — the universe manifest ([universe-form.md](universe-form.md)),
-[fauna](fields-fauna.md), [locations](fields-locations.md), [people](fields-people.md),
-[history](fields-history.md), [afflictions](fields-afflictions.md), [cosmology](fields-cosmology.md),
-[documents](fields-documents.md), [ethnicities](fields-ethnicities.md), [flora](fields-flora.md),
-[geography](fields-geography.md), [institutions](fields-institutions.md),
-[languages](fields-languages.md), [legends](fields-legends.md), [phenomena](fields-phenomena.md),
-[roads](fields-roads.md), [tales](fields-tales.md), [terminology](fields-terminology.md) and
-[theology](fields-theology.md). A container without one is not broken; its entries are the name, summary
-and tags every container supports, and a spec can be added later without migrating anything.
+briefed from. Twenty-one exist — the universe manifest ([universe-form.md](universe-form.md)) and every
+container in the catalog: [afflictions](fields-afflictions.md), [cosmology](fields-cosmology.md),
+[documents](fields-documents.md), [ethnicities](fields-ethnicities.md), [fauna](fields-fauna.md),
+[flora](fields-flora.md), [geography](fields-geography.md), [history](fields-history.md),
+[institutions](fields-institutions.md), [items](fields-items.md), [languages](fields-languages.md),
+[legends](fields-legends.md), [locations](fields-locations.md), [people](fields-people.md),
+[phenomena](fields-phenomena.md), [roads](fields-roads.md), [tales](fields-tales.md),
+[terminology](fields-terminology.md), [theology](fields-theology.md) and
+[traditions](fields-traditions.md).
+
+A container without a spec is not broken; its entries are the name, summary and tags every container
+supports, and a spec can be added later without migrating anything. That is how every one of these
+started, and how a container added from here would start.
 
 Specs are data, in [store/src/fields.ts](../store/src/fields.ts). Adding a container's spec makes its
 form appear, makes its fields generatable, and makes them accepted on save, with nothing else to

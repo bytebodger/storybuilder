@@ -92,8 +92,12 @@ Cultural Significance 60%), [`legends`](fields-legends.md#fill-rates), whose fou
 25% to 60%, `phenomena` (First Observed, Associated Legends and History 50%, Societal Impact 60%) and
 `roads` (Established On 40%, Cultural Impact, Political Impact and History 50%, Commercial Impact 60%)
 `terminology` (Associated People and Theology 30%, Institutions 35%, Locations, Ethnicities and
-Languages 50%) and [`theology`](fields-theology.md#fill-rates), whose seventeen rates run from 20% to
-70% and are listed on its own page.
+Languages 50%), [`theology`](fields-theology.md#fill-rates), whose seventeen rates run from 20% to 70%
+and are listed on its own page, and `traditions` (Ended On 20%, Associated People 30%, Established On,
+Associated Institutions and Associated Theology 40%, History and Components and Tools 50%, Associated
+Locations and Associated Ethnicities 60%, Participants & Key Roles 70%) and `items` (Destroyed On 20%,
+Associated Theology 30%, Associated Institutions and Ethnicities 40%, Created On, Mechanics and
+Manufacturing Process 50%, Associated Locations, Associated People and Weight 60%).
 
 **Existed Until at 20%** is the one worth pausing on. It maps to the store's `endDate`, and a blank
 there is a claim that a place still stands — so a generator filling it every time was quietly drowning
