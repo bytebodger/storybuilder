@@ -99,8 +99,10 @@ describe('one form, many containers', () => {
   })
 
   it('generates nothing for a container with no spec', () => {
+    // Deliberately not a container in the catalog. Every one of those has a
+    // spec now, so naming a real one meant rewriting this line each time.
     const { values } = applyForgeResponse('{"name": "The Pass"}', {
-      container: 'roads',
+      container: 'no-such-container',
       fill: ['name'],
       current: {},
     })
