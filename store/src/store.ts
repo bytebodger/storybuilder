@@ -29,14 +29,45 @@ export interface Store {
 
   /** Container names that currently hold at least one item. */
   containers(): Promise<string[]>
+  /**
+   * Everything in the world. Trashed items are not in it.
+   *
+   * The one place that filter lives, because every read that should not see a
+   * trashed article comes through here: the navigation, the briefs, the
+   * cross-referencer, `validate`, the rolled skeleton, and so every canon check
+   * and query. Restoring one is the same filter run again.
+   */
   list(container?: string): Promise<Item[]>
+  /** Finds a trashed item too - what the trash view and a rescue read through. */
   get(id: string): Promise<Item | null>
+  /** What is in the trash, most recently trashed first. */
+  trashed(): Promise<Item[]>
   /** Case-insensitive lookup by name or alias. Used to catch accidental renaming and duplicates. */
   find(name: string, container?: string): Promise<Item[]>
 
   add(input: NewItem): Promise<Item>
   update(id: string, patch: ItemPatch): Promise<Item>
+  /** Destroys it. `trash` is what the console offers; this is for the CLI. */
   remove(id: string): Promise<void>
+
+  /**
+   * Move an item to the trash: out of the world, still on disk.
+   *
+   * Its edges are cut on both sides and kept on the item, so a rescue can put
+   * them back. Nothing else is touched - in particular, the words of other
+   * articles are left exactly as they were written. A name that was mentioned
+   * in prose is still mentioned; it simply stops linking here.
+   */
+  trash(id: string): Promise<Item>
+
+  /**
+   * Take it back out, and re-make the edges that were cut with it.
+   *
+   * Best effort on those: a set closed while the item was away refuses a new
+   * member, and the other end may itself be gone. The report says which came
+   * back and which did not, rather than failing the rescue over an edge.
+   */
+  restore(id: string): Promise<{ item: Item; relinked: number; refused: string[] }>
 
   /** Create a reciprocal edge. Throws CanonViolation if it would exceed a closed set. */
   link(aId: string, bId: string, role?: { a?: string; b?: string }): Promise<void>

@@ -13,6 +13,7 @@ import {
   type Neighborhood,
   type NewItem,
   type RelationSet,
+  type Tag,
   type Timeline,
   type Universe,
   ROOT_TIMELINE_ID,
@@ -93,7 +94,27 @@ export class JsonFileStore implements Store {
       .sort()
   }
 
+  /**
+   * The world, without what has been thrown out of it.
+   *
+   * One filter, in the one place every read passes through: the navigation, the
+   * briefs, the cross-referencer, `validate`, the rolled skeleton, and so every
+   * canon check and query. A trashed article leaves all of them at once, and a
+   * rescue puts it back in all of them at once.
+   */
   async list(container?: string): Promise<Item[]> {
+    return (await this.readAll(container)).filter((i) => !i.trashed)
+  }
+
+  /** What is in the trash, most recently thrown out first. */
+  async trashed(): Promise<Item[]> {
+    return (await this.readAll())
+      .filter((i) => i.trashed)
+      .sort((a, b) => (b.trashed?.at ?? '').localeCompare(a.trashed?.at ?? ''))
+  }
+
+  /** Everything on disk, trash included. Only the trash and `mintId` want this. */
+  private async readAll(container?: string): Promise<Item[]> {
     if (container) return (await this.readContainer(container)).items
     const all: Item[] = []
     for (const c of await this.containers()) all.push(...(await this.readContainer(c)).items)
@@ -205,6 +226,67 @@ export class JsonFileStore implements Store {
     const file = await this.readContainer(item.container)
     file.items = file.items.filter((i) => i.id !== id)
     await this.writeContainer(file)
+  }
+
+  /**
+   * Out of the world, still on disk.
+   *
+   * The edges go, because a relationship with something that is not in the
+   * world is not a relationship - and they are kept on the item so a rescue can
+   * re-make them. Nothing else is touched: the prose of every other article is
+   * left exactly as its author wrote it, and a name mentioned there is still
+   * mentioned. It simply stops linking here.
+   */
+  async trash(id: string): Promise<Item> {
+    const item = await this.require(id)
+    if (item.trashed) return item
+
+    const cut: Tag[] = item.tags.map((t) => ({ ...t }))
+    const touched: Item[] = [item]
+    const changed = new Set<string>([item.container])
+
+    for (const tag of cut) {
+      const other = await this.get(tag.relatedTo)
+      if (!other) continue
+      if (dropTag(other, id)) {
+        touched.push(other)
+        changed.add(other.container)
+      }
+    }
+
+    item.tags = []
+    item.trashed = { at: new Date().toISOString(), tags: cut }
+    await this.persist(touched, changed)
+    return (await this.get(id))!
+  }
+
+  /**
+   * Back into the world, with the edges it went in with.
+   *
+   * Those are best effort, and deliberately not a reason to fail: a set closed
+   * while the item was away refuses a new member, and the other end may have
+   * been removed in the meantime. The refusals are reported so the author can
+   * see what did not come back rather than discovering it later.
+   */
+  async restore(id: string): Promise<{ item: Item; relinked: number; refused: string[] }> {
+    const item = await this.require(id)
+    if (!item.trashed) return { item, relinked: 0, refused: [] }
+
+    const { tags } = item.trashed
+    delete item.trashed
+    await this.persist([item], new Set([item.container]))
+
+    let relinked = 0
+    const refused: string[] = []
+    for (const tag of tags) {
+      try {
+        await this.link(id, tag.relatedTo, { a: tag.role })
+        relinked++
+      } catch (e: unknown) {
+        refused.push(e instanceof Error ? e.message : String(e))
+      }
+    }
+    return { item: (await this.get(id))!, relinked, refused }
   }
 
   async link(aId: string, bId: string, role?: { a?: string; b?: string }): Promise<void> {
@@ -479,7 +561,9 @@ export class JsonFileStore implements Store {
   }
 
   private async mintId(): Promise<string> {
-    const taken = new Set((await this.list()).map((i) => i.id))
+    // Against everything on disk, not the world: an id handed out twice because
+    // the first holder was in the trash would collide the moment it came back.
+    const taken = new Set((await this.readAll()).map((i) => i.id))
     for (;;) {
       const id = randomBytes(4).toString('hex')
       if (!taken.has(id)) return id

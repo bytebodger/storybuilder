@@ -14,6 +14,7 @@ import { renderBrief, renderUniverseBrief } from './brief.ts'
 import { validate } from './validate.ts'
 import { CanonViolation, type ClosureState } from './types.ts'
 import { matchTerm } from './terms.ts'
+import { referencesTo } from './references.ts'
 import { fieldsFor, containersWithFields } from './fields.ts'
 import { fillRateOf } from './skeleton.ts'
 import { byFirstYear, eventsIn, flatten, isRoot, spanOf, subtree, treeOf } from './timelines.ts'
@@ -69,7 +70,11 @@ Everything below needs a universe: --universe <id>, or set SB_UNIVERSE.
         Closing requires a reason. Reopening does not, but one is kept if given.
         Close only sets that are genuinely bounded - continents, moons. Leave
         religions, cities, characters and the like open: they accrete.
-  sb remove <id>
+  sb remove <id>                            Destroys it. Use trash for the reversible one.
+  sb trash <id>                             Out of the world, still on disk. Cuts its edges
+                                            and keeps them, so a restore puts them back.
+  sb restore <id>                           Back into the world, with those edges
+  sb trash-list                             What is in the trash
   sb validate
 
   sb fill-rates [container]                 How often each optional field is filled
@@ -249,11 +254,22 @@ async function main(argv: string[]): Promise<number> {
 
     case 'resolve': {
       const s = await store(a)
-      const hits = matchTerm(rest.join(' '), await s.list())
+      // The trash counts here, and only here. This asks whether the author has
+      // already written this name down, and a name in the trash is one they
+      // have - answering "new" would invite a second article for the same
+      // thing, and a stub for something they deliberately threw away.
+      const trashed = await s.trashed()
+      const hits = matchTerm(rest.join(' '), [...(await s.list()), ...trashed])
       if (!hits.length) {
         console.log('(new to this universe)')
         return 1
       }
+      const inTrash = new Set(trashed.map((i) => i.id))
+      for (const h of hits.filter((h) => inTrash.has(h.item.id))) {
+        console.log(`${h.item.id}  ${h.item.container}  ${h.item.name}  (in the trash)`)
+      }
+      hits.splice(0, hits.length, ...hits.filter((h) => !inTrash.has(h.item.id)))
+      if (!hits.length) return 0
       for (const h of hits) {
         console.log(`${h.item.id}  ${h.item.container}  ${h.item.name}  via ${h.via}${h.exact ? '' : ' (loose)'}`)
       }
@@ -293,6 +309,56 @@ async function main(argv: string[]): Promise<number> {
       const s = await store(a)
       await s.remove(rest[0])
       console.log(`Removed ${rest[0]}`)
+      return 0
+    }
+
+    case 'trash': {
+      const s = await store(a)
+      const item = await s.get(rest[0])
+      if (!item) throw new Error(`No item with id "${rest[0]}"`)
+
+      // Said before it happens, because the edges are what actually change and
+      // the author should see the number rather than discover it.
+      const { linked, mentioned } = referencesTo(item, await s.list())
+      await s.trash(item.id)
+
+      console.log(`"${item.name}" is in the trash. Nothing was destroyed.`)
+      if (linked.length) {
+        console.log(
+          `  ${linked.length} relationship(s) removed: ${linked.map((i) => i.name).join(', ')}. ` +
+            `Restoring puts them back.`,
+        )
+      }
+      if (mentioned.length) {
+        console.log(
+          `  Still named in ${mentioned.length} article(s): ${mentioned.map((i) => i.name).join(', ')}. ` +
+            `Their words are unchanged; the name simply stops linking.`,
+        )
+      }
+      return 0
+    }
+
+    case 'restore': {
+      const s = await store(a)
+      const { item, relinked, refused } = await s.restore(rest[0])
+      console.log(
+        `"${item.name}" is back${relinked ? `, with ${relinked} relationship(s)` : ''}.` +
+          (refused.length ? ` ${refused.length} could not be re-made.` : ''),
+      )
+      for (const why of refused) console.log(`  ${why}`)
+      return 0
+    }
+
+    case 'trash-list': {
+      const s = await store(a)
+      const items = await s.trashed()
+      if (!items.length) {
+        console.log('(the trash is empty)')
+        return 0
+      }
+      for (const i of items) {
+        console.log(`${i.id}  ${i.container.padEnd(14)} ${i.name}  trashed ${i.trashed?.at ?? ''}`)
+      }
       return 0
     }
 

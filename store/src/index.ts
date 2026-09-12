@@ -18,6 +18,7 @@ export { isEmptyValue, type FieldSpec, type FieldKind } from './field-spec.ts'
 export { FIELD_SPECS, fieldsFor, fieldIn, containersWithFields } from './fields.ts'
 export { draftToItem, itemToDraft, draftToPatch, defaultValues, type ArticleValues } from './article.ts'
 export { normalizeTerm, singularize, matchTerm, termExists, type TermMatch } from './terms.ts'
+export { referencesTo, type References } from './references.ts'
 export {
   COMMON_PER_NAME,
   COMMON_SHARE,

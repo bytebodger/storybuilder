@@ -120,6 +120,21 @@ export interface Item {
   attributes?: Record<string, unknown>
   tags: Tag[]
   /**
+   * In the trash: present but out of the world.
+   *
+   * Nothing is destroyed. A trashed item keeps its file, its id and every word
+   * of it, and `list()` simply stops returning it - so it leaves the navigation,
+   * the briefs, the cross-references and every canon check at once, and coming
+   * back is one write. It is still found by `get`, which is what the trash view
+   * and a rescue read it through.
+   *
+   * `tags` holds the edges that were cut on the way in. Trashing removes them
+   * from both sides - a relationship to something out of the world is not a
+   * relationship - and keeping them here is what lets a rescue put them back
+   * rather than making the author remember what they were.
+   */
+  trashed?: { at: string; tags: Tag[] }
+  /**
    * Completeness of each relation set, keyed by group key (see `groupKey`).
    * Absent means 'open'.
    * An explicit 'open' entry is how a reopening keeps its own record.
