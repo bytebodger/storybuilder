@@ -130,6 +130,27 @@ export const saveItem = (body: {
     body: JSON.stringify(body),
   }).then((r) => r.item)
 
+/** What would notice if this article went away: edges cut, mentions left alone. */
+export const referencesTo = (universe: string, id: string) =>
+  json<{
+    linked: { id: string; name: string; container: string }[]
+    mentioned: { id: string; name: string; container: string }[]
+  }>(`/references?universe=${encodeURIComponent(universe)}&id=${encodeURIComponent(id)}`)
+
+/** To the trash: out of the world, still on disk, and reversible. */
+export const trashItem = (universe: string, id: string) =>
+  json<{ item: { id: string; name: string } }>('/trash', {
+    method: 'POST',
+    body: JSON.stringify({ universe, id }),
+  })
+
+/** Back out of it, with the relationships it went in with. */
+export const restoreItem = (universe: string, id: string) =>
+  json<{ item: { id: string; name: string }; relinked: number; refused: string[] }>('/trash', {
+    method: 'POST',
+    body: JSON.stringify({ universe, id, restore: true }),
+  })
+
 export const getUniverse = (id: string) =>
   json<{ universe: Universe }>(`/universe?id=${encodeURIComponent(id)}`).then((r) => r.universe)
 

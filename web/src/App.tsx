@@ -299,6 +299,12 @@ export function App() {
                   const section = sections.find((sec) => sec.items.some((i) => i.id === article.id))
                   if (section) setComposing({ section, itemId: article.id })
                 }}
+                onTrashed={() => {
+                  // The navigation is where the change shows: the article
+                  // leaves its container and appears under Trash, or the other
+                  // way round.
+                  nav(view.id).then(setSections, () => undefined)
+                }}
               />
             ) : (
               <section className="panel">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { article as fetchArticle, brief } from '../api'
+import { article as fetchArticle, brief, referencesTo, restoreItem, trashItem } from '../api'
 import type { ArticleView, NavItem, Segment } from '../types'
 import { MapFigure } from './MapFigure'
 
@@ -9,6 +9,14 @@ interface Props {
   onEdit: () => void
   /** Following a link opens that article. */
   onNavigate: (item: NavItem) => void
+  /** Trashed or restored: the navigation and the open article both change. */
+  onTrashed?: () => void
+}
+
+/** What deleting this would actually do, fetched before it is done. */
+interface Fallout {
+  linked: { id: string; name: string; container: string }[]
+  mentioned: { id: string; name: string; container: string }[]
 }
 
 /** One field's prose, with the mentions of other articles made into links. */
@@ -47,11 +55,14 @@ function Prose({
   )
 }
 
-export function Article({ universe, item, onEdit, onNavigate }: Props) {
+export function Article({ universe, item, onEdit, onNavigate, onTrashed }: Props) {
   const [view, setView] = useState<ArticleView | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showBrief, setShowBrief] = useState(false)
   const [briefText, setBriefText] = useState<string | null>(null)
+  /** Null until Delete is pressed: the confirmation is the reference count. */
+  const [fallout, setFallout] = useState<Fallout | null>(null)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     setView(null)
@@ -83,12 +94,55 @@ export function Article({ universe, item, onEdit, onNavigate }: Props) {
           {view.item.name}
           {view.item.kind && <span className="badge">{view.item.kind}</span>}
           {view.item.stub && <span className="badge stub-badge">stub</span>}
+          {view.item.trashed && <span className="badge stub-badge">in the trash</span>}
         </h2>
         <div className="field-actions">
           <span className="examples">{view.container.label}</span>
-          <button type="button" className="icon" onClick={onEdit}>
-            Edit
-          </button>
+          {view.item.trashed ?
+            <button
+              type="button"
+              className="icon"
+              disabled={busy}
+              title="Put it back, with the relationships it went in with"
+              onClick={async () => {
+                setBusy(true)
+                try {
+                  const { refused } = await restoreItem(universe, view.item.id)
+                  if (refused.length) setError(`Restored, but ${refused.length} link could not be re-made.`)
+                  onTrashed?.()
+                  fetchArticle(universe, item.id).then(setView, () => undefined)
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              {busy ? 'Restoring…' : 'Restore'}
+            </button>
+          : <>
+              <button type="button" className="icon" onClick={onEdit}>
+                Edit
+              </button>
+              <button
+                type="button"
+                className="icon"
+                disabled={busy}
+                title="Move it to the trash. Nothing is destroyed."
+                onClick={async () => {
+                  // The count is the confirmation: asking "are you sure?" with
+                  // no idea what depends on it is not a question anyone can
+                  // answer.
+                  setBusy(true)
+                  try {
+                    setFallout(await referencesTo(universe, view.item.id))
+                  } finally {
+                    setBusy(false)
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </>
+          }
         </div>
       </div>
 
@@ -97,6 +151,65 @@ export function Article({ universe, item, onEdit, onNavigate }: Props) {
           A placeholder. The name is established and nothing else is — writing it is what turns this
           into an article.
         </p>
+      )}
+
+      {view.item.trashed && (
+        <p className="note">
+          In the trash. It is out of the navigation, out of every brief, and nothing links to it — but
+          nothing has been destroyed, and Restore brings it back with the relationships it went in
+          with.
+        </p>
+      )}
+
+      {fallout && (
+        <div className="note">
+          <p>
+            <strong>Move “{view.item.name}” to the trash?</strong> Nothing is destroyed — it can be
+            restored from the Trash section.
+          </p>
+          {fallout.linked.length > 0 && (
+            <p>
+              {fallout.linked.length} article{fallout.linked.length === 1 ? '' : 's'}{' '}
+              {fallout.linked.length === 1 ? 'has' : 'have'} a recorded relationship with it, and{' '}
+              {fallout.linked.length === 1 ? 'that link is' : 'those links are'} removed:{' '}
+              {fallout.linked.map((r) => r.name).join(', ')}. Restoring puts them back.
+            </p>
+          )}
+          {fallout.mentioned.length > 0 && (
+            <p>
+              {fallout.mentioned.length} article{fallout.mentioned.length === 1 ? '' : 's'} mention
+              {fallout.mentioned.length === 1 ? 's' : ''} it in prose:{' '}
+              {fallout.mentioned.map((r) => r.name).join(', ')}. Their words are left exactly as
+              written — the name simply stops linking here.
+            </p>
+          )}
+          {fallout.linked.length === 0 && fallout.mentioned.length === 0 && (
+            <p>Nothing else refers to it.</p>
+          )}
+          <div className="field-actions">
+            <button type="button" className="icon" disabled={busy} onClick={() => setFallout(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="icon"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true)
+                try {
+                  await trashItem(universe, view.item.id)
+                  setFallout(null)
+                  onTrashed?.()
+                  fetchArticle(universe, item.id).then(setView, () => undefined)
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              {busy ? 'Moving…' : 'Move to trash'}
+            </button>
+          </div>
+        </div>
       )}
 
       {view.fields.length === 0 && !view.item.stub && (

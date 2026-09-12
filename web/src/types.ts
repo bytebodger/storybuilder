@@ -173,7 +173,15 @@ export interface ArticleField {
 }
 
 export interface ArticleView {
-  item: { id: string; name: string; container: string; kind?: string; stub?: boolean }
+  item: {
+    id: string
+    name: string
+    container: string
+    kind?: string
+    stub?: boolean
+    /** Set while it is in the trash: shown as such, and restored rather than edited. */
+    trashed?: { at: string; tags: unknown[] }
+  }
   /** True when this article has a window onto the universe's map. */
   hasMap?: boolean
   container: { key: string; label: string; singular?: string }

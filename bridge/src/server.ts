@@ -41,7 +41,8 @@ import {
   renderUniverseBrief,
   toUniverseId,
 } from '../../store/src/index.ts'
-import type { ImportCandidate, Item, UniverseDraft } from '../../store/src/index.ts'
+import type { ImportCandidate, Item, Store, UniverseDraft } from '../../store/src/index.ts'
+import { referencesTo } from '../../store/src/index.ts'
 import { readFile } from 'node:fs/promises'
 import { applyForgeResponse, buildForgePrompt, type ForgeRequest } from './forge.ts'
 import { extractCandidates, screenCandidates, stubContainers } from './stubs.ts'
@@ -209,6 +210,18 @@ function runClaude(prompt: string): Promise<{ output: string; error?: string }> 
  * that reassembled an article from `attributes` alone would silently lose every
  * date - unrendered in the view, unchecked by the canon check.
  */
+/**
+ * The world plus the trash, for the one question that wants both.
+ *
+ * Stub detection asks "has the author already written this name down?", and a
+ * name in the trash is one they have - so it must not be proposed as something
+ * new to create. Every other read wants the world alone, which is what
+ * `list()` gives.
+ */
+async function withTrash(store: Store): Promise<Item[]> {
+  return [...(await store.list()), ...(await store.trashed())]
+}
+
 function filledFields(item: Item) {
   const spec = fieldsFor(item.container)
   const values: Record<string, unknown> = spec
@@ -339,6 +352,45 @@ const server = createServer(async (req, res) => {
       })
     }
 
+    /**
+     * What would notice if this article went away.
+     *
+     * Asked before anything is thrown out, so the warning names what actually
+     * changes. An edge is cut by trashing; a mention is not touched at all -
+     * the words stay as they were written and simply stop linking here - and
+     * telling the author one number for both would be a warning about the
+     * wrong thing.
+     */
+    if (req.method === 'GET' && url.pathname === '/api/references') {
+      const store = await openUniverse(url.searchParams.get('universe') ?? '')
+      const item = await store.get(url.searchParams.get('id') ?? '')
+      if (!item) return send(res, 404, { error: 'No such item' })
+
+      const { linked, mentioned } = referencesTo(item, await store.list())
+      const brief = (i: Item) => ({ id: i.id, name: i.name, container: i.container })
+      return send(res, 200, { linked: linked.map(brief), mentioned: mentioned.map(brief) })
+    }
+
+    /**
+     * Move an article to the trash, or take one back out.
+     *
+     * Never a destruction: the file, the id and every word of it stay where
+     * they are. What changes is that `list()` stops returning it, which is what
+     * takes it out of the navigation, the briefs, the cross-references and
+     * every canon check at once.
+     */
+    if (req.method === 'POST' && url.pathname === '/api/trash') {
+      const body = await readJson<{ universe: string; id: string; restore?: boolean }>(req)
+      const store = await openUniverse(body.universe)
+      if (!(await store.get(body.id))) return send(res, 404, { error: 'No such item' })
+
+      if (body.restore) {
+        const { item, relinked, refused } = await store.restore(body.id)
+        return send(res, 200, { item, relinked, refused })
+      }
+      return send(res, 200, { item: await store.trash(body.id) })
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/item') {
       const store = await openUniverse(url.searchParams.get('universe') ?? '')
       const item = await store.get(url.searchParams.get('id') ?? '')
@@ -384,6 +436,31 @@ const server = createServer(async (req, res) => {
           .filter((i) => i.container === type.key)
           .map((i) => ({ id: i.id, name: i.name, kind: i.kind, summary: i.summary })),
       }))
+      /*
+       * The trash is a section of its own, and never a section of its own
+       * container: an article in it should not be sitting among the live ones
+       * looking like part of the world. Each entry says where it came from, so
+       * a rescue is not a guess.
+       */
+      const trashed = await store.trashed()
+      if (trashed.length) {
+        sections.push({
+          key: 'trash',
+          label: 'Trash',
+          singular: 'trashed article',
+          description:
+            'Out of the world: not in the navigation, not in any brief, and not linked to from ' +
+            'anywhere. Nothing is destroyed - restore one and it comes back with the relationships ' +
+            'it went in with.',
+          items: trashed.map((i) => ({
+            id: i.id,
+            name: i.name,
+            kind: containerType(i.container)?.label ?? i.container,
+            summary: i.summary,
+          })),
+        })
+      }
+
       // Anything in the store under a container that is not in the catalog is
       // still shown - the store never refused it, and hiding it would be a lie.
       const known = new Set(CONTAINER_TYPES.map((c) => c.key))
@@ -691,7 +768,10 @@ const server = createServer(async (req, res) => {
       if (!proposed) {
         return send(res, 200, { candidates: [], alreadyKnown: [], discarded: [], error: run.error })
       }
-      return send(res, 200, screenCandidates(proposed, await store.list(), item))
+      // Trashed articles count as existing here, and only here. A name in the
+      // trash is a name the author has already written down, so proposing a
+      // stub for it would offer to create what they just threw away.
+      return send(res, 200, screenCandidates(proposed, await withTrash(store), item))
     }
 
     /**
@@ -736,7 +816,7 @@ const server = createServer(async (req, res) => {
         }
         // Re-checked at creation: the author may have edited a title into
         // something that already exists, or scanned twice.
-        const store_items = await store.list()
+        const store_items = await withTrash(store)
         const { candidates } = screenCandidates([{ term: name, container: stub.container }], store_items)
         if (candidates.length === 0) {
           skipped.push({ term: name, why: 'Already exists in this universe' })
